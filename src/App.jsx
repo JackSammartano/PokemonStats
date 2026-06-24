@@ -157,7 +157,7 @@ function App() {
           >
             <option value="all">Tutte</option>
             <option value="base">Base</option>
-            <option value="form">Forme</option>
+            <option value="form">Forme alternative</option>
             <option value="mega">Mega</option>
           </select>
         </label>
@@ -192,7 +192,7 @@ function App() {
       <section className="results-summary">
         <span>{filtered.length} risultati visibili</span>
         <span>
-          {baseCount} base, {formCount} forme, {megaCount} Mega
+          {baseCount} base, {formCount} forme alternative, {megaCount} Mega
         </span>
       </section>
 
