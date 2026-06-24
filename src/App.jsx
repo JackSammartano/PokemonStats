@@ -223,13 +223,6 @@ function PokemonCard({ pokemon }) {
 
   return (
     <article className="pokemon-card">
-      <div className="card-topline">
-        <span>#{String(pokemon.id).padStart(4, '0')}</span>
-        {pokemon.apiName !== pokemon.displayName.toLowerCase() && (
-          <span className="api-name">PokéAPI: {pokemon.apiName}</span>
-        )}
-      </div>
-
       <div className="pokemon-heading">
         <div>
           <h2>{pokemon.displayName}</h2>
@@ -301,9 +294,6 @@ function PokemonCard({ pokemon }) {
 function UnsupportedCard({ pokemon }) {
   return (
     <article className="pokemon-card unsupported-card">
-      <div className="card-topline">
-        <span>Non risolto</span>
-      </div>
       <h2>{pokemon.displayName}</h2>
       <p>
         PokéAPI non ha risposto per gli slug provati. Non mostro stats o tipi

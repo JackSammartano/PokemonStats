@@ -197,13 +197,14 @@
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
   gap: 18px;
-  align-items: start;
+  align-items: stretch;
 }
 
 .pokemon-card {
   display: flex;
   flex-direction: column;
   gap: 18px;
+  height: 100%;
   padding: 20px;
   border: 1px solid var(--border);
   border-radius: 28px;
@@ -214,7 +215,6 @@
   animation: card-in 0.42s ease both;
 }
 
-.card-topline,
 .section-title {
   display: flex;
   align-items: center;
@@ -225,13 +225,6 @@
   font-weight: 800;
   letter-spacing: 0.1em;
   text-transform: uppercase;
-}
-
-.api-name {
-  max-width: 190px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
 .pokemon-heading {
