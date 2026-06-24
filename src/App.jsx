@@ -1,7 +1,7 @@
 import { useDeferredValue, useEffect, useState } from 'react'
 import './App.css'
 import { REGULATION_MB_POKEMON } from './data/regulationMb'
-import { formatName, loadPokemonDataset } from './lib/pokeapi'
+import { TYPE_NAMES, formatName, loadPokemonDataset } from './lib/pokeapi'
 
 const STAT_LABELS = {
   hp: 'HP',
@@ -34,6 +34,8 @@ const TYPE_OPTIONS = [
   'fairy',
 ]
 
+const TEAM_SIZE = 6
+
 function getEntryCategory(displayName) {
   if (displayName.startsWith('Mega ')) return 'mega'
   if (
@@ -47,6 +49,7 @@ function getEntryCategory(displayName) {
 
 function App() {
   const [pokemon, setPokemon] = useState([])
+  const [teamNames, setTeamNames] = useState([])
   const [loadedCount, setLoadedCount] = useState(0)
   const [status, setStatus] = useState('loading')
   const [error, setError] = useState(null)
@@ -86,6 +89,10 @@ function App() {
 
   const supported = pokemon.filter((entry) => entry.status === 'ready')
   const unsupported = pokemon.filter((entry) => entry.status === 'unsupported')
+  const team = teamNames
+    .map((name) => pokemon.find((entry) => entry.displayName === name))
+    .filter(Boolean)
+  const teamAnalysis = getTeamDefenseAnalysis(team)
   const baseCount = pokemon.filter((entry) => getEntryCategory(entry.displayName) === 'base').length
   const formCount = pokemon.filter((entry) => getEntryCategory(entry.displayName) === 'form').length
   const megaCount = pokemon.filter((entry) => getEntryCategory(entry.displayName) === 'mega').length
@@ -101,6 +108,22 @@ function App() {
 
     return matchesText && matchesType && matchesCategory
   })
+
+  function toggleTeamMember(entry) {
+    if (entry.status !== 'ready') return
+
+    setTeamNames((currentTeam) => {
+      if (currentTeam.includes(entry.displayName)) {
+        return currentTeam.filter((name) => name !== entry.displayName)
+      }
+
+      if (currentTeam.length >= TEAM_SIZE) {
+        return currentTeam
+      }
+
+      return [...currentTeam, entry.displayName]
+    })
+  }
 
   return (
     <main className="app-shell">
@@ -186,10 +209,25 @@ function App() {
         <span>{filtered.length} risultati visibili</span>
       </section>
 
+      <TeamBuilder
+        analysis={teamAnalysis}
+        onClear={() => setTeamNames([])}
+        onRemove={(name) =>
+          setTeamNames((currentTeam) => currentTeam.filter((entry) => entry !== name))
+        }
+        team={team}
+      />
+
       <section className="pokemon-grid">
         {filtered.map((entry) =>
           entry.status === 'ready' ? (
-            <PokemonCard key={entry.displayName} pokemon={entry} />
+            <PokemonCard
+              isSelected={teamNames.includes(entry.displayName)}
+              key={entry.displayName}
+              onToggleTeam={() => toggleTeamMember(entry)}
+              pokemon={entry}
+              teamIsFull={teamNames.length >= TEAM_SIZE}
+            />
           ) : (
             <UnsupportedCard key={entry.displayName} pokemon={entry} />
           ),
@@ -197,6 +235,39 @@ function App() {
       </section>
     </main>
   )
+}
+
+function getDefenseScore(multiplier) {
+  if (multiplier === 0) return -2
+  return Math.log2(multiplier)
+}
+
+function getTeamDefenseAnalysis(team) {
+  return TYPE_NAMES.map((type) => {
+    const entries = team.map((pokemon) => {
+      const multiplier = pokemon.defenseProfile?.[type] ?? 1
+
+      return {
+        multiplier,
+        name: pokemon.displayName,
+        score: getDefenseScore(multiplier),
+      }
+    })
+    const weak = entries.filter((entry) => entry.multiplier > 1)
+    const resistant = entries.filter(
+      (entry) => entry.multiplier > 0 && entry.multiplier < 1,
+    )
+    const immune = entries.filter((entry) => entry.multiplier === 0)
+    const score = entries.reduce((sum, entry) => sum + entry.score, 0)
+
+    return {
+      immune,
+      resistant,
+      score,
+      type,
+      weak,
+    }
+  }).sort((a, b) => b.score - a.score || a.type.localeCompare(b.type))
 }
 
 function Metric({ label, value, tone }) {
@@ -208,8 +279,109 @@ function Metric({ label, value, tone }) {
   )
 }
 
-function PokemonCard({ pokemon }) {
+function TeamBuilder({ analysis, onClear, onRemove, team }) {
+  return (
+    <details className="team-builder">
+      <summary>Il mio team ({team.length}/{TEAM_SIZE})</summary>
+      <div className="team-header">
+        <div>
+          <p className="eyebrow compact">Team builder</p>
+          <h2>Il mio team</h2>
+        </div>
+        <button
+          className="ghost-button"
+          disabled={team.length === 0}
+          onClick={onClear}
+          type="button"
+        >
+          Svuota team
+        </button>
+      </div>
+
+      <div className="team-slots">
+        {Array.from({ length: TEAM_SIZE }, (_, index) => {
+          const pokemon = team[index]
+
+          return pokemon ? (
+            <article className="team-slot filled" key={pokemon.displayName}>
+              {pokemon.image && <img src={pokemon.image} alt="" />}
+              <div>
+                <strong>{pokemon.displayName}</strong>
+                <div className="type-row mini">
+                  {pokemon.types.map((type) => (
+                    <span className={`type-badge type-${type}`} key={type}>
+                      {formatName(type)}
+                    </span>
+                  ))}
+                </div>
+              </div>
+              <button
+                aria-label={`Rimuovi ${pokemon.displayName} dal team`}
+                onClick={() => onRemove(pokemon.displayName)}
+                type="button"
+              >
+                Rimuovi
+              </button>
+            </article>
+          ) : (
+            <article className="team-slot empty" key={`empty-${index}`}>
+              Slot {index + 1}
+            </article>
+          )
+        })}
+      </div>
+
+      {team.length > 0 ? (
+        <div className="team-analysis">
+          {analysis.map((entry) => (
+            <article
+              className={`team-type-row ${getTeamRowTone(entry.score)}`}
+              key={entry.type}
+            >
+              <span className={`type-badge type-${entry.type}`}>
+                {formatName(entry.type)}
+              </span>
+              <DefenseBars score={entry.score} />
+              <strong>{entry.score > 0 ? `+${entry.score}` : entry.score}</strong>
+            </article>
+          ))}
+        </div>
+      ) : (
+        <p className="team-empty-message">
+          Seleziona fino a 6 Pokémon per analizzare debolezze, resistenze e
+          copertura difensiva del team.
+        </p>
+      )}
+    </details>
+  )
+}
+
+function DefenseBars({ score }) {
+  const barCount = Math.min(Math.abs(score), TEAM_SIZE * 2)
+  const tone = score > 0 ? 'weak' : score < 0 ? 'resist' : 'neutral'
+
+  if (barCount === 0) {
+    return <span className="defense-bars neutral">Bilanciato</span>
+  }
+
+  return (
+    <span className={`defense-bars ${tone}`} aria-label={`Score ${score}`}>
+      {Array.from({ length: barCount }, (_, index) => (
+        <span key={index}></span>
+      ))}
+    </span>
+  )
+}
+
+function getTeamRowTone(score) {
+  if (score > 0) return 'vulnerable'
+  if (score < 0) return 'covered'
+  return 'balanced'
+}
+
+function PokemonCard({ isSelected, onToggleTeam, pokemon, teamIsFull }) {
   const total = pokemon.stats.reduce((sum, stat) => sum + stat.value, 0)
+  const disabled = teamIsFull && !isSelected
 
   return (
     <article className="pokemon-card">
@@ -226,6 +398,16 @@ function PokemonCard({ pokemon }) {
         </div>
         {pokemon.image && <img src={pokemon.image} alt={pokemon.displayName} loading="lazy" />}
       </div>
+
+      <button
+        className={`team-toggle ${isSelected ? 'selected' : ''}`}
+        disabled={disabled}
+        aria-label={isSelected ? 'Rimuovi dal team' : 'Aggiungi al team'}
+        onClick={onToggleTeam}
+        type="button"
+      >
+        {isSelected ? '-' : '+'}
+      </button>
 
       <div className="stats-block">
         <div className="section-title">

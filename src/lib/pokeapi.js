@@ -4,7 +4,7 @@ import {
 } from '../data/regulationMb'
 
 const API_BASE = 'https://pokeapi.co/api/v2'
-const TYPE_NAMES = [
+export const TYPE_NAMES = [
   'normal',
   'fire',
   'water',
@@ -174,7 +174,7 @@ function relationNames(relations, key) {
   return relations[key].map((entry) => entry.name)
 }
 
-export function getWeaknesses(typeNames, typeChart) {
+export function getDefenseProfile(typeNames, typeChart) {
   const multipliers = Object.fromEntries(TYPE_NAMES.map((type) => [type, 1]))
 
   for (const defendingType of typeNames) {
@@ -192,7 +192,11 @@ export function getWeaknesses(typeNames, typeChart) {
     }
   }
 
-  return Object.entries(multipliers)
+  return multipliers
+}
+
+export function getWeaknesses(typeNames, typeChart) {
+  return Object.entries(getDefenseProfile(typeNames, typeChart))
     .filter(([, multiplier]) => multiplier > 1)
     .map(([type, multiplier]) => ({ type, multiplier }))
     .sort((a, b) => b.multiplier - a.multiplier || a.type.localeCompare(b.type))
@@ -237,6 +241,7 @@ export async function fetchPokemon(displayName, typeChart) {
         value: entry.base_stat,
       })),
       types,
+      defenseProfile: getDefenseProfile(types, typeChart),
       weaknesses: getWeaknesses(types, typeChart),
       status: 'ready',
     }
