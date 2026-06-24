@@ -167,67 +167,69 @@ function App() {
         </div>
       </section>
 
-      <section className="toolbar" aria-label="Filtri">
-        <label className="search-field">
-          <span>Cerca Pokémon</span>
-          <input
-            type="search"
-            value={query}
-            onChange={(event) => setQuery(event.target.value)}
-            placeholder="Es. Garchomp, Mega Raichu..."
-          />
-        </label>
+      <details className="toolbar" open aria-label="Filtri">
+        <summary>Cerca e filtra</summary>
+        <div className="toolbar-fields">
+          <label className="search-field">
+            <span>Cerca Pokémon</span>
+            <input
+              type="search"
+              value={query}
+              onChange={(event) => setQuery(event.target.value)}
+              placeholder="Es. Garchomp, Mega Raichu..."
+            />
+          </label>
 
-        <label className="select-field">
-          <span>Tipo</span>
-          <select
-            value={selectedType}
-            onChange={(event) => setSelectedType(event.target.value)}
-          >
-            {TYPE_OPTIONS.map((type) => (
-              <option key={type} value={type}>
-                {type === 'all' ? 'Tutti i tipi' : formatName(type)}
-              </option>
-            ))}
-          </select>
-        </label>
+          <label className="select-field">
+            <span>Tipo</span>
+            <select
+              value={selectedType}
+              onChange={(event) => setSelectedType(event.target.value)}
+            >
+              {TYPE_OPTIONS.map((type) => (
+                <option key={type} value={type}>
+                  {type === 'all' ? 'Tutti i tipi' : formatName(type)}
+                </option>
+              ))}
+            </select>
+          </label>
 
-        <label className="select-field">
-          <span>Categoria</span>
-          <select
-            value={selectedCategory}
-            onChange={(event) => setSelectedCategory(event.target.value)}
-          >
-            <option value="all">Tutte</option>
-            <option value="base">Base</option>
-            <option value="form">Forme alternative</option>
-            <option value="mega">Mega</option>
-          </select>
-        </label>
+          <label className="select-field">
+            <span>Categoria</span>
+            <select
+              value={selectedCategory}
+              onChange={(event) => setSelectedCategory(event.target.value)}
+            >
+              <option value="all">Tutte</option>
+              <option value="base">Base</option>
+              <option value="form">Forme alternative</option>
+              <option value="mega">Mega</option>
+            </select>
+          </label>
 
-        <label className="select-field">
-          <span>Ordina per</span>
-          <select value={sortBy} onChange={(event) => setSortBy(event.target.value)}>
-            {SORT_OPTIONS.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </select>
-        </label>
+          <label className="select-field">
+            <span>Ordina per</span>
+            <select value={sortBy} onChange={(event) => setSortBy(event.target.value)}>
+              {SORT_OPTIONS.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </label>
 
-        <label className="select-field">
-          <span>Direzione</span>
-          <select
-            value={sortDirection}
-            onChange={(event) => setSortDirection(event.target.value)}
-          >
-            <option value="asc">Crescente</option>
-            <option value="desc">Decrescente</option>
-          </select>
-        </label>
-
-      </section>
+          <label className="select-field">
+            <span>Direzione</span>
+            <select
+              value={sortDirection}
+              onChange={(event) => setSortDirection(event.target.value)}
+            >
+              <option value="asc">Crescente</option>
+              <option value="desc">Decrescente</option>
+            </select>
+          </label>
+        </div>
+      </details>
 
       {status === 'error' && (
         <section className="notice error">

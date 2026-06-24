@@ -104,16 +104,29 @@
   position: sticky;
   z-index: 5;
   top: 12px;
-  display: grid;
-  grid-template-columns: minmax(220px, 1fr) repeat(4, minmax(150px, 190px));
-  gap: 14px;
   margin: 22px 0;
-  padding: 14px;
   border: 1px solid var(--border);
   border-radius: 24px;
   background: rgba(250, 247, 239, 0.86);
   box-shadow: 0 18px 48px rgba(15, 23, 42, 0.12);
   backdrop-filter: blur(18px);
+}
+
+.toolbar summary {
+  cursor: pointer;
+  padding: 14px 18px;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.toolbar-fields {
+  display: grid;
+  grid-template-columns: minmax(220px, 1fr) repeat(4, minmax(150px, 190px));
+  gap: 14px;
+  padding: 0 14px 14px;
 }
 
 .search-field,
@@ -824,7 +837,7 @@ meter::-webkit-meter-optimum-value {
 }
 
 @media (max-width: 900px) {
-  .toolbar {
+  .toolbar-fields {
     grid-template-columns: 1fr;
   }
 
