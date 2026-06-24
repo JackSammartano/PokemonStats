@@ -202,6 +202,13 @@ export function getWeaknesses(typeNames, typeChart) {
     .sort((a, b) => b.multiplier - a.multiplier || a.type.localeCompare(b.type))
 }
 
+export function getResistances(typeNames, typeChart) {
+  return Object.entries(getDefenseProfile(typeNames, typeChart))
+    .filter(([, multiplier]) => multiplier < 1)
+    .map(([type, multiplier]) => ({ type, multiplier }))
+    .sort((a, b) => a.multiplier - b.multiplier || a.type.localeCompare(b.type))
+}
+
 export function formatName(value) {
   return value
     .split('-')
@@ -243,6 +250,7 @@ export async function fetchPokemon(displayName, typeChart) {
       types,
       defenseProfile: getDefenseProfile(types, typeChart),
       weaknesses: getWeaknesses(types, typeChart),
+      resistances: getResistances(types, typeChart),
       status: 'ready',
     }
   } catch (error) {

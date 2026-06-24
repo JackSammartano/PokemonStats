@@ -546,6 +546,27 @@ function PokemonCard({ isSelected, onToggleTeam, pokemon, teamIsFull }) {
         </div>
       </div>
 
+      <div className="weakness-block">
+        <div className="section-title">
+          <span>Resistenze</span>
+        </div>
+        <div className="chip-row">
+          {pokemon.resistances.length > 0 ? (
+            pokemon.resistances.map((resistance) => (
+              <span
+                className={`resistance-chip type-${resistance.type}`}
+                key={resistance.type}
+              >
+                {formatName(resistance.type)}{' '}
+                {resistance.multiplier === 0 ? 'Immune' : `x${resistance.multiplier}`}
+              </span>
+            ))
+          ) : (
+            <span className="muted">Nessuna resistenza</span>
+          )}
+        </div>
+      </div>
+
       <div className="abilities">
         <div className="section-title">
           <span>Abilità</span>

@@ -563,7 +563,8 @@
 }
 
 .type-badge,
-.weakness-chip {
+.weakness-chip,
+.resistance-chip {
   border-radius: 999px;
   padding: 6px 10px;
   color: #fff;
@@ -665,24 +666,24 @@ meter::-webkit-meter-optimum-value {
   color: var(--muted);
 }
 
-.type-normal { background: #8a8f98; }
-.type-fire { background: #f97316; }
-.type-water { background: #2563eb; }
-.type-electric { background: #ca8a04; }
-.type-grass { background: #16a34a; }
-.type-ice { background: #0891b2; }
-.type-fighting { background: #dc2626; }
-.type-poison { background: #9333ea; }
-.type-ground { background: #b45309; }
-.type-flying { background: #4f46e5; }
-.type-psychic { background: #db2777; }
-.type-bug { background: #65a30d; }
-.type-rock { background: #78716c; }
-.type-ghost { background: #6d28d9; }
-.type-dragon { background: #1d4ed8; }
-.type-dark { background: #292524; }
-.type-steel { background: #64748b; }
-.type-fairy { background: #ec4899; }
+.type-normal { --type-color: #8a8f98; background: var(--type-color); }
+.type-fire { --type-color: #f97316; background: var(--type-color); }
+.type-water { --type-color: #2563eb; background: var(--type-color); }
+.type-electric { --type-color: #ca8a04; background: var(--type-color); }
+.type-grass { --type-color: #16a34a; background: var(--type-color); }
+.type-ice { --type-color: #0891b2; background: var(--type-color); }
+.type-fighting { --type-color: #dc2626; background: var(--type-color); }
+.type-poison { --type-color: #9333ea; background: var(--type-color); }
+.type-ground { --type-color: #b45309; background: var(--type-color); }
+.type-flying { --type-color: #4f46e5; background: var(--type-color); }
+.type-psychic { --type-color: #db2777; background: var(--type-color); }
+.type-bug { --type-color: #65a30d; background: var(--type-color); }
+.type-rock { --type-color: #78716c; background: var(--type-color); }
+.type-ghost { --type-color: #6d28d9; background: var(--type-color); }
+.type-dragon { --type-color: #1d4ed8; background: var(--type-color); }
+.type-dark { --type-color: #292524; background: var(--type-color); }
+.type-steel { --type-color: #64748b; background: var(--type-color); }
+.type-fairy { --type-color: #ec4899; background: var(--type-color); }
 
 @keyframes card-in {
   from {
