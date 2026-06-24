@@ -106,21 +106,22 @@ function App() {
 
   return (
     <main className="app-shell">
+      <details className="debug-panel">
+        <summary>Debug</summary>
+        <div className="debug-grid">
+          <Metric label="Caricati" value={`${loadedCount}/${REGULATION_MB_POKEMON.length}`} />
+          <Metric label="Supportati" value={supported.length} />
+          <Metric label="Non risolti" value={unsupported.length} tone="warning" />
+          <Metric label="Base" value={baseCount} />
+          <Metric label="Forme alternative" value={formCount} />
+          <Metric label="Mega" value={megaCount} />
+        </div>
+      </details>
+
       <section className="hero-section">
         <div className="hero-copy">
           <p className="eyebrow">Regulation MB Worlds roster</p>
           <h1>Pokémon stats explorer</h1>
-          <p className="hero-text">
-            Lista locale da 224 Pokémon, dati live da PokéAPI, debolezze calcolate
-            dalla type chart e abilità con descrizione quando disponibili.
-          </p>
-        </div>
-
-        <div className="status-panel">
-          <Metric label="Caricati" value={`${loadedCount}/${REGULATION_MB_POKEMON.length}`} />
-          <Metric label="Supportati" value={supported.length} />
-          <Metric label="Mega" value={megaCount} />
-          <Metric label="Non risolti" value={unsupported.length} tone="warning" />
         </div>
       </section>
 
@@ -180,20 +181,19 @@ function App() {
       )}
 
       {status === 'loading' && (
-        <section className="notice">
-          <strong>Caricamento da PokéAPI in corso.</strong>
-          <span>
-            Le richieste sono a batch per evitare picchi inutili. Il browser deve poter
-            raggiungere <code>pokeapi.co</code>.
-          </span>
+        <section className="notice loading-notice">
+          <div className="pokeball-spinner" aria-hidden="true"></div>
+          <div>
+            <strong>Caricamento da PokéAPI in corso.</strong>
+            <span>
+              {loadedCount}/{REGULATION_MB_POKEMON.length} Pokémon caricati
+            </span>
+          </div>
         </section>
       )}
 
       <section className="results-summary">
         <span>{filtered.length} risultati visibili</span>
-        <span>
-          {baseCount} base, {formCount} forme alternative, {megaCount} Mega
-        </span>
       </section>
 
       <section className="pokemon-grid">
