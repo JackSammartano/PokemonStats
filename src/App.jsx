@@ -265,7 +265,10 @@ function PokemonCard({ pokemon }) {
         <div className="chip-row">
           {pokemon.weaknesses.length > 0 ? (
             pokemon.weaknesses.map((weakness) => (
-              <span className="weakness-chip" key={weakness.type}>
+              <span
+                className={`weakness-chip type-${weakness.type}`}
+                key={weakness.type}
+              >
                 {formatName(weakness.type)} x{weakness.multiplier}
               </span>
             ))
@@ -275,8 +278,10 @@ function PokemonCard({ pokemon }) {
         </div>
       </div>
 
-      <details className="abilities">
-        <summary>Abilità disponibili</summary>
+      <div className="abilities">
+        <div className="section-title">
+          <span>Abilità</span>
+        </div>
         <div className="ability-list">
           {pokemon.abilities.map((ability) => (
             <div className="ability" key={`${pokemon.displayName}-${ability.name}`}>
@@ -288,7 +293,7 @@ function PokemonCard({ pokemon }) {
             </div>
           ))}
         </div>
-      </details>
+      </div>
     </article>
   )
 }

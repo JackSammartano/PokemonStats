@@ -143,18 +143,22 @@ async function fetchPokemonResource(displayName) {
 
 async function fetchAbility(abilityRef) {
   const ability = await fetchJson(abilityRef.url)
+  const italianEffect =
+    ability.effect_entries.find((entry) => entry.language.name === 'it') ??
+    ability.flavor_text_entries.find((entry) => entry.language.name === 'it')
   const englishEffect =
     ability.effect_entries.find((entry) => entry.language.name === 'en') ??
     ability.flavor_text_entries.find((entry) => entry.language.name === 'en')
+  const bestEffect = italianEffect ?? englishEffect
 
   return {
     name: formatName(ability.name),
     isHidden: abilityRef.is_hidden,
     description:
-      englishEffect?.short_effect ??
-      englishEffect?.effect ??
-      englishEffect?.flavor_text?.replace(/\s+/g, ' ') ??
-      'Description not available in PokeAPI.',
+      bestEffect?.short_effect ??
+      bestEffect?.effect ??
+      bestEffect?.flavor_text?.replace(/\s+/g, ' ') ??
+      'Descrizione non disponibile in PokeAPI.',
   }
 }
 
@@ -225,6 +229,7 @@ export async function fetchPokemon(displayName, typeChart) {
       baseExperience: pokemon.base_experience,
       id: pokemon.id,
       image:
+        pokemon.sprites.other?.home?.front_default ??
         pokemon.sprites.other?.['official-artwork']?.front_default ??
         pokemon.sprites.front_default,
       stats: pokemon.stats.map((entry) => ({

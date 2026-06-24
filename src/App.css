@@ -197,13 +197,13 @@
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
   gap: 18px;
+  align-items: start;
 }
 
 .pokemon-card {
   display: flex;
   flex-direction: column;
   gap: 18px;
-  min-height: 100%;
   padding: 20px;
   border: 1px solid var(--border);
   border-radius: 28px;
@@ -236,7 +236,7 @@
 
 .pokemon-heading {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 118px;
+  grid-template-columns: minmax(0, 1fr) 148px;
   align-items: center;
   gap: 16px;
 }
@@ -251,8 +251,8 @@
 }
 
 .pokemon-heading img {
-  width: 118px;
-  height: 118px;
+  width: 148px;
+  height: 148px;
   object-fit: contain;
   filter: drop-shadow(0 18px 16px rgba(15, 23, 42, 0.18));
 }
@@ -274,10 +274,6 @@
   font-weight: 900;
   letter-spacing: 0.06em;
   text-transform: uppercase;
-}
-
-.weakness-chip {
-  background: #111827;
 }
 
 .stats-block {
@@ -312,15 +308,8 @@ meter::-webkit-meter-optimum-value {
 }
 
 .abilities {
-  margin-top: auto;
   border-top: 1px solid var(--border);
   padding-top: 14px;
-}
-
-.abilities summary {
-  cursor: pointer;
-  color: var(--text);
-  font-weight: 900;
 }
 
 .ability-list {
