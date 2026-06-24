@@ -66,7 +66,9 @@ function varietyScore(displayName, varietyName) {
   const normalizedVariety = slugify(varietyName)
 
   if (!displayName.startsWith('Mega ')) {
-    return normalizedDisplay === normalizedVariety ? 100 : 0
+    if (normalizedDisplay === normalizedVariety) return 100
+    if (normalizedVariety.startsWith(`${normalizedDisplay}-`)) return 50
+    return 0
   }
 
   const wantsX = /\sX$/.test(displayName)
@@ -118,7 +120,9 @@ async function fetchPokemonResource(displayName) {
       const species = await fetchJson(`${API_BASE}/pokemon-species/${speciesCandidate}`)
       const bestVariety = species.varieties
         .map((entry) => ({
-          score: varietyScore(displayName, entry.pokemon.name),
+          score:
+            varietyScore(displayName, entry.pokemon.name) +
+            (entry.is_default ? 25 : 0),
           url: entry.pokemon.url,
         }))
         .sort((a, b) => b.score - a.score)[0]
