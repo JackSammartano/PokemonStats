@@ -10,8 +10,8 @@
   display: grid;
   grid-template-columns: 1fr;
   gap: 28px;
-  min-height: 300px;
-  padding: 46px;
+  min-height: 160px;
+  padding: 24px 46px 38px;
   border: 1px solid rgba(255, 255, 255, 0.14);
   border-radius: 36px;
   background:
@@ -70,6 +70,7 @@
   font-size: clamp(52px, 9vw, 116px);
   line-height: 0.85;
   letter-spacing: -0.075em;
+  white-space: nowrap;
 }
 
 .metric {
@@ -477,6 +478,126 @@
   background: rgba(241, 245, 249, 0.92);
 }
 
+.compare-panel {
+  margin: 0 0 22px;
+  border: 1px solid var(--border);
+  border-radius: 28px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0.68)),
+    radial-gradient(circle at 100% 0%, rgba(37, 99, 235, 0.10), transparent 30%);
+  box-shadow: 0 18px 45px rgba(15, 23, 42, 0.08);
+}
+
+.compare-panel summary {
+  cursor: pointer;
+  padding: 16px 20px;
+  color: var(--text);
+  font-size: 14px;
+  font-weight: 900;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.compare-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 0 20px 18px;
+}
+
+.compare-header h2 {
+  margin: 0;
+  color: var(--text);
+  font-size: 34px;
+  letter-spacing: -0.04em;
+  line-height: 1;
+}
+
+.compare-selects {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  padding: 0 20px 20px;
+}
+
+.compare-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px;
+  padding: 0 20px 20px;
+  align-items: start;
+}
+
+.searchable-select {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.searchable-select > span {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.searchable-select-input-wrap {
+  position: relative;
+}
+
+.searchable-select input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 13px 14px;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: #fff;
+  color: var(--text);
+  font: inherit;
+}
+
+.searchable-select-dropdown {
+  position: absolute;
+  z-index: 10;
+  top: calc(100% + 6px);
+  left: 0;
+  right: 0;
+  max-height: 240px;
+  overflow-y: auto;
+  margin: 0;
+  padding: 6px;
+  list-style: none;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: #fff;
+  box-shadow: 0 12px 32px rgba(15, 23, 42, 0.14);
+}
+
+.searchable-select-dropdown li {
+  padding: 9px 12px;
+  border-radius: 10px;
+  cursor: pointer;
+  color: var(--text);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.searchable-select-dropdown li:hover,
+.searchable-select-dropdown li.selected {
+  background: rgba(15, 23, 42, 0.06);
+}
+
+.searchable-select-dropdown li.no-results {
+  cursor: default;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
 .pokemon-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
@@ -744,7 +865,9 @@ meter::-webkit-meter-optimum-value {
   }
 
   .team-slots,
-  .team-analysis {
+  .team-analysis,
+  .compare-selects,
+  .compare-grid {
     grid-template-columns: 1fr;
   }
 

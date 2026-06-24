@@ -1,4 +1,4 @@
-import { useDeferredValue, useEffect, useState } from 'react'
+import { useDeferredValue, useEffect, useRef, useState } from 'react'
 import './App.css'
 import { REGULATION_MB_POKEMON } from './data/regulationMb'
 import { TYPE_NAMES, formatName, loadPokemonDataset } from './lib/pokeapi'
@@ -69,6 +69,8 @@ function App() {
   const [selectedCategory, setSelectedCategory] = useState('all')
   const [sortBy, setSortBy] = useState('name')
   const [sortDirection, setSortDirection] = useState('asc')
+  const [compareLeft, setCompareLeft] = useState('')
+  const [compareRight, setCompareRight] = useState('')
   const deferredQuery = useDeferredValue(query)
 
   useEffect(() => {
@@ -161,7 +163,7 @@ function App() {
       <section className="hero-section">
         <div className="hero-copy">
           <p className="eyebrow">Regulation MB Worlds roster</p>
-          <h1>Pokémon stats explorer</h1>
+          <h1>Pokemon stats expo</h1>
         </div>
       </section>
 
@@ -246,10 +248,6 @@ function App() {
         </section>
       )}
 
-      <section className="results-summary">
-        <span>{filtered.length} risultati visibili</span>
-      </section>
-
       <TeamBuilder
         analysis={teamAnalysis}
         highlightedTeamMember={highlightedTeamMember}
@@ -260,6 +258,17 @@ function App() {
           setTeamNames((currentTeam) => currentTeam.filter((entry) => entry !== name))
         }
         team={team}
+      />
+
+      <ComparePanel
+        compareLeft={compareLeft}
+        compareRight={compareRight}
+        onChangeLeft={setCompareLeft}
+        onChangeRight={setCompareRight}
+        onToggleTeam={toggleTeamMember}
+        supported={supported}
+        teamIsFull={teamNames.length >= TEAM_SIZE}
+        teamNames={teamNames}
       />
 
       <section className="pokemon-grid">
@@ -362,20 +371,17 @@ function TeamBuilder({
   return (
     <details className="team-builder">
       <summary>Il mio team ({team.length}/{TEAM_SIZE})</summary>
-      <div className="team-header">
-        <div>
-          <p className="eyebrow compact">Team builder</p>
-          <h2>Il mio team</h2>
+      {team.length > 0 && (
+        <div className="team-header">
+          <button
+            className="ghost-button"
+            onClick={onClear}
+            type="button"
+          >
+            Svuota team
+          </button>
         </div>
-        <button
-          className="ghost-button"
-          disabled={team.length === 0}
-          onClick={onClear}
-          type="button"
-        >
-          Svuota team
-        </button>
-      </div>
+      )}
 
       <div className="team-slots">
         {Array.from({ length: TEAM_SIZE }, (_, index) => {
@@ -584,6 +590,143 @@ function PokemonCard({ isSelected, onToggleTeam, pokemon, teamIsFull }) {
         </div>
       </div>
     </article>
+  )
+}
+
+function SearchableSelect({ label, onChange, options, value }) {
+  const [inputValue, setInputValue] = useState(value)
+  const [isOpen, setIsOpen] = useState(false)
+  const containerRef = useRef(null)
+
+  useEffect(() => {
+    setInputValue(value)
+  }, [value])
+
+  useEffect(() => {
+    function handleMouseDown(event) {
+      if (containerRef.current && !containerRef.current.contains(event.target)) {
+        setIsOpen(false)
+        setInputValue(value)
+      }
+    }
+    document.addEventListener('mousedown', handleMouseDown)
+    return () => document.removeEventListener('mousedown', handleMouseDown)
+  }, [value])
+
+  const filtered = options.filter((name) =>
+    name.toLowerCase().includes(inputValue.toLowerCase()),
+  )
+
+  function handleSelect(name) {
+    onChange(name)
+    setInputValue(name)
+    setIsOpen(false)
+  }
+
+  function handleKeyDown(event) {
+    if (event.key === 'Escape') {
+      setIsOpen(false)
+      setInputValue(value)
+    }
+  }
+
+  return (
+    <div className="searchable-select" ref={containerRef}>
+      <span>{label}</span>
+      <div className="searchable-select-input-wrap">
+        <input
+          autoComplete="off"
+          onChange={(event) => {
+            setInputValue(event.target.value)
+            setIsOpen(true)
+          }}
+          onFocus={() => setIsOpen(true)}
+          onKeyDown={handleKeyDown}
+          placeholder="Cerca Pokémon..."
+          type="text"
+          value={inputValue}
+        />
+        {isOpen && (
+          <ul className="searchable-select-dropdown" role="listbox">
+            {filtered.length > 0 ? (
+              filtered.map((name) => (
+                <li
+                  aria-selected={name === value}
+                  className={name === value ? 'selected' : ''}
+                  key={name}
+                  onMouseDown={() => handleSelect(name)}
+                  role="option"
+                >
+                  {name}
+                </li>
+              ))
+            ) : (
+              <li className="no-results" role="option" aria-selected={false}>
+                Nessun risultato
+              </li>
+            )}
+          </ul>
+        )}
+      </div>
+    </div>
+  )
+}
+
+function ComparePanel({
+  compareLeft,
+  compareRight,
+  onChangeLeft,
+  onChangeRight,
+  onToggleTeam,
+  supported,
+  teamIsFull,
+  teamNames,
+}) {
+  const options = [...supported]
+    .sort((a, b) => a.displayName.localeCompare(b.displayName))
+    .map((p) => p.displayName)
+
+  const leftPokemon = supported.find((p) => p.displayName === compareLeft)
+  const rightPokemon = supported.find((p) => p.displayName === compareRight)
+
+  return (
+    <details className="compare-panel">
+      <summary>Confronta</summary>
+      <div className="compare-selects">
+        <SearchableSelect
+          label="Pokémon 1"
+          onChange={onChangeLeft}
+          options={options}
+          value={compareLeft}
+        />
+        <SearchableSelect
+          label="Pokémon 2"
+          onChange={onChangeRight}
+          options={options}
+          value={compareRight}
+        />
+      </div>
+      {leftPokemon && rightPokemon ? (
+        <div className="compare-grid">
+          <PokemonCard
+            isSelected={teamNames.includes(leftPokemon.displayName)}
+            onToggleTeam={() => onToggleTeam(leftPokemon)}
+            pokemon={leftPokemon}
+            teamIsFull={teamIsFull}
+          />
+          <PokemonCard
+            isSelected={teamNames.includes(rightPokemon.displayName)}
+            onToggleTeam={() => onToggleTeam(rightPokemon)}
+            pokemon={rightPokemon}
+            teamIsFull={teamIsFull}
+          />
+        </div>
+      ) : (
+        <p className="team-empty-message">
+          Seleziona due Pokémon per confrontarli fianco a fianco.
+        </p>
+      )}
+    </details>
   )
 }
 
