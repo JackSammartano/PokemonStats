@@ -53,7 +53,6 @@ function App() {
   const [query, setQuery] = useState('')
   const [selectedType, setSelectedType] = useState('all')
   const [selectedCategory, setSelectedCategory] = useState('all')
-  const [showUnsupported, setShowUnsupported] = useState(true)
   const deferredQuery = useDeferredValue(query)
 
   useEffect(() => {
@@ -99,9 +98,8 @@ function App() {
       (entry.status === 'ready' && entry.types.includes(selectedType))
     const matchesCategory =
       selectedCategory === 'all' || getEntryCategory(entry.displayName) === selectedCategory
-    const matchesSupport = showUnsupported || entry.status === 'ready'
 
-    return matchesText && matchesType && matchesCategory && matchesSupport
+    return matchesText && matchesType && matchesCategory
   })
 
   return (
@@ -163,14 +161,6 @@ function App() {
           </select>
         </label>
 
-        <label className="toggle-field">
-          <input
-            type="checkbox"
-            checked={showUnsupported}
-            onChange={(event) => setShowUnsupported(event.target.checked)}
-          />
-          Mostra non risolti
-        </label>
       </section>
 
       {status === 'error' && (
