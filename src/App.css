@@ -114,7 +114,7 @@
   z-index: 5;
   top: 12px;
   display: grid;
-  grid-template-columns: minmax(220px, 1fr) 220px auto;
+  grid-template-columns: minmax(220px, 1fr) 190px 190px auto;
   gap: 14px;
   margin: 22px 0;
   padding: 14px;
@@ -420,7 +420,7 @@ meter::-webkit-meter-optimum-value {
   }
 
   .status-panel {
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(4, 1fr);
   }
 }
 

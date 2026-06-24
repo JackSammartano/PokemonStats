@@ -1,11 +1,11 @@
 # PokemonStats
 
-Frontend React + Vite per consultare la lista Regulation MB e mostrare dati live da PokeAPI.
+Frontend React + Vite per consultare Regulation Set M-B e mostrare dati live da PokeAPI.
 
 ## Funzionalita
 
-- Lista locale Regulation MB da 224 Pokemon.
-- Ricerca testuale e filtro per tipo.
+- Lista locale Regulation Set M-B da Bulbapedia, con Pokemon base, forme esplicite e Mega Evolutions.
+- Ricerca testuale, filtro per tipo e filtro per categoria.
 - Stats base, tipi, debolezze difensive e abilita con descrizione.
 - Gestione esplicita dei Pokemon non risolti da PokeAPI.
 - Fallback per forme Mega tramite `pokemon-species/{name}` e `varieties`, come suggerito dai maintainer PokeAPI.
@@ -21,7 +21,11 @@ npm run build
 
 ## Dati
 
-La lista Regulation MB e' mantenuta in `src/data/regulationMb.js`.
+La lista Regulation Set M-B e' mantenuta in `src/data/regulationMb.js`.
+
+Fonte principale del ruleset:
+
+- `https://bulbapedia.bulbagarden.net/wiki/Regulation_Set_M-B`
 
 I dati vengono letti a runtime da:
 

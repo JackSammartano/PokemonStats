@@ -34,6 +34,17 @@ const TYPE_OPTIONS = [
   'fairy',
 ]
 
+function getEntryCategory(displayName) {
+  if (displayName.startsWith('Mega ')) return 'mega'
+  if (
+    /\b(Alola|Galar|Hisui|Paldea|Male|Female)\b/.test(displayName) ||
+    displayName.includes('Family Of')
+  ) {
+    return 'form'
+  }
+  return 'base'
+}
+
 function App() {
   const [pokemon, setPokemon] = useState([])
   const [loadedCount, setLoadedCount] = useState(0)
@@ -41,6 +52,7 @@ function App() {
   const [error, setError] = useState(null)
   const [query, setQuery] = useState('')
   const [selectedType, setSelectedType] = useState('all')
+  const [selectedCategory, setSelectedCategory] = useState('all')
   const [showUnsupported, setShowUnsupported] = useState(true)
   const deferredQuery = useDeferredValue(query)
 
@@ -75,6 +87,9 @@ function App() {
 
   const supported = pokemon.filter((entry) => entry.status === 'ready')
   const unsupported = pokemon.filter((entry) => entry.status === 'unsupported')
+  const baseCount = pokemon.filter((entry) => getEntryCategory(entry.displayName) === 'base').length
+  const formCount = pokemon.filter((entry) => getEntryCategory(entry.displayName) === 'form').length
+  const megaCount = pokemon.filter((entry) => getEntryCategory(entry.displayName) === 'mega').length
   const filtered = pokemon.filter((entry) => {
     const matchesText = entry.displayName
       .toLowerCase()
@@ -82,9 +97,11 @@ function App() {
     const matchesType =
       selectedType === 'all' ||
       (entry.status === 'ready' && entry.types.includes(selectedType))
+    const matchesCategory =
+      selectedCategory === 'all' || getEntryCategory(entry.displayName) === selectedCategory
     const matchesSupport = showUnsupported || entry.status === 'ready'
 
-    return matchesText && matchesType && matchesSupport
+    return matchesText && matchesType && matchesCategory && matchesSupport
   })
 
   return (
@@ -102,6 +119,7 @@ function App() {
         <div className="status-panel">
           <Metric label="Caricati" value={`${loadedCount}/${REGULATION_MB_POKEMON.length}`} />
           <Metric label="Supportati" value={supported.length} />
+          <Metric label="Mega" value={megaCount} />
           <Metric label="Non risolti" value={unsupported.length} tone="warning" />
         </div>
       </section>
@@ -128,6 +146,19 @@ function App() {
                 {type === 'all' ? 'Tutti i tipi' : formatName(type)}
               </option>
             ))}
+          </select>
+        </label>
+
+        <label className="select-field">
+          <span>Categoria</span>
+          <select
+            value={selectedCategory}
+            onChange={(event) => setSelectedCategory(event.target.value)}
+          >
+            <option value="all">Tutte</option>
+            <option value="base">Base</option>
+            <option value="form">Forme</option>
+            <option value="mega">Mega</option>
           </select>
         </label>
 
@@ -160,7 +191,9 @@ function App() {
 
       <section className="results-summary">
         <span>{filtered.length} risultati visibili</span>
-        <span>{REGULATION_MB_POKEMON.length} Pokémon in lista Regulation MB</span>
+        <span>
+          {baseCount} base, {formCount} forme, {megaCount} Mega
+        </span>
       </section>
 
       <section className="pokemon-grid">
