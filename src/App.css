@@ -330,12 +330,39 @@
 }
 
 .team-slot.filled {
+  padding: 0;
+  background: transparent;
+}
+
+.team-slot-inner {
   display: grid;
   grid-template-columns: 58px minmax(0, 1fr);
   gap: 10px;
   align-items: center;
+  height: 100%;
+  box-sizing: border-box;
   padding: 12px;
   background: rgba(255, 255, 255, 0.72);
+  border: 2px solid transparent;
+  border-radius: 20px;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease,
+    transform 0.2s ease;
+}
+
+.team-slot-inner.highlighted {
+  transform: translateY(-2px);
+}
+
+.team-slot-inner.highlighted.weak {
+  border-color: #dc2626;
+  box-shadow: 0 0 0 4px rgba(220, 38, 38, 0.16);
+}
+
+.team-slot-inner.highlighted.resist {
+  border-color: #16a34a;
+  box-shadow: 0 0 0 4px rgba(22, 163, 74, 0.16);
 }
 
 .team-slot img {
@@ -407,18 +434,27 @@
   min-height: 22px;
 }
 
-.defense-bars span {
+.defense-bars button {
+  cursor: pointer;
   width: 5px;
   height: 22px;
+  padding: 0;
+  border: 0;
   border-radius: 999px;
 }
 
-.defense-bars.weak span {
+.defense-bars button.weak {
   background: #dc2626;
 }
 
-.defense-bars.resist span {
+.defense-bars button.resist {
   background: #16a34a;
+}
+
+.defense-bars button:hover,
+.defense-bars button:focus-visible {
+  outline: 2px solid #111827;
+  outline-offset: 2px;
 }
 
 .defense-bars.neutral {

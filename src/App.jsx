@@ -60,6 +60,7 @@ function getEntryCategory(displayName) {
 function App() {
   const [pokemon, setPokemon] = useState([])
   const [teamNames, setTeamNames] = useState([])
+  const [highlightedTeamMember, setHighlightedTeamMember] = useState(null)
   const [loadedCount, setLoadedCount] = useState(0)
   const [status, setStatus] = useState('loading')
   const [error, setError] = useState(null)
@@ -137,6 +138,10 @@ function App() {
 
       return [...currentTeam, entry.displayName]
     })
+  }
+
+  function clearTeamHighlight() {
+    setHighlightedTeamMember(null)
   }
 
   return (
@@ -247,7 +252,10 @@ function App() {
 
       <TeamBuilder
         analysis={teamAnalysis}
+        highlightedTeamMember={highlightedTeamMember}
+        onClearHighlight={clearTeamHighlight}
         onClear={() => setTeamNames([])}
+        onHighlight={setHighlightedTeamMember}
         onRemove={(name) =>
           setTeamNames((currentTeam) => currentTeam.filter((entry) => entry !== name))
         }
@@ -308,28 +316,27 @@ function getDefenseScore(multiplier) {
 
 function getTeamDefenseAnalysis(team) {
   return TYPE_NAMES.map((type) => {
-    const entries = team.map((pokemon) => {
+    const entries = team.flatMap((pokemon) => {
       const multiplier = pokemon.defenseProfile?.[type] ?? 1
+      const score = getDefenseScore(multiplier)
 
-      return {
+      if (score === 0) return []
+
+      return Array.from({ length: Math.abs(score) }, (_, index) => ({
+        id: `${type}-${pokemon.displayName}-${index}`,
         multiplier,
         name: pokemon.displayName,
-        score: getDefenseScore(multiplier),
-      }
+        score: Math.sign(score),
+        tone: score > 0 ? 'weak' : 'resist',
+        type,
+      }))
     })
-    const weak = entries.filter((entry) => entry.multiplier > 1)
-    const resistant = entries.filter(
-      (entry) => entry.multiplier > 0 && entry.multiplier < 1,
-    )
-    const immune = entries.filter((entry) => entry.multiplier === 0)
     const score = entries.reduce((sum, entry) => sum + entry.score, 0)
 
     return {
-      immune,
-      resistant,
+      contributions: entries,
       score,
       type,
-      weak,
     }
   }).sort((a, b) => b.score - a.score || a.type.localeCompare(b.type))
 }
@@ -343,7 +350,15 @@ function Metric({ label, value, tone }) {
   )
 }
 
-function TeamBuilder({ analysis, onClear, onRemove, team }) {
+function TeamBuilder({
+  analysis,
+  highlightedTeamMember,
+  onClear,
+  onClearHighlight,
+  onHighlight,
+  onRemove,
+  team,
+}) {
   return (
     <details className="team-builder">
       <summary>Il mio team ({team.length}/{TEAM_SIZE})</summary>
@@ -368,24 +383,32 @@ function TeamBuilder({ analysis, onClear, onRemove, team }) {
 
           return pokemon ? (
             <article className="team-slot filled" key={pokemon.displayName}>
-              {pokemon.image && <img src={pokemon.image} alt="" />}
-              <div>
-                <strong>{pokemon.displayName}</strong>
-                <div className="type-row mini">
-                  {pokemon.types.map((type) => (
-                    <span className={`type-badge type-${type}`} key={type}>
-                      {formatName(type)}
-                    </span>
-                  ))}
-                </div>
-              </div>
-              <button
-                aria-label={`Rimuovi ${pokemon.displayName} dal team`}
-                onClick={() => onRemove(pokemon.displayName)}
-                type="button"
+              <div
+                className={`team-slot-inner ${
+                  highlightedTeamMember?.name === pokemon.displayName
+                    ? `highlighted ${highlightedTeamMember.tone}`
+                    : ''
+                }`}
               >
-                Rimuovi
-              </button>
+                {pokemon.image && <img src={pokemon.image} alt="" />}
+                <div>
+                  <strong>{pokemon.displayName}</strong>
+                  <div className="type-row mini">
+                    {pokemon.types.map((type) => (
+                      <span className={`type-badge type-${type}`} key={type}>
+                        {formatName(type)}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+                <button
+                  aria-label={`Rimuovi ${pokemon.displayName} dal team`}
+                  onClick={() => onRemove(pokemon.displayName)}
+                  type="button"
+                >
+                  Rimuovi
+                </button>
+              </div>
             </article>
           ) : (
             <article className="team-slot empty" key={`empty-${index}`}>
@@ -405,7 +428,11 @@ function TeamBuilder({ analysis, onClear, onRemove, team }) {
               <span className={`type-badge type-${entry.type}`}>
                 {formatName(entry.type)}
               </span>
-              <DefenseBars score={entry.score} />
+              <DefenseBars
+                contributions={entry.contributions}
+                onClearHighlight={onClearHighlight}
+                onHighlight={onHighlight}
+              />
               <strong>{entry.score > 0 ? `+${entry.score}` : entry.score}</strong>
             </article>
           ))}
@@ -420,18 +447,30 @@ function TeamBuilder({ analysis, onClear, onRemove, team }) {
   )
 }
 
-function DefenseBars({ score }) {
-  const barCount = Math.min(Math.abs(score), TEAM_SIZE * 2)
-  const tone = score > 0 ? 'weak' : score < 0 ? 'resist' : 'neutral'
-
-  if (barCount === 0) {
+function DefenseBars({ contributions, onClearHighlight, onHighlight }) {
+  if (contributions.length === 0) {
     return <span className="defense-bars neutral">Bilanciato</span>
   }
 
   return (
-    <span className={`defense-bars ${tone}`} aria-label={`Score ${score}`}>
-      {Array.from({ length: barCount }, (_, index) => (
-        <span key={index}></span>
+    <span className="defense-bars">
+      {contributions.map((contribution) => (
+        <button
+          aria-label={`${contribution.name}: ${
+            contribution.tone === 'weak' ? 'debolezza' : 'resistenza'
+          } ${contribution.multiplier}x a ${formatName(contribution.type)}`}
+          className={contribution.tone}
+          key={contribution.id}
+          onBlur={onClearHighlight}
+          onClick={() => onHighlight(contribution)}
+          onFocus={() => onHighlight(contribution)}
+          onMouseEnter={() => onHighlight(contribution)}
+          onMouseLeave={onClearHighlight}
+          title={`${contribution.name}: ${contribution.multiplier}x ${formatName(
+            contribution.type,
+          )}`}
+          type="button"
+        ></button>
       ))}
     </span>
   )
