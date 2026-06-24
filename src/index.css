@@ -1,0 +1,35 @@
+:root {
+  --bg: #f7f0df;
+  --border: rgba(15, 23, 42, 0.12);
+  --muted: #64748b;
+  --text: #111827;
+  --sans: Avenir Next, Aptos, Segoe UI, sans-serif;
+  --mono: Cascadia Code, Consolas, monospace;
+
+  color: var(--text);
+  background:
+    radial-gradient(circle at 8% 0%, rgba(250, 204, 21, 0.24), transparent 26%),
+    radial-gradient(circle at 92% 14%, rgba(37, 99, 235, 0.16), transparent 26%),
+    linear-gradient(180deg, #fbf6ea, var(--bg));
+  font: 16px/1.5 var(--sans);
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  min-width: 320px;
+  min-height: 100vh;
+  margin: 0;
+}
+
+button,
+input,
+select {
+  font: inherit;
+}
+
+code {
+  font-family: var(--mono);
+}
