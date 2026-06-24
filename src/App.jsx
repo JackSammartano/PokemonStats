@@ -12,6 +12,16 @@ const STAT_LABELS = {
   speed: 'Spe',
 }
 
+const SORT_OPTIONS = [
+  { label: 'Nome', value: 'name' },
+  { label: 'HP', value: 'hp' },
+  { label: 'Atk', value: 'attack' },
+  { label: 'Def', value: 'defense' },
+  { label: 'SpA', value: 'special-attack' },
+  { label: 'SpD', value: 'special-defense' },
+  { label: 'Spe', value: 'speed' },
+]
+
 const TYPE_OPTIONS = [
   'all',
   'normal',
@@ -56,6 +66,8 @@ function App() {
   const [query, setQuery] = useState('')
   const [selectedType, setSelectedType] = useState('all')
   const [selectedCategory, setSelectedCategory] = useState('all')
+  const [sortBy, setSortBy] = useState('name')
+  const [sortDirection, setSortDirection] = useState('asc')
   const deferredQuery = useDeferredValue(query)
 
   useEffect(() => {
@@ -96,18 +108,20 @@ function App() {
   const baseCount = pokemon.filter((entry) => getEntryCategory(entry.displayName) === 'base').length
   const formCount = pokemon.filter((entry) => getEntryCategory(entry.displayName) === 'form').length
   const megaCount = pokemon.filter((entry) => getEntryCategory(entry.displayName) === 'mega').length
-  const filtered = pokemon.filter((entry) => {
-    const matchesText = entry.displayName
-      .toLowerCase()
-      .includes(deferredQuery.trim().toLowerCase())
-    const matchesType =
-      selectedType === 'all' ||
-      (entry.status === 'ready' && entry.types.includes(selectedType))
-    const matchesCategory =
-      selectedCategory === 'all' || getEntryCategory(entry.displayName) === selectedCategory
+  const filtered = [
+    ...pokemon.filter((entry) => {
+      const matchesText = entry.displayName
+        .toLowerCase()
+        .includes(deferredQuery.trim().toLowerCase())
+      const matchesType =
+        selectedType === 'all' ||
+        (entry.status === 'ready' && entry.types.includes(selectedType))
+      const matchesCategory =
+        selectedCategory === 'all' || getEntryCategory(entry.displayName) === selectedCategory
 
-    return matchesText && matchesType && matchesCategory
-  })
+      return matchesText && matchesType && matchesCategory
+    }),
+  ].sort((first, second) => comparePokemon(first, second, sortBy, sortDirection))
 
   function toggleTeamMember(entry) {
     if (entry.status !== 'ready') return
@@ -184,6 +198,28 @@ function App() {
           </select>
         </label>
 
+        <label className="select-field">
+          <span>Ordina per</span>
+          <select value={sortBy} onChange={(event) => setSortBy(event.target.value)}>
+            {SORT_OPTIONS.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </select>
+        </label>
+
+        <label className="select-field">
+          <span>Direzione</span>
+          <select
+            value={sortDirection}
+            onChange={(event) => setSortDirection(event.target.value)}
+          >
+            <option value="asc">Crescente</option>
+            <option value="desc">Decrescente</option>
+          </select>
+        </label>
+
       </section>
 
       {status === 'error' && (
@@ -235,6 +271,34 @@ function App() {
       </section>
     </main>
   )
+}
+
+function comparePokemon(first, second, sortBy, sortDirection) {
+  const direction = sortDirection === 'asc' ? 1 : -1
+
+  if (sortBy === 'name') {
+    return first.displayName.localeCompare(second.displayName) * direction
+  }
+
+  const firstValue = getStatValue(first, sortBy)
+  const secondValue = getStatValue(second, sortBy)
+
+  if (firstValue === null && secondValue === null) {
+    return first.displayName.localeCompare(second.displayName)
+  }
+  if (firstValue === null) return 1
+  if (secondValue === null) return -1
+  if (firstValue === secondValue) {
+    return first.displayName.localeCompare(second.displayName)
+  }
+
+  return (firstValue - secondValue) * direction
+}
+
+function getStatValue(pokemon, statName) {
+  if (pokemon.status !== 'ready') return null
+
+  return pokemon.stats.find((stat) => stat.name === statName)?.value ?? null
 }
 
 function getDefenseScore(multiplier) {
@@ -406,7 +470,7 @@ function PokemonCard({ isSelected, onToggleTeam, pokemon, teamIsFull }) {
         onClick={onToggleTeam}
         type="button"
       >
-        {isSelected ? '-' : '+'}
+        {isSelected ? '−' : '+'}
       </button>
 
       <div className="stats-block">
