@@ -152,6 +152,7 @@ async function fetchAbility(abilityRef) {
   const bestEffect = italianEffect ?? englishEffect
 
   return {
+    id: ability.name,
     name: formatName(ability.name),
     isHidden: abilityRef.is_hidden,
     description:
@@ -225,6 +226,12 @@ export async function fetchPokemon(displayName, typeChart) {
           })),
         ),
     )
+    const moves = pokemon.moves
+      .map((entry) => ({
+        id: entry.move.name,
+        name: formatName(entry.move.name),
+      }))
+      .sort((first, second) => first.name.localeCompare(second.name))
 
     return {
       displayName,
@@ -240,6 +247,7 @@ export async function fetchPokemon(displayName, typeChart) {
         name: entry.stat.name,
         value: entry.base_stat,
       })),
+      moves,
       types,
       defenseProfile: getDefenseProfile(types, typeChart),
       weaknesses: getWeaknesses(types, typeChart),
