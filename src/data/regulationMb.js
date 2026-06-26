@@ -230,6 +230,11 @@ export const REGULATION_MB_POKEMON = [
   'Rhyperior',
   'Roserade',
   'Rotom',
+  'Rotom Heat',
+  'Rotom Wash',
+  'Rotom Frost',
+  'Rotom Fan',
+  'Rotom Mow',
   'Runerigus',
   'Sableye',
   'Salazzle',
@@ -398,3 +403,4 @@ export const POKEAPI_NAME_OVERRIDES = {
 
 export const NEW_OR_UNVERIFIED_MEGA_FORMS = new Set([
 ])
+
