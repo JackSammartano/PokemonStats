@@ -107,14 +107,43 @@ Informazioni verificate:
 
 ## Stato attuale della feature
 
+### Pannelli principali
+
+La UI operativa usa pannelli apribili/chiudibili:
+
+- `Il mio team`
+- `Confronta`
+- `Damage calculator`
+
+Il pulsante `+` sulle card Pokemon cambia comportamento in base al pannello aperto:
+
+- con `Il mio team` aperto aggiunge/rimuove il Pokemon dal team, rispettando il limite di 6;
+- con `Confronta` aperto seleziona il primo Pokemon a sinistra e il secondo a destra;
+- con `Damage calculator` aperto seleziona il primo Pokemon come attacker e il secondo come defender;
+- con un terzo Pokemon in `Confronta` o `Damage calculator`, chiede conferma prima di azzerare la coppia corrente e iniziare dal nuovo Pokemon;
+- se nessun pannello e' aperto, mantiene il comportamento storico del team builder.
+
+`Confronta` mostra due card Pokemon complete affiancate, con immagine, tipi, stats, debolezze e abilita'.
+
 ### Damage calculator UI
 
-Il pannello `Champions core damage` permette di selezionare:
+Il pannello `Damage calculator` contiene `Champions core damage` ed e' apribile/chiudibile come gli altri pannelli.
+
+Layout attuale:
+
+- colonna sinistra: controlli attacker;
+- colonna centrale: impostazioni comuni della battaglia;
+- colonna destra: controlli defender.
+
+Le select `Attacker` e `Defender` mostrano anche una piccola immagine del Pokemon selezionato.
+
+Il calculator permette di selezionare:
 
 - attacker
 - defender
 - move
 - weather
+- format Singles/Doubles
 - attacker ability
 - defender ability
 - item pool
@@ -131,6 +160,9 @@ Il pannello `Champions core damage` permette di selezionare:
 - Crit
 - Reflect
 - Light Screen
+- optimizer ranking:
+  - `Minimum investment`
+  - `Practical build`
 
 Label rese piu' chiare:
 
@@ -256,9 +288,16 @@ Gli item sono divisi in due modalita' UI:
 - `None`
 - `Black Glasses`
 - `Charcoal`
+- `Chople Berry`
+- `Colbur Berry`
 - `Mystic Water`
+- `Occa Berry`
+- `Shuca Berry`
 - `Silk Scarf`
 - `Spell Tag`
+- `Yache Berry`
+
+Le resist berries sono raggruppate nella select sotto `Berry`.
 
 `All damage items` include anche:
 
@@ -280,6 +319,14 @@ Nota verificata:
 - `Fairy Feather` esiste in `calc/src/data/items.ts`.
 - `Fairy Feather` non compare in `src/js/data/sets/champions.js`.
 - Per questo non appare nella modalita' default, ma appare in `All damage items`.
+- Resist berries implementate come final modifier da reference Champions:
+  - `Occa Berry` riduce mosse Fire superefficaci;
+  - `Shuca Berry` riduce mosse Ground superefficaci;
+  - `Yache Berry` riduce mosse Ice superefficaci;
+  - `Chople Berry` riduce mosse Fighting superefficaci;
+  - `Colbur Berry` riduce mosse Dark superefficaci.
+- Nel calculator single-hit non viene gestito consumo persistente dell'item.
+- Sono modellati anche i casi reference `Unnerve` e `Ripen`, anche se queste abilita' non sono ancora selezionabili dalla UI se non implementate/abilitate.
 
 ### Abilita'
 
@@ -304,6 +351,19 @@ Abilita' implementate finora:
 - `Water Absorb`
 - `Volt Absorb`
 - `Sap Sipper`
+- `Drought`
+- `Drizzle`
+- `Sand Stream`
+- `Snow Warning`
+
+Le abilita' weather automatiche sovrascrivono il meteo selezionato:
+
+- `Drought` forza `Sun`;
+- `Drizzle` forza `Rain`;
+- `Sand Stream` forza `Sand`;
+- `Snow Warning` forza `Snow`.
+
+La UI mantiene visibile la select `Weather`, ma mostra sotto la select il meteo effettivo usato dal calcolo. La stessa risoluzione viene usata da `Find KO` e `Find Survival`.
 
 ## Optimizer
 
@@ -316,11 +376,12 @@ Ricerca oggi:
 
 - nature;
 - SP;
-- boost;
 - weather;
 - screen;
 - burn;
-- crit.
+
+Nota: `Find KO` non propone piu' soluzioni con crit. `Find Survival` era gia' senza crit.
+Nota: i boost temporanei Atk/SpA e Def/SpD non sono piu' dimensioni di ricerca dell'optimizer. Restano disponibili nel damage preview manuale, ma `Find KO` e `Find Survival` cercano spread/build a boost 0.
 
 Item e abilita' sono usati come condizioni fisse selezionate dall'utente, non ancora come dimensioni di ricerca.
 
@@ -329,16 +390,28 @@ Ottimizzazioni gia' fatte:
 - non mostra milioni di risultati;
 - limita candidate utili;
 - scarta opzioni dominate;
+- mostra risultati in tabella, con colonne allineate per KO e Survival;
 - mostra `Showing X best options`;
 - spinner Pokeball durante il calcolo.
+- se il setup corrente gia' soddisfa l'obiettivo, non lancia la ricerca:
+  - `Find KO`: mostra che il KO e' gia' garantito;
+  - `Find Survival`: mostra che il defender gia' sopravvive.
+
+Modalita' ranking:
+
+- `Minimum investment`
+  - privilegia il minimo investimento sufficiente;
+  - utile per capire quanto poco basta.
+- `Practical build`
+  - privilegia configurazioni piu' naturali da build;
+  - per KO preferisce SP offensivi alti;
+  - per Survival preferisce investimenti difensivi alti prima di condizioni.
 
 ## Prossimi step operativi
 
-### 1. Item speciali Champions
+### Completato: item speciali Champions
 
-Priorita' alta.
-
-Item Champions presenti nei set ma non ancora calcolati:
+Item Champions presenti nei set e ora calcolati:
 
 - `Occa Berry`
 - `Shuca Berry`
@@ -348,34 +421,33 @@ Item Champions presenti nei set ma non ancora calcolati:
 
 Questi riducono danni superefficaci di tipo specifico.
 
-Workflow corretto:
+Verifiche fatte:
 
-1. Verificare in `calc/src/data/items.ts` che gli item esistano nella gen Champions/reference.
-2. Verificare in `src/js/data/sets/champions.js` quali Pokemon li usano.
-3. Verificare nella damage mechanics reference come sono trattate le resist berries:
+- verificati in `calc/src/data/items.ts`;
+- verificati in `src/js/data/sets/champions.js`;
+- verificato il punto formula in:
 
 ```text
 C:\Progetti\damage-calc\damage-calc\calc\src\mechanics\champions.ts
 ```
 
-4. Implementare in `championsItems.js` una funzione specifica, probabilmente in final modifier o damage modifier, verificando il punto corretto della formula.
-5. Aggiungere test in `championsDamage.test.js` per:
-   - berry corretta + mossa superefficace riduce;
-   - berry corretta + mossa non superefficace non riduce;
-   - berry sbagliata non riduce;
-   - modalita' UI `Champions set items` include le berries solo dopo implementazione.
+Test aggiunti:
 
-Domanda da risolvere prima di implementare:
+- berry corretta + mossa superefficace riduce;
+- berry corretta + mossa non superefficace non riduce;
+- berry sbagliata non riduce;
+- `Unnerve` impedisce la berry;
+- `Ripen` aumenta la riduzione;
+- modalita' UI `Champions set items` include le berries implementate.
 
-- Le berries vanno consumate? Nel calculator single-hit probabilmente basta applicare effetto se condizioni vere. Non gestiamo consumo persistente.
+Decisione: non gestiamo consumo persistente della berry nel calculator single-hit.
 
-### 2. Abilita' offensive/difensive importanti
+### 1. Abilita' offensive/difensive importanti
 
-Priorita' alta dopo berries.
+Priorita' alta.
 
 Candidate da verificare nei set Champions:
 
-- `Drought`
 - `Tough Claws`
 - `Sharpness`
 - `Intimidate`
@@ -387,6 +459,8 @@ Candidate da verificare nei set Champions:
 - `Skill Link`
 - `Scrappy`
 - `Pixilate` / `Aerilate` se presenti
+
+Nota: `Drought`, `Drizzle`, `Sand Stream` e `Snow Warning` sono gia' implementate come override del meteo.
 
 Workflow:
 
@@ -406,7 +480,7 @@ rg -n "Tough Claws|Sharpness|Drought|Technician" C:\Progetti\damage-calc\damage-
 4. Inserire solo abilita' con effetto danno chiaramente verificato.
 5. Aggiungere test per ogni effetto.
 
-### 3. Mosse con formule speciali
+### 2. Mosse con formule speciali
 
 Priorita' media, ma fondamentale per copertura.
 
@@ -448,7 +522,7 @@ Workflow:
 4. Estendere `calculateChampionsDamage` solo per quel comportamento.
 5. Aggiungere test mirati.
 
-### 4. Optimizer esteso
+### 3. Optimizer esteso
 
 Da fare solo dopo item/abilita' base.
 
@@ -463,11 +537,35 @@ Possibili estensioni:
 
 Attenzione: ogni dimensione aumenta combinazioni. Continuare a usare pruning e opzioni dominate.
 
-### 5. Validazione con casi reali
+### Completato: formato Singles/Doubles e mosse spread
+
+Priorita' alta per accuratezza in simulazioni Doubles.
+
+Stato implementato:
+
+- la UI espone `Format` con default `Singles`;
+- `calculateChampionsDamage` riceve `field.gameType`;
+- in `Doubles`, le mosse con `target: allAdjacent` o `target: allAdjacentFoes`, per esempio `Heat Wave`, applicano lo spread modifier `3072 / 4096`;
+- `Find KO` e `Find Survival` usano lo stesso `gameType` selezionato nel calculator.
+
+Reference:
+
+```text
+C:\Progetti\damage-calc\damage-calc\calc\src\mechanics\champions.ts
+```
+
+Test mirati:
+
+- `Heat Wave` in Singles resta single-target;
+- `Heat Wave` in Doubles applica spread modifier;
+- `Earthquake` in Doubles applica spread modifier;
+- `Find KO` cambia risultato quando il formato passa da Singles a Doubles.
+
+### 4. Validazione con casi reali
 
 Creare una lista di casi manuali da confrontare con reference:
 
-- `Mega Charizard Y` con `Flamethrower` / `Fire Blast` / `Solar Beam`
+- `Mega Charizard Y` con `Flamethrower` / `Fire Blast` / `Heat Wave` / `Solar Beam`
 - `Garchomp` con `Earthquake`
 - `Kingambit` con `Kowtow Cleave` / `Sucker Punch`
 - `Palafin` con `Jet Punch` / `Wave Crash`
@@ -531,7 +629,19 @@ npm run lint  PASS
 npm run build PASS
 ```
 
-Test totali all'ultimo giro: `29`.
+Test totali all'ultimo giro: `47`.
+
+Ultimo commit deployato su GitHub Pages:
+
+```text
+1c2dd9f Improve Champions damage calculator UX
+```
+
+URL:
+
+```text
+https://jacksammartano.github.io/PokemonStats/
+```
 
 ## Note importanti
 

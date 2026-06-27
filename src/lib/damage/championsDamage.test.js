@@ -186,6 +186,94 @@ describe('Champions damage math', () => {
     assert.equal(result.max, 73)
   })
 
+  it('applies rain to Water-type base damage and weakens Fire-type base damage', () => {
+    const water = calculateChampionsDamage({
+      attacker: neutralAttacker,
+      defender: neutralDefender,
+      field: {
+        weather: 'Rain',
+      },
+      move: 'Surf',
+    })
+    const fire = calculateChampionsDamage({
+      attacker: neutralAttacker,
+      defender: neutralDefender,
+      field: {
+        weather: 'Rain',
+      },
+      move: 'Flamethrower',
+    })
+
+    assert.equal(water.min, 62)
+    assert.equal(water.max, 73)
+    assert.equal(fire.min, 20)
+    assert.equal(fire.max, 24)
+  })
+
+  it('lets weather abilities override the selected weather', () => {
+    const drought = calculateChampionsDamage({
+      attacker: {
+        ...neutralAttacker,
+        ability: 'Drought',
+      },
+      defender: neutralDefender,
+      field: {
+        weather: 'Rain',
+      },
+      move: 'Flamethrower',
+    })
+    const drizzle = calculateChampionsDamage({
+      attacker: {
+        ...neutralAttacker,
+        ability: 'Drizzle',
+      },
+      defender: neutralDefender,
+      field: {
+        weather: 'Sun',
+      },
+      move: 'Surf',
+    })
+
+    assert.equal(drought.min, 62)
+    assert.equal(drought.max, 73)
+    assert.equal(drizzle.min, 62)
+    assert.equal(drizzle.max, 73)
+  })
+
+  it('applies spread damage only in Doubles for adjacent target moves', () => {
+    const heatWaveSingles = calculateChampionsDamage({
+      attacker: neutralAttacker,
+      defender: neutralDefender,
+      field: {
+        gameType: 'Singles',
+      },
+      move: 'Heat Wave',
+    })
+    const heatWaveDoubles = calculateChampionsDamage({
+      attacker: neutralAttacker,
+      defender: neutralDefender,
+      field: {
+        gameType: 'Doubles',
+      },
+      move: 'Heat Wave',
+    })
+    const earthquakeDoubles = calculateChampionsDamage({
+      attacker: neutralAttacker,
+      defender: neutralDefender,
+      field: {
+        gameType: 'Doubles',
+      },
+      move: 'Earthquake',
+    })
+
+    assert.equal(heatWaveSingles.min, 44)
+    assert.equal(heatWaveSingles.max, 52)
+    assert.equal(heatWaveDoubles.min, 33)
+    assert.equal(heatWaveDoubles.max, 39)
+    assert.equal(earthquakeDoubles.min, 34)
+    assert.equal(earthquakeDoubles.max, 40)
+  })
+
   it('applies Adaptability to same-type attacks', () => {
     const normal = calculateChampionsDamage({
       attacker: {

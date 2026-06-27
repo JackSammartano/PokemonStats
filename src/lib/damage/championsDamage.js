@@ -7,6 +7,7 @@ import {
   getAbilityAttackMods,
   getAbilityFinalMods,
   getAbilityStabMod,
+  resolveAbilityWeather,
 } from './championsAbilities.js'
 import {
   getItemAttackMods,
@@ -120,6 +121,13 @@ function getWeatherBaseDamageMod(weather, moveType) {
   return 4096
 }
 
+function isSpreadMove(field, move) {
+  return (
+    (field.gameType ?? 'Singles') !== 'Singles' &&
+    ['allAdjacent', 'allAdjacentFoes'].includes(move.target)
+  )
+}
+
 function getScreenFinalMods({ field, isCritical, move }) {
   if (isCritical) return []
 
@@ -149,6 +157,11 @@ export function calculateChampionsDamage({
   typeChart = CHAMPIONS_TYPE_CHART,
 }) {
   const resolvedMove = getMove(move)
+  const effectiveWeather = resolveAbilityWeather({
+    attackerAbility: attacker.ability,
+    defenderAbility: defender.ability,
+    selectedWeather: field.weather,
+  }).weather
 
   if (resolvedMove.category === 'status' || resolvedMove.basePower === 0) {
     return {
@@ -210,7 +223,11 @@ export function calculateChampionsDamage({
     level: attacker.level ?? 50,
   })
 
-  const weatherMod = getWeatherBaseDamageMod(field.weather, resolvedMove.type)
+  if (isSpreadMove(field, resolvedMove)) {
+    baseDamage = pokeRound(of32(baseDamage * 3072) / 4096)
+  }
+
+  const weatherMod = getWeatherBaseDamageMod(effectiveWeather, resolvedMove.type)
   if (weatherMod !== 4096) {
     baseDamage = pokeRound(of32(baseDamage * weatherMod) / 4096)
   }

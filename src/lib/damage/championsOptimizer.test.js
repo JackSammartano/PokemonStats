@@ -80,7 +80,6 @@ describe('Champions optimizer', () => {
   it('finds guaranteed survival options', () => {
     const result = findSurvivalOptions(physicalContext, {
       attackerBurned: [false],
-      defenderBoosts: [0, 1],
       defenderDefenseSp: [0, 32],
       defenderHpSp: [0, 32],
       defenderNatures: ['serious'],
@@ -103,7 +102,6 @@ describe('Champions optimizer', () => {
 
   it('finds guaranteed KO options', () => {
     const result = findKoOptions(specialContext, {
-      attackerBoosts: [0, 1],
       attackerNatures: ['serious', 'modest'],
       attackerSp: [0, 32],
       critical: [false],
@@ -119,7 +117,6 @@ describe('Champions optimizer', () => {
 
   it('does not include critical hits in default KO options', () => {
     const result = findKoOptions(specialContext, {
-      attackerBoosts: [0, 1],
       attackerNatures: ['serious', 'modest'],
       attackerSp: [0, 32],
       weather: [''],
@@ -134,13 +131,11 @@ describe('Champions optimizer', () => {
 
   it('can rank KO options by practical offensive investment', () => {
     const minimum = findKoOptions(specialContext, {
-      attackerBoosts: [1],
       attackerNatures: ['modest'],
       attackerSp: [0, 12, 32],
       weather: [''],
     })
     const practical = findKoOptions(specialContext, {
-      attackerBoosts: [1],
       attackerNatures: ['modest'],
       attackerSp: [0, 12, 32],
       rankingMode: OPTIMIZER_RANKING_MODES.practical,
@@ -154,7 +149,6 @@ describe('Champions optimizer', () => {
   it('can rank survival options by practical defensive investment', () => {
     const minimum = findSurvivalOptions(physicalContext, {
       attackerBurned: [false],
-      defenderBoosts: [0],
       defenderDefenseSp: [0, 32],
       defenderHpSp: [0, 32],
       defenderNatures: ['serious'],
@@ -163,7 +157,6 @@ describe('Champions optimizer', () => {
     })
     const practical = findSurvivalOptions(physicalContext, {
       attackerBurned: [false],
-      defenderBoosts: [0],
       defenderDefenseSp: [0, 32],
       defenderHpSp: [0, 32],
       defenderNatures: ['serious'],
@@ -180,7 +173,6 @@ describe('Champions optimizer', () => {
 
   it('removes dominated KO options', () => {
     const result = findKoOptions(specialContext, {
-      attackerBoosts: [1],
       attackerNatures: ['modest'],
       attackerSp: [0, 1, 32],
       critical: [false],
@@ -194,7 +186,6 @@ describe('Champions optimizer', () => {
   it('respects the internal candidate limit', () => {
     const result = findSurvivalOptions(physicalContext, {
       attackerBurned: [false, true],
-      defenderBoosts: [0, 1, 2],
       defenderDefenseSp: [0, 1, 2, 32],
       defenderHpSp: [0, 1, 2, 32],
       defenderNatures: ['serious', 'bold', 'impish'],
@@ -207,16 +198,14 @@ describe('Champions optimizer', () => {
     assert.equal(result.displayed.length <= 3, true)
   })
 
-  it('scores less invasive options lower', () => {
+  it('does not score temporary battle boosts as investment', () => {
     const baseline = {
       attacker: {
-        boost: 0,
         burned: false,
         nature: 'serious',
         offenseSp: 0,
       },
       defender: {
-        boost: 0,
         defenseSp: 0,
         hpSp: 0,
         nature: 'serious',
@@ -232,48 +221,204 @@ describe('Champions optimizer', () => {
       attacker: {
         ...baseline.attacker,
         boost: 1,
-        nature: 'modest',
-        offenseSp: 32,
-      },
-      field: {
-        ...baseline.field,
-        critical: true,
       },
     }
 
-    assert.ok(scoreOption(baseline) < scoreOption(boosted))
+    assert.equal(scoreOption(baseline), scoreOption(boosted))
   })
 
-  it('scores stat investment lower than battle boosts', () => {
-    const withStatInvestment = {
+  it('does not include temporary boosts in optimizer results', () => {
+    const ko = findKoOptions(specialContext, {
+      attackerNatures: ['modest'],
+      attackerSp: [32],
+      weather: [''],
+    })
+    const survival = findSurvivalOptions(physicalContext, {
+      attackerBurned: [false],
+      defenderDefenseSp: [32],
+      defenderHpSp: [32],
+      defenderNatures: ['bold'],
+      screens: ['Reflect'],
+      weather: [''],
+    })
+
+    assert.equal('boost' in ko.displayed[0].attacker, false)
+    assert.equal('boost' in ko.displayed[0].defender, false)
+    assert.equal('boost' in survival.displayed[0].attacker, false)
+    assert.equal('boost' in survival.displayed[0].defender, false)
+  })
+
+  it('ignores selected UI boosts during optimizer searches', () => {
+    const boostedContext = {
+      ...specialContext,
       attacker: {
-        boost: 0,
-        burned: false,
-        nature: 'modest',
-        offenseSp: 32,
+        ...specialContext.attacker,
+        boost: 6,
       },
       defender: {
-        boost: 0,
-        defenseSp: 0,
-        hpSp: 0,
-        nature: 'serious',
+        ...specialContext.defender,
+        boost: 6,
+      },
+    }
+    const baseline = findKoOptions(specialContext, {
+      attackerNatures: ['modest'],
+      attackerSp: [32],
+      weather: [''],
+    })
+    const boosted = findKoOptions(boostedContext, {
+      attackerNatures: ['modest'],
+      attackerSp: [32],
+      weather: [''],
+    })
+
+    assert.deepEqual(boosted, baseline)
+  })
+
+  it('uses weather in KO searches through the damage engine', () => {
+    const context = {
+      ...specialContext,
+      attacker: {
+        ...specialContext.attacker,
+        types: ['fire'],
+      },
+      defender: {
+        ...specialContext.defender,
+        hp: 110,
+        types: ['normal'],
+      },
+      move: CHAMPIONS_MOVES.flamethrower,
+    }
+    const result = findKoOptions(context, {
+      attackerNatures: ['serious'],
+      attackerSp: [0],
+      weather: ['', 'Sun', 'Rain'],
+    })
+
+    assert.ok(result.displayed.length > 0)
+    assert.ok(result.displayed.every((option) => option.field.weather === 'Sun'))
+  })
+
+  it('lets weather abilities force weather in KO searches', () => {
+    const context = {
+      ...specialContext,
+      attacker: {
+        ...specialContext.attacker,
+        ability: 'Drought',
+        types: ['fire'],
+      },
+      defender: {
+        ...specialContext.defender,
+        hp: 110,
+        types: ['normal'],
       },
       field: {
-        critical: false,
-        screen: '',
-        weather: '',
+        weather: 'Rain',
       },
+      move: CHAMPIONS_MOVES.flamethrower,
     }
-    const withBoost = {
-      ...withStatInvestment,
+    const result = findKoOptions(context, {
+      attackerNatures: ['serious'],
+      attackerSp: [0],
+      weather: ['Rain'],
+    })
+
+    assert.ok(result.displayed.length > 0)
+    assert.ok(result.displayed.every((option) => option.field.weather === 'Sun'))
+  })
+
+  it('uses weather in survival searches through the damage engine', () => {
+    const context = {
+      ...specialContext,
       attacker: {
-        ...withStatInvestment.attacker,
-        boost: 1,
+        ...specialContext.attacker,
+        types: ['fire'],
+      },
+      defender: {
+        ...specialContext.defender,
+        baseStats: {
+          ...specialContext.defender.baseStats,
+          hp: 20,
+        },
+        hp: 95,
+        types: ['normal'],
+      },
+      move: CHAMPIONS_MOVES.flamethrower,
+    }
+    const result = findSurvivalOptions(context, {
+      attackerBurned: [false],
+      defenderDefenseSp: [0],
+      defenderHpSp: [0],
+      defenderNatures: ['serious'],
+      screens: [''],
+      weather: ['', 'Sun', 'Rain'],
+    })
+
+    assert.ok(result.displayed.length > 0)
+    assert.ok(result.displayed.every((option) => option.field.weather === 'Rain'))
+  })
+
+  it('uses game type in KO searches through the damage engine', () => {
+    const context = {
+      attacker: {
+        baseStats: {
+          hp: 80,
+          atk: 120,
+          def: 80,
+          spa: 120,
+          spd: 80,
+          spe: 100,
+        },
+        boost: 0,
         nature: 'serious',
         offenseSp: 0,
+        types: ['normal'],
       },
+      defender: {
+        baseStats: {
+          hp: 60,
+          atk: 60,
+          def: 60,
+          spa: 60,
+          spd: 60,
+          spe: 60,
+        },
+        boost: 0,
+        defenseSp: 0,
+        hp: 57,
+        hpSp: 0,
+        nature: 'serious',
+        types: ['normal'],
+      },
+      move: CHAMPIONS_MOVES['heat-wave'],
     }
+    const singles = findKoOptions(
+      {
+        ...context,
+        field: {
+          gameType: 'Singles',
+        },
+      },
+      {
+        attackerNatures: ['serious'],
+        attackerSp: [0],
+        weather: [''],
+      },
+    )
+    const doubles = findKoOptions(
+      {
+        ...context,
+        field: {
+          gameType: 'Doubles',
+        },
+      },
+      {
+        attackerNatures: ['serious'],
+        attackerSp: [0],
+        weather: [''],
+      },
+    )
 
-    assert.ok(scoreOption(withStatInvestment) < scoreOption(withBoost))
+    assert.equal(singles.total, 1)
+    assert.equal(doubles.total, 0)
   })
 })

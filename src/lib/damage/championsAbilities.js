@@ -7,6 +7,14 @@ export const CHAMPIONS_ABILITIES = {
   adaptability: {
     name: 'Adaptability',
   },
+  drizzle: {
+    name: 'Drizzle',
+    weather: 'Rain',
+  },
+  drought: {
+    name: 'Drought',
+    weather: 'Sun',
+  },
   filter: {
     name: 'Filter',
   },
@@ -31,8 +39,16 @@ export const CHAMPIONS_ABILITIES = {
     blockedTypes: ['grass'],
     name: 'Sap Sipper',
   },
+  'sand-stream': {
+    name: 'Sand Stream',
+    weather: 'Sand',
+  },
   'solid-rock': {
     name: 'Solid Rock',
+  },
+  'snow-warning': {
+    name: 'Snow Warning',
+    weather: 'Snow',
   },
   'thick-fat': {
     name: 'Thick Fat',
@@ -49,6 +65,36 @@ export const CHAMPIONS_ABILITIES = {
 
 export function getAbility(ability) {
   return CHAMPIONS_ABILITIES[toId(ability)] ?? CHAMPIONS_ABILITIES['']
+}
+
+export function resolveAbilityWeather({ attackerAbility, defenderAbility, selectedWeather = '' }) {
+  const attackerWeather = getAbility(attackerAbility).weather
+  const defenderWeather = getAbility(defenderAbility).weather
+
+  if (attackerWeather) {
+    return {
+      isOverridden: attackerWeather !== selectedWeather,
+      sourceAbility: getAbility(attackerAbility).name,
+      sourceSide: 'attacker',
+      weather: attackerWeather,
+    }
+  }
+
+  if (defenderWeather) {
+    return {
+      isOverridden: defenderWeather !== selectedWeather,
+      sourceAbility: getAbility(defenderAbility).name,
+      sourceSide: 'defender',
+      weather: defenderWeather,
+    }
+  }
+
+  return {
+    isOverridden: false,
+    sourceAbility: '',
+    sourceSide: '',
+    weather: selectedWeather,
+  }
 }
 
 export function abilityBlocksMove({ defender, field = {}, move }) {

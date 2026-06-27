@@ -10,6 +10,15 @@ export const NO_SUPPORTED_MOVES_OPTION = {
   value: '',
 }
 
+export function getAllDamageMoveOptions() {
+  return Object.entries(CHAMPIONS_MOVES)
+    .map(([moveId, move]) => ({
+      label: move.name,
+      move,
+      value: moveId,
+    }))
+}
+
 export function getSupportedMoveOptions(pokemon) {
   const championsSetMoves = CHAMPIONS_SET_MOVE_IDS[toId(pokemon?.apiName)]
   const learnset = new Set(
@@ -17,13 +26,23 @@ export function getSupportedMoveOptions(pokemon) {
       (pokemon?.moves ?? []).map((move) => toId(move.id ?? move.name)),
   )
 
-  return Object.entries(CHAMPIONS_MOVES)
-    .filter(([moveId]) => learnset.has(moveId))
-    .map(([moveId, move]) => ({
-      label: move.name,
-      move,
-      value: moveId,
-    }))
+  return getAllDamageMoveOptions().filter(({ value }) => learnset.has(value))
+}
+
+export function getDamageMoveOptions(pokemon) {
+  const supportedOptions = getSupportedMoveOptions(pokemon)
+
+  if (supportedOptions.length > 0) {
+    return {
+      options: supportedOptions,
+      source: 'supported',
+    }
+  }
+
+  return {
+    options: getAllDamageMoveOptions(),
+    source: 'manual',
+  }
 }
 
 export function getSupportedAbilityOptions(pokemon) {

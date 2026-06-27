@@ -7,6 +7,10 @@ Frontend React + Vite per consultare Regulation Set M-B e mostrare dati live da 
 - Lista locale Regulation Set M-B da Bulbapedia, con Pokemon base, forme esplicite e Mega Evolutions.
 - Ricerca testuale, filtro per tipo e filtro per categoria.
 - Stats base, tipi, debolezze difensive e abilita con descrizione.
+- Team builder con analisi difensiva.
+- Tab Confronta per vedere due card Pokemon complete affiancate.
+- Damage calculator Champions con selezione attacker/defender, mosse, item, abilita, nature, SP, boost e condizioni di campo.
+- Optimizer `Find KO` / `Find Survival` con ranking `Minimum investment` o `Practical build`.
 - Gestione esplicita dei Pokemon non risolti da PokeAPI.
 - Fallback per forme Mega tramite `pokemon-species/{name}` e `varieties`, come suggerito dai maintainer PokeAPI.
 

@@ -1,4 +1,4 @@
-import { useDeferredValue, useEffect, useState } from 'react'
+import { useDeferredValue, useEffect, useMemo, useState } from 'react'
 import './App.css'
 import { REGULATION_MB_POKEMON } from './data/regulationMb'
 import { calculateChampionsDamage } from './lib/damage/championsDamage'
@@ -8,7 +8,7 @@ import {
   findKoOptions,
   findSurvivalOptions,
 } from './lib/damage/championsOptimizer'
-import { CHAMPIONS_ABILITIES } from './lib/damage/championsAbilities'
+import { CHAMPIONS_ABILITIES, resolveAbilityWeather } from './lib/damage/championsAbilities'
 import {
   CHAMPIONS_ITEMS,
   getAllDamageItemOptions,
@@ -16,8 +16,8 @@ import {
 } from './lib/damage/championsItems'
 import {
   NO_SUPPORTED_MOVES_OPTION,
+  getDamageMoveOptions,
   getSupportedAbilityOptions,
-  getSupportedMoveOptions,
 } from './lib/damage/championsOptions'
 import { TYPE_NAMES, formatName, loadPokemonDataset } from './lib/pokeapi'
 
@@ -85,6 +85,10 @@ const WEATHER_OPTIONS = [
   { label: 'Sun', value: 'Sun' },
   { label: 'Rain', value: 'Rain' },
 ]
+const GAME_TYPE_OPTIONS = [
+  { label: 'Singles', value: 'Singles' },
+  { label: 'Doubles', value: 'Doubles' },
+]
 
 function getEntryCategory(displayName) {
   if (displayName.startsWith('Mega ')) return 'mega'
@@ -120,6 +124,7 @@ function App() {
   const [damageItemMode, setDamageItemMode] = useState('champions')
   const [damageAttackerItem, setDamageAttackerItem] = useState('')
   const [damageDefenderItem, setDamageDefenderItem] = useState('')
+  const [damageGameType, setDamageGameType] = useState('Singles')
   const [damageWeather, setDamageWeather] = useState('')
   const [damageAttackerBoost, setDamageAttackerBoost] = useState(0)
   const [damageDefenderBoost, setDamageDefenderBoost] = useState(0)
@@ -407,6 +412,7 @@ function App() {
         defenderItem={damageDefenderItem}
         defenderName={damageDefenderName}
         defenderNature={damageDefenderNature}
+        gameType={damageGameType}
         itemMode={damageItemMode}
         isOpen={activePanel === 'damage'}
         lightScreen={damageLightScreen}
@@ -426,6 +432,7 @@ function App() {
         onDefenderHpSpChange={setDamageDefenderHpSp}
         onDefenderItemChange={setDamageDefenderItem}
         onDefenderNatureChange={setDamageDefenderNature}
+        onGameTypeChange={setDamageGameType}
         onItemModeChange={setDamageItemMode}
         onLightScreenChange={setDamageLightScreen}
         onMoveChange={setDamageMoveName}
@@ -474,6 +481,7 @@ function DamageCalculator({
   defenderItem,
   defenderName,
   defenderNature,
+  gameType,
   itemMode,
   isOpen,
   lightScreen,
@@ -493,6 +501,7 @@ function DamageCalculator({
   onDefenderHpSpChange,
   onDefenderItemChange,
   onDefenderNatureChange,
+  onGameTypeChange,
   onItemModeChange,
   onLightScreenChange,
   onMoveChange,
@@ -507,16 +516,24 @@ function DamageCalculator({
 }) {
   const [optimizerResult, setOptimizerResult] = useState(null)
   const [isOptimizing, setIsOptimizing] = useState(false)
+  const [manualMoveText, setManualMoveText] = useState('')
+  const [isManualMovePickerOpen, setIsManualMovePickerOpen] = useState(false)
   const attacker = pokemon.find((entry) => entry.displayName === attackerName) ?? pokemon[0]
   const defender =
     pokemon.find((entry) => entry.displayName === defenderName) ??
     pokemon.find((entry) => entry.displayName !== attacker?.displayName) ??
     pokemon[1]
-  const moveOptions = getSupportedMoveOptions(attacker)
-  const selectedMoveName = moveOptions.some((option) => option.value === moveName)
-    ? moveName
-    : moveOptions[0]?.value ?? ''
-  const move = moveOptions.find((option) => option.value === selectedMoveName)?.move
+  const moveOptionsResult = useMemo(() => getDamageMoveOptions(attacker), [attacker])
+  const moveOptions = moveOptionsResult.options
+  const isManualMoveSelection = moveOptionsResult.source === 'manual'
+  const selectedMoveOption = isManualMoveSelection
+    ? findMoveOption(moveOptions, manualMoveText)
+    : moveOptions.find((option) => option.value === moveName) ?? moveOptions[0]
+  const selectedMoveName = selectedMoveOption?.value ?? ''
+  const move = selectedMoveOption?.move
+  const filteredManualMoveOptions = isManualMoveSelection
+    ? filterMoveOptions(moveOptions, manualMoveText).slice(0, 12)
+    : []
   const attackerAbilityOptions = getSupportedAbilityOptions(attacker)
   const defenderAbilityOptions = getSupportedAbilityOptions(defender)
   const itemOptions =
@@ -537,6 +554,12 @@ function DamageCalculator({
   )
     ? defenderAbility
     : ''
+  const weatherResolution = resolveAbilityWeather({
+    attackerAbility: selectedAttackerAbility,
+    defenderAbility: selectedDefenderAbility,
+    selectedWeather: weather,
+  })
+  const effectiveWeather = weatherResolution.weather
   const attackerStats =
     attacker && move
       ? getChampionsDamageStats(attacker, {
@@ -584,8 +607,9 @@ function DamageCalculator({
               isLightScreen: lightScreen,
               isReflect: reflect,
             },
+            gameType,
             isCritical: critical,
-            weather,
+            weather: effectiveWeather,
           },
           move,
         })
@@ -616,15 +640,35 @@ function DamageCalculator({
             nature: defenderNature,
             types: defender.types,
           },
+          field: {
+            gameType,
+            weather: effectiveWeather,
+          },
           move,
         }
       : null
 
   useEffect(() => {
+    if (isManualMoveSelection) {
+      return
+    }
+
     if (selectedMoveName !== moveName) {
       onMoveChange(selectedMoveName)
     }
-  }, [moveName, onMoveChange, selectedMoveName])
+  }, [isManualMoveSelection, moveName, onMoveChange, selectedMoveName])
+
+  useEffect(() => {
+    if (!isManualMoveSelection) {
+      setManualMoveText('')
+      return
+    }
+
+    const currentMoveOption = moveOptions.find((option) => option.value === moveName)
+    if (currentMoveOption) {
+      setManualMoveText(currentMoveOption.label)
+    }
+  }, [attacker?.displayName, isManualMoveSelection, moveName, moveOptions])
 
   useEffect(() => {
     if (selectedAttackerAbility !== attackerAbility) {
@@ -859,29 +903,76 @@ function DamageCalculator({
 
           <label className="select-field">
             <span>Move</span>
-            <select
-              disabled={moveOptions.length === 0}
-              value={selectedMoveName}
-              onChange={(event) => onMoveChange(event.target.value)}
-            >
-              {moveOptions.length > 0 ? (
-                moveOptions.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
+            {isManualMoveSelection ? (
+              <div className="manual-move-picker">
+                <input
+                  aria-autocomplete="list"
+                  aria-expanded={isManualMovePickerOpen}
+                  aria-invalid={Boolean(manualMoveText && !selectedMoveOption)}
+                  autoComplete="off"
+                  onChange={(event) => {
+                    const nextMoveText = event.target.value
+                    const nextMoveOption = findMoveOption(moveOptions, nextMoveText)
+
+                    setManualMoveText(nextMoveText)
+                    setIsManualMovePickerOpen(true)
+                    if (nextMoveOption) {
+                      onMoveChange(nextMoveOption.value)
+                    }
+                  }}
+                  onBlur={() => setIsManualMovePickerOpen(false)}
+                  onFocus={() => setIsManualMovePickerOpen(true)}
+                  placeholder="Type a move"
+                  role="combobox"
+                  value={manualMoveText}
+                />
+                {isManualMovePickerOpen && filteredManualMoveOptions.length > 0 && (
+                  <div className="manual-move-options" role="listbox">
+                    {filteredManualMoveOptions.map((option) => (
+                      <button
+                        key={option.value}
+                        onMouseDown={(event) => {
+                          event.preventDefault()
+                          setManualMoveText(option.label)
+                          setIsManualMovePickerOpen(false)
+                          onMoveChange(option.value)
+                        }}
+                        role="option"
+                        type="button"
+                      >
+                        {option.label}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ) : (
+              <select
+                disabled={moveOptions.length === 0}
+                value={selectedMoveName}
+                onChange={(event) => onMoveChange(event.target.value)}
+              >
+                {moveOptions.length > 0 ? (
+                  moveOptions.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))
+                ) : (
+                  <option
+                    disabled={NO_SUPPORTED_MOVES_OPTION.disabled}
+                    key={NO_SUPPORTED_MOVES_OPTION.name}
+                    value={NO_SUPPORTED_MOVES_OPTION.value}
+                  >
+                    {NO_SUPPORTED_MOVES_OPTION.name}
                   </option>
-                ))
-              ) : (
-                <option
-                  disabled={NO_SUPPORTED_MOVES_OPTION.disabled}
-                  key={NO_SUPPORTED_MOVES_OPTION.name}
-                  value={NO_SUPPORTED_MOVES_OPTION.value}
-                >
-                  {NO_SUPPORTED_MOVES_OPTION.name}
-                </option>
-              )}
-            </select>
+                )}
+              </select>
+            )}
             <small>
-              {moveOptions.length} supported moves for {attacker?.displayName ?? 'selected Pokemon'}
+              {isManualMoveSelection
+                ? `${moveOptions.length} manual damage moves, not filtered for ${attacker?.displayName ?? 'selected Pokemon'}`
+                : `${moveOptions.length} supported moves for ${attacker?.displayName ?? 'selected Pokemon'}`}
             </small>
           </label>
 
@@ -889,6 +980,22 @@ function DamageCalculator({
             <span>Weather</span>
             <select value={weather} onChange={(event) => onWeatherChange(event.target.value)}>
               {WEATHER_OPTIONS.map((option) => (
+                <option key={option.label} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+            {weatherResolution.sourceAbility && (
+              <small className="weather-override-hint">
+                Effective weather: {effectiveWeather} from {weatherResolution.sourceAbility}
+              </small>
+            )}
+          </label>
+
+          <label className="select-field">
+            <span>Format</span>
+            <select value={gameType} onChange={(event) => onGameTypeChange(event.target.value)}>
+              {GAME_TYPE_OPTIONS.map((option) => (
                 <option key={option.label} value={option.value}>
                   {option.label}
                 </option>
@@ -1136,6 +1243,31 @@ function hasItemOption(options, value) {
   )
 }
 
+function findMoveOption(options, value) {
+  const normalizedValue = String(value ?? '').trim().toLowerCase()
+
+  if (!normalizedValue) return null
+
+  return (
+    options.find(
+      (option) =>
+        option.value.toLowerCase() === normalizedValue ||
+        option.label.toLowerCase() === normalizedValue,
+    ) ?? null
+  )
+}
+
+function filterMoveOptions(options, value) {
+  const normalizedValue = String(value ?? '').trim().toLowerCase()
+
+  if (!normalizedValue) return options
+
+  return options.filter((option) =>
+    option.label.toLowerCase().includes(normalizedValue) ||
+    option.value.toLowerCase().includes(normalizedValue),
+  )
+}
+
 function OptimizerResults({ isOptimizing, moveCategory, result }) {
   const title = result.mode === 'survival' ? 'Survival options' : 'KO options'
   const emptyText =
@@ -1196,7 +1328,6 @@ function OptimizerSurvivalTable({ moveCategory, options }) {
           <th>Item</th>
           <th>HP SP</th>
           <th>{defenseLabel} SP</th>
-          <th>{defenseLabel} Boost</th>
           <th>Screen</th>
           <th>Weather</th>
           <th>Condition</th>
@@ -1213,7 +1344,6 @@ function OptimizerSurvivalTable({ moveCategory, options }) {
             <td>{formatTableValue(formatSelectedEffect(option.defender.item))}</td>
             <td>{option.defender.hpSp}</td>
             <td>{option.defender.defenseSp}</td>
-            <td>{formatBoost(option.defender.boost)}</td>
             <td>{formatTableValue(option.field.screen)}</td>
             <td>{formatTableValue(option.field.weather)}</td>
             <td>{option.attacker.burned ? 'Burn attacker' : '-'}</td>
@@ -1238,7 +1368,6 @@ function OptimizerKoTable({ moveCategory, options }) {
           <th>Ability</th>
           <th>Item</th>
           <th>{offenseLabel} SP</th>
-          <th>{offenseLabel} Boost</th>
           <th>Weather</th>
           <th>Damage</th>
           <th>% HP</th>
@@ -1252,7 +1381,6 @@ function OptimizerKoTable({ moveCategory, options }) {
             <td>{formatTableValue(formatSelectedEffect(option.attacker.ability))}</td>
             <td>{formatTableValue(formatSelectedEffect(option.attacker.item))}</td>
             <td>{option.attacker.offenseSp}</td>
-            <td>{formatBoost(option.attacker.boost)}</td>
             <td>{formatTableValue(option.field.weather)}</td>
             <td>{formatDamageRange(option.damage)}</td>
             <td>{formatDamagePercent(option.damage, option.defender.hp)}</td>
@@ -1261,10 +1389,6 @@ function OptimizerKoTable({ moveCategory, options }) {
       </tbody>
     </table>
   )
-}
-
-function formatBoost(boost) {
-  return boost ? `+${boost}` : '-'
 }
 
 function formatDamageRange(damage) {
@@ -1292,9 +1416,6 @@ function formatOptimizerOption(option, moveCategory) {
       formatSelectedEffect(option.defender.item),
       `HP SP ${option.defender.hpSp}`,
       `${moveCategory === 'physical' ? 'Def' : 'SpD'} SP ${option.defender.defenseSp}`,
-      option.defender.boost
-        ? `+${option.defender.boost} ${moveCategory === 'physical' ? 'Def' : 'SpD'} boost`
-        : '',
       option.field.screen,
       option.field.weather,
       option.attacker.burned ? 'Burn attacker' : '',
@@ -1307,9 +1428,6 @@ function formatOptimizerOption(option, moveCategory) {
     formatSelectedEffect(option.attacker.ability),
     formatSelectedEffect(option.attacker.item),
     `${moveCategory === 'physical' ? 'Atk' : 'SpA'} SP ${option.attacker.offenseSp}`,
-    option.attacker.boost
-      ? `+${option.attacker.boost} ${moveCategory === 'physical' ? 'Atk' : 'SpA'} boost`
-      : '',
     option.field.critical ? 'Crit' : '',
     option.field.weather,
     damage,

@@ -136,6 +136,7 @@
 }
 
 .search-field input,
+.select-field input,
 .select-field select {
   width: 100%;
   box-sizing: border-box;
@@ -145,6 +146,48 @@
   color: var(--text);
   font: inherit;
   padding: 13px 14px;
+}
+
+.weather-override-hint {
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+.manual-move-picker {
+  position: relative;
+}
+
+.manual-move-options {
+  position: absolute;
+  z-index: 20;
+  top: calc(100% + 6px);
+  right: 0;
+  left: 0;
+  max-height: 260px;
+  overflow-y: auto;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: #fff;
+  box-shadow: 0 18px 38px rgba(15, 23, 42, 0.18);
+}
+
+.manual-move-options button {
+  display: block;
+  width: 100%;
+  border: 0;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  padding: 10px 14px;
+  text-align: left;
+}
+
+.manual-move-options button:hover,
+.manual-move-options button:focus {
+  background: rgba(37, 99, 235, 0.1);
+  outline: none;
 }
 
 .notice {
