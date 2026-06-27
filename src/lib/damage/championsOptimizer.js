@@ -13,6 +13,13 @@ export const OPTIMIZER_RANKING_MODES = {
 const ALL_NATURES = Object.keys(CHAMPIONS_NATURES)
 const ALL_SP = Array.from({ length: 33 }, (_, index) => index)
 const WEATHER_OPTIONS = ['', 'Sun', 'Rain']
+const STAT_LABELS = {
+  atk: 'Atk',
+  def: 'Def',
+  spa: 'SpA',
+  spd: 'SpD',
+  spe: 'Spe',
+}
 
 function getDefenseStat(moveCategory) {
   return moveCategory === 'physical' ? 'def' : 'spd'
@@ -159,6 +166,46 @@ function getNaturePreference(nature, stat) {
   if (plus === stat && minus !== stat) return 2
   if (isNeutralNature(nature)) return 1
   return 0
+}
+
+function getNatureEffect(nature, stat) {
+  const [plus, minus] = CHAMPIONS_NATURES[nature] ?? []
+
+  if (plus === stat && minus !== stat) return 'plus'
+  if (minus === stat && plus !== stat) return 'minus'
+  return 'neutral'
+}
+
+function formatNatureGroupLabel(effect, stat) {
+  if (effect === 'plus') return `Any +${STAT_LABELS[stat]} nature`
+  if (effect === 'minus') return `Any -${STAT_LABELS[stat]} nature`
+  return `No ${STAT_LABELS[stat]} modifier`
+}
+
+function getNatureCandidates(natures, stat) {
+  const groups = new Map()
+
+  for (const nature of natures) {
+    const effect = getNatureEffect(nature, stat)
+    const group = groups.get(effect) ?? []
+
+    group.push(nature)
+    groups.set(effect, group)
+  }
+
+  return Array.from(groups.entries()).map(([effect, group]) => {
+    const representative = group.find((nature) => isNeutralNature(nature)) ?? group[0]
+
+    return {
+      nature: representative,
+      natureGroup: group.length > 1
+        ? {
+            label: formatNatureGroupLabel(effect, stat),
+            natures: group,
+          }
+        : null,
+    }
+  })
 }
 
 export function scoreOption(option) {
@@ -336,7 +383,8 @@ export function findSurvivalOptions(context, config = {}) {
   const options = []
   const burnOptions = context.move.category === 'physical' ? [false, true] : [false]
 
-  for (const nature of config.defenderNatures ?? ALL_NATURES) {
+  for (const natureCandidate of getNatureCandidates(config.defenderNatures ?? ALL_NATURES, defenseStat)) {
+    const { nature, natureGroup } = natureCandidate
     for (const hpSp of config.defenderHpSp ?? ALL_SP) {
       for (const defenseSp of config.defenderDefenseSp ?? ALL_SP) {
         const defenderStats = buildStats({
@@ -366,6 +414,7 @@ export function findSurvivalOptions(context, config = {}) {
                   hpSp,
                   item: context.defender.item,
                   nature,
+                  natureGroup,
                 },
                 field: {
                   critical: false,
@@ -400,7 +449,8 @@ export function findKoOptions(context, config = {}) {
   const gameType = context.field?.gameType ?? 'Singles'
   const options = []
 
-  for (const nature of config.attackerNatures ?? ALL_NATURES) {
+  for (const natureCandidate of getNatureCandidates(config.attackerNatures ?? ALL_NATURES, offenseStat)) {
+    const { nature, natureGroup } = natureCandidate
     for (const offenseSp of config.attackerSp ?? ALL_SP) {
       for (const weather of getWeatherCandidates(context, config.weather)) {
         for (const critical of config.critical ?? [false]) {
@@ -417,6 +467,7 @@ export function findKoOptions(context, config = {}) {
               burned: false,
               item: context.attacker.item,
               nature,
+              natureGroup,
               offenseSp,
             },
             defender: {

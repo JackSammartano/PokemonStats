@@ -390,6 +390,9 @@ Ottimizzazioni gia' fatte:
 - non mostra milioni di risultati;
 - limita candidate utili;
 - scarta opzioni dominate;
+- raggruppa le nature equivalenti per la stat cercata:
+  - esempio `Find Survival` speciale mostra `Any +SpD nature` invece di righe duplicate `Calm`, `Careful`, `Gentle`, `Sassy`;
+  - esempio `Find KO` speciale mostra `Any +SpA nature` invece di righe duplicate `Modest`, `Mild`, `Quiet`, `Rash`;
 - mostra risultati in tabella, con colonne allineate per KO e Survival;
 - mostra `Showing X best options`;
 - spinner Pokeball durante il calcolo.
@@ -629,12 +632,21 @@ npm run lint  PASS
 npm run build PASS
 ```
 
-Test totali all'ultimo giro: `47`.
+Test totali all'ultimo giro: `49`.
 
 Ultimo commit deployato su GitHub Pages:
 
 ```text
-1c2dd9f Improve Champions damage calculator UX
+cb9fe66 Improve Champions damage calculator mechanics
+```
+
+Deploy verificato:
+
+```text
+Workflow: Deploy GitHub Pages
+Run: 28294644977
+Status: success
+HTTP: 200
 ```
 
 URL:

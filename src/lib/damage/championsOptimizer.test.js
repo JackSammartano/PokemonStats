@@ -183,6 +183,67 @@ describe('Champions optimizer', () => {
     assert.equal(result.displayed[0].attacker.offenseSp, 0)
   })
 
+  it('groups KO natures with the same offensive stat modifier', () => {
+    const result = findKoOptions(specialContext, {
+      attackerNatures: ['modest', 'mild', 'quiet', 'rash'],
+      attackerSp: [32],
+      critical: [false],
+      weather: [''],
+    })
+
+    assert.equal(result.total, 1)
+    assert.equal(result.displayed[0].attacker.natureGroup.label, 'Any +SpA nature')
+    assert.deepEqual(result.displayed[0].attacker.natureGroup.natures, [
+      'modest',
+      'mild',
+      'quiet',
+      'rash',
+    ])
+  })
+
+  it('groups survival natures with the same defensive stat modifier', () => {
+    const result = findSurvivalOptions(
+      {
+        ...specialContext,
+        attacker: {
+          ...specialContext.attacker,
+          baseStats: {
+            ...specialContext.attacker.baseStats,
+            spa: 70,
+          },
+          types: ['fire'],
+        },
+        defender: {
+          ...specialContext.defender,
+          baseStats: {
+            ...specialContext.defender.baseStats,
+            hp: 90,
+            spd: 90,
+          },
+          types: ['normal'],
+        },
+        move: CHAMPIONS_MOVES.flamethrower,
+      },
+      {
+        attackerBurned: [false],
+        defenderDefenseSp: [32],
+        defenderHpSp: [32],
+        defenderNatures: ['calm', 'careful', 'gentle', 'sassy'],
+        screens: [''],
+        weather: [''],
+      },
+    )
+
+    assert.equal(result.total, 1)
+    assert.equal(result.displayed[0].defender.natureGroup.label, 'Any +SpD nature')
+    assert.deepEqual(result.displayed[0].defender.natureGroup.natures, [
+      'calm',
+      'careful',
+      'gentle',
+      'sassy',
+    ])
+  })
+
   it('respects the internal candidate limit', () => {
     const result = findSurvivalOptions(physicalContext, {
       attackerBurned: [false, true],

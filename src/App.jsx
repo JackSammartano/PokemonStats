@@ -1339,7 +1339,7 @@ function OptimizerSurvivalTable({ moveCategory, options }) {
         {options.map((option, index) => (
           <tr key={`survival-${index}-${option.score}`}>
             <td>{index + 1}</td>
-            <td>{formatNatureOption(option.defender.nature)}</td>
+            <td>{formatOptimizerNature(option.defender)}</td>
             <td>{formatTableValue(formatSelectedEffect(option.defender.ability))}</td>
             <td>{formatTableValue(formatSelectedEffect(option.defender.item))}</td>
             <td>{option.defender.hpSp}</td>
@@ -1377,7 +1377,7 @@ function OptimizerKoTable({ moveCategory, options }) {
         {options.map((option, index) => (
           <tr key={`ko-${index}-${option.score}`}>
             <td>{index + 1}</td>
-            <td>{formatNatureOption(option.attacker.nature)}</td>
+            <td>{formatOptimizerNature(option.attacker)}</td>
             <td>{formatTableValue(formatSelectedEffect(option.attacker.ability))}</td>
             <td>{formatTableValue(formatSelectedEffect(option.attacker.item))}</td>
             <td>{option.attacker.offenseSp}</td>
@@ -1411,7 +1411,7 @@ function formatOptimizerOption(option, moveCategory) {
 
   if (option.kind === 'survival') {
     return [
-      formatNatureOption(option.defender.nature),
+      formatOptimizerNature(option.defender),
       formatSelectedEffect(option.defender.ability),
       formatSelectedEffect(option.defender.item),
       `HP SP ${option.defender.hpSp}`,
@@ -1424,7 +1424,7 @@ function formatOptimizerOption(option, moveCategory) {
   }
 
   return [
-    formatNatureOption(option.attacker.nature),
+    formatOptimizerNature(option.attacker),
     formatSelectedEffect(option.attacker.ability),
     formatSelectedEffect(option.attacker.item),
     `${moveCategory === 'physical' ? 'Atk' : 'SpA'} SP ${option.attacker.offenseSp}`,
@@ -1505,6 +1505,14 @@ function formatNatureOption(nature) {
   }
 
   return `${name} (+${DAMAGE_STAT_LABELS[plus]} / -${DAMAGE_STAT_LABELS[minus]})`
+}
+
+function formatOptimizerNature(pokemon) {
+  if (!pokemon.natureGroup) return formatNatureOption(pokemon.nature)
+
+  return `${pokemon.natureGroup.label}: ${pokemon.natureGroup.natures
+    .map((nature) => nature.charAt(0).toUpperCase() + nature.slice(1))
+    .join(', ')}`
 }
 
 function formatSelectedEffect(value) {
