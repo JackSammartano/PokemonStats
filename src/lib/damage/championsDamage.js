@@ -222,7 +222,7 @@ export function calculateChampionsDamage({
     [
       ...getScreenFinalMods({ field, isCritical, move: resolvedMove }),
       ...getAbilityFinalMods({ defender, effectiveness }),
-      ...getItemFinalMods({ attacker, effectiveness }),
+      ...getItemFinalMods({ attacker, defender, effectiveness, move: resolvedMove }),
     ],
     41,
     131072,

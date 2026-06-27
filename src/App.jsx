@@ -101,6 +101,9 @@ function App() {
   const [pokemon, setPokemon] = useState([])
   const [teamNames, setTeamNames] = useState([])
   const [highlightedTeamMember, setHighlightedTeamMember] = useState(null)
+  const [activePanel, setActivePanel] = useState(null)
+  const [compareLeftName, setCompareLeftName] = useState('')
+  const [compareRightName, setCompareRightName] = useState('')
   const [loadedCount, setLoadedCount] = useState(0)
   const [status, setStatus] = useState('loading')
   const [error, setError] = useState(null)
@@ -129,6 +132,7 @@ function App() {
   const [damageCritical, setDamageCritical] = useState(false)
   const [damageReflect, setDamageReflect] = useState(false)
   const [damageLightScreen, setDamageLightScreen] = useState(false)
+  const [optimizerRankingMode, setOptimizerRankingMode] = useState('minimum')
   const deferredQuery = useDeferredValue(query)
 
   useEffect(() => {
@@ -198,6 +202,59 @@ function App() {
 
       return [...currentTeam, entry.displayName]
     })
+  }
+
+  function handlePanelToggle(panelName, isOpen) {
+    setActivePanel(isOpen ? panelName : null)
+  }
+
+  function selectForPair(entry, leftName, rightName, setLeftName, setRightName) {
+    if (!leftName || leftName === entry.displayName) {
+      setLeftName(entry.displayName)
+      return
+    }
+
+    if (!rightName || rightName === entry.displayName) {
+      setRightName(entry.displayName)
+      return
+    }
+
+    const shouldReset = window.confirm(
+      `Vuoi annullare il confronto corrente e iniziarne uno nuovo con ${entry.displayName}?`,
+    )
+
+    if (shouldReset) {
+      setLeftName(entry.displayName)
+      setRightName('')
+    }
+  }
+
+  function handlePokemonAction(entry) {
+    if (entry.status !== 'ready') return
+
+    if (activePanel === 'compare') {
+      selectForPair(
+        entry,
+        compareLeftName,
+        compareRightName,
+        setCompareLeftName,
+        setCompareRightName,
+      )
+      return
+    }
+
+    if (activePanel === 'damage') {
+      selectForPair(
+        entry,
+        damageAttackerName,
+        damageDefenderName,
+        setDamageAttackerName,
+        setDamageDefenderName,
+      )
+      return
+    }
+
+    toggleTeamMember(entry)
   }
 
   function clearTeamHighlight() {
@@ -313,13 +370,25 @@ function App() {
       <TeamBuilder
         analysis={teamAnalysis}
         highlightedTeamMember={highlightedTeamMember}
+        isOpen={activePanel === 'team'}
         onClearHighlight={clearTeamHighlight}
         onClear={() => setTeamNames([])}
         onHighlight={setHighlightedTeamMember}
+        onOpenChange={(isOpen) => handlePanelToggle('team', isOpen)}
         onRemove={(name) =>
           setTeamNames((currentTeam) => currentTeam.filter((entry) => entry !== name))
         }
         team={team}
+      />
+
+      <ComparePanel
+        isOpen={activePanel === 'compare'}
+        leftName={compareLeftName}
+        onLeftChange={setCompareLeftName}
+        onOpenChange={(isOpen) => handlePanelToggle('compare', isOpen)}
+        onRightChange={setCompareRightName}
+        pokemon={supported}
+        rightName={compareRightName}
       />
 
       <DamageCalculator
@@ -339,6 +408,7 @@ function App() {
         defenderName={damageDefenderName}
         defenderNature={damageDefenderNature}
         itemMode={damageItemMode}
+        isOpen={activePanel === 'damage'}
         lightScreen={damageLightScreen}
         moveName={damageMoveName}
         onAttackerBoostChange={setDamageAttackerBoost}
@@ -359,8 +429,11 @@ function App() {
         onItemModeChange={setDamageItemMode}
         onLightScreenChange={setDamageLightScreen}
         onMoveChange={setDamageMoveName}
+        onOpenChange={(isOpen) => handlePanelToggle('damage', isOpen)}
+        onOptimizerRankingModeChange={setOptimizerRankingMode}
         onReflectChange={setDamageReflect}
         onWeatherChange={setDamageWeather}
+        optimizerRankingMode={optimizerRankingMode}
         pokemon={supported}
         reflect={damageReflect}
         weather={damageWeather}
@@ -372,9 +445,9 @@ function App() {
             <PokemonCard
               isSelected={teamNames.includes(entry.displayName)}
               key={entry.displayName}
-              onToggleTeam={() => toggleTeamMember(entry)}
+              onToggleTeam={() => handlePokemonAction(entry)}
               pokemon={entry}
-              teamIsFull={teamNames.length >= TEAM_SIZE}
+              teamIsFull={activePanel !== 'team' ? false : teamNames.length >= TEAM_SIZE}
             />
           ) : (
             <UnsupportedCard key={entry.displayName} pokemon={entry} />
@@ -402,6 +475,7 @@ function DamageCalculator({
   defenderName,
   defenderNature,
   itemMode,
+  isOpen,
   lightScreen,
   moveName,
   onAttackerAbilityChange,
@@ -422,8 +496,11 @@ function DamageCalculator({
   onItemModeChange,
   onLightScreenChange,
   onMoveChange,
+  onOpenChange,
+  onOptimizerRankingModeChange,
   onReflectChange,
   onWeatherChange,
+  optimizerRankingMode,
   pokemon,
   reflect,
   weather,
@@ -444,10 +521,10 @@ function DamageCalculator({
   const defenderAbilityOptions = getSupportedAbilityOptions(defender)
   const itemOptions =
     itemMode === 'all' ? ALL_DAMAGE_ITEM_OPTIONS : CHAMPIONS_SET_ITEM_OPTIONS
-  const selectedAttackerItem = itemOptions.some((option) => option.value === attackerItem)
+  const selectedAttackerItem = hasItemOption(itemOptions, attackerItem)
     ? attackerItem
     : ''
-  const selectedDefenderItem = itemOptions.some((option) => option.value === defenderItem)
+  const selectedDefenderItem = hasItemOption(itemOptions, defenderItem)
     ? defenderItem
     : ''
   const selectedAttackerAbility = attackerAbilityOptions.some(
@@ -583,6 +660,19 @@ function DamageCalculator({
 
   function optimizeSurvival() {
     if (!optimizerContext) return
+    if (result && defenderHp && result.max < defenderHp) {
+      setOptimizerResult({
+        alreadySatisfied: true,
+        defenderHp,
+        displayed: [],
+        max: result.max,
+        min: result.min,
+        mode: 'survival',
+        total: 0,
+      })
+      return
+    }
+
     setIsOptimizing(true)
     setOptimizerResult({
       mode: 'survival',
@@ -592,7 +682,9 @@ function DamageCalculator({
     window.setTimeout(() => {
       setOptimizerResult({
         mode: 'survival',
-        ...findSurvivalOptions(optimizerContext),
+        ...findSurvivalOptions(optimizerContext, {
+          rankingMode: optimizerRankingMode,
+        }),
       })
       setIsOptimizing(false)
     }, 0)
@@ -600,6 +692,19 @@ function DamageCalculator({
 
   function optimizeKo() {
     if (!optimizerContext) return
+    if (result && defenderHp && result.min >= defenderHp) {
+      setOptimizerResult({
+        alreadySatisfied: true,
+        defenderHp,
+        displayed: [],
+        max: result.max,
+        min: result.min,
+        mode: 'ko',
+        total: 0,
+      })
+      return
+    }
+
     setIsOptimizing(true)
     setOptimizerResult({
       mode: 'ko',
@@ -609,14 +714,21 @@ function DamageCalculator({
     window.setTimeout(() => {
       setOptimizerResult({
         mode: 'ko',
-        ...findKoOptions(optimizerContext),
+        ...findKoOptions(optimizerContext, {
+          rankingMode: optimizerRankingMode,
+        }),
       })
       setIsOptimizing(false)
     }, 0)
   }
 
   return (
-    <section className="damage-calculator" aria-label="Damage calculator">
+    <details
+      className="damage-calculator"
+      onToggle={(event) => onOpenChange(event.currentTarget.open)}
+      open={isOpen}
+    >
+      <summary>Damage calculator</summary>
       <div className="damage-header">
         <div>
           <p className="eyebrow compact">Damage preview</p>
@@ -636,308 +748,345 @@ function DamageCalculator({
       </div>
 
       <div className="damage-controls">
-        <label className="select-field">
-          <span>Attacker</span>
-          <select
-            value={attacker?.displayName ?? ''}
-            onChange={(event) => onAttackerChange(event.target.value)}
-          >
-            {pokemon.map((entry) => (
-              <option key={entry.displayName} value={entry.displayName}>
-                {entry.displayName}
-              </option>
-            ))}
-          </select>
-        </label>
+        <section className="damage-panel" aria-label="Attacker controls">
+          <h3>Attacker</h3>
 
-        <label className="select-field">
-          <span>Defender</span>
-          <select
-            value={defender?.displayName ?? ''}
-            onChange={(event) => onDefenderChange(event.target.value)}
-          >
-            {pokemon.map((entry) => (
-              <option key={entry.displayName} value={entry.displayName}>
-                {entry.displayName}
-              </option>
-            ))}
-          </select>
-        </label>
+          <label className="select-field">
+            <span>Pokemon</span>
+            <div className="pokemon-select-preview">
+              {attacker?.image && <img src={attacker.image} alt="" />}
+              <select
+                value={attacker?.displayName ?? ''}
+                onChange={(event) => onAttackerChange(event.target.value)}
+              >
+                {pokemon.map((entry) => (
+                  <option key={entry.displayName} value={entry.displayName}>
+                    {entry.displayName}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </label>
 
-        <label className="select-field">
-          <span>Move</span>
-          <select
-            disabled={moveOptions.length === 0}
-            value={selectedMoveName}
-            onChange={(event) => onMoveChange(event.target.value)}
-          >
-            {moveOptions.length > 0 ? (
-              moveOptions.map((option) => (
-                <option key={option.value} value={option.value}>
+          <label className="select-field">
+            <span>Ability</span>
+            <select
+              value={selectedAttackerAbility}
+              onChange={(event) => onAttackerAbilityChange(event.target.value)}
+            >
+              {attackerAbilityOptions.map((option) => (
+                <option
+                  disabled={option.disabled}
+                  key={`attacker-${option.value}`}
+                  value={option.value}
+                >
                   {option.label}
                 </option>
-              ))
-            ) : (
-              <option
-                disabled={NO_SUPPORTED_MOVES_OPTION.disabled}
-                key={NO_SUPPORTED_MOVES_OPTION.name}
-                value={NO_SUPPORTED_MOVES_OPTION.value}
-              >
-                {NO_SUPPORTED_MOVES_OPTION.name}
-              </option>
-            )}
-          </select>
-          <small>
-            {moveOptions.length} supported moves for {attacker?.displayName ?? 'selected Pokemon'}
-          </small>
-        </label>
-
-        <label className="select-field">
-          <span>Weather</span>
-          <select value={weather} onChange={(event) => onWeatherChange(event.target.value)}>
-            {WEATHER_OPTIONS.map((option) => (
-              <option key={option.label} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </select>
-        </label>
-
-        <label className="select-field">
-          <span>Atk ability</span>
-          <select
-            value={selectedAttackerAbility}
-            onChange={(event) => onAttackerAbilityChange(event.target.value)}
-          >
-            {attackerAbilityOptions.map((option) => (
-              <option
-                disabled={option.disabled}
-                key={`attacker-${option.value}`}
-                value={option.value}
-              >
-                {option.label}
-              </option>
-            ))}
-          </select>
-        </label>
-
-        <label className="select-field">
-          <span>Def ability</span>
-          <select
-            value={selectedDefenderAbility}
-            onChange={(event) => onDefenderAbilityChange(event.target.value)}
-          >
-            {defenderAbilityOptions.map((option) => (
-              <option
-                disabled={option.disabled}
-                key={`defender-${option.value}`}
-                value={option.value}
-              >
-                {option.label}
-              </option>
-            ))}
-          </select>
-        </label>
-
-        <fieldset className="segmented-field">
-          <legend>Item pool</legend>
-          <label>
-            <input
-              checked={itemMode === 'champions'}
-              name="damage-item-mode"
-              onChange={() => onItemModeChange('champions')}
-              type="radio"
-            />
-            <span>Champions set items</span>
+              ))}
+            </select>
           </label>
-          <label>
-            <input
-              checked={itemMode === 'all'}
-              name="damage-item-mode"
-              onChange={() => onItemModeChange('all')}
-              type="radio"
-            />
-            <span>All damage items</span>
+
+          <label className="select-field">
+            <span>Damage item</span>
+            <select
+              value={selectedAttackerItem}
+              onChange={(event) => onAttackerItemChange(event.target.value)}
+            >
+              {renderItemOptions(itemOptions, 'attacker')}
+            </select>
           </label>
-        </fieldset>
 
-        <label className="select-field">
-          <span>Attacker damage item</span>
-          <select
-            value={selectedAttackerItem}
-            onChange={(event) => onAttackerItemChange(event.target.value)}
-          >
-            {itemOptions.map((option) => (
-              <option key={`attacker-${option.value}`} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </select>
-        </label>
+          <label className="select-field">
+            <span>Nature</span>
+            <select
+              value={attackerNature}
+              onChange={(event) => onAttackerNatureChange(event.target.value)}
+            >
+              {NATURE_OPTIONS.map((nature) => (
+                <option key={nature} value={nature}>
+                  {formatNatureOption(nature)}
+                </option>
+              ))}
+            </select>
+          </label>
 
-        <label className="select-field">
-          <span>Defender damage item</span>
-          <select
-            value={selectedDefenderItem}
-            onChange={(event) => onDefenderItemChange(event.target.value)}
-          >
-            {itemOptions.map((option) => (
-              <option key={`defender-${option.value}`} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </select>
-        </label>
+          <label className="select-field">
+            <span>Atk/SpA boost</span>
+            <select
+              value={attackerBoost}
+              onChange={(event) => onAttackerBoostChange(Number(event.target.value))}
+            >
+              {BOOST_OPTIONS.map((boost) => (
+                <option key={boost} value={boost}>
+                  {boost > 0 ? `+${boost}` : boost}
+                </option>
+              ))}
+            </select>
+            <small>
+              {move?.category === 'physical' ? 'Physical move uses Atk' : 'Special move uses SpA'}
+            </small>
+          </label>
 
-        <label className="select-field">
-          <span>Atk nature</span>
-          <select
-            value={attackerNature}
-            onChange={(event) => onAttackerNatureChange(event.target.value)}
-          >
-            {NATURE_OPTIONS.map((nature) => (
-              <option key={nature} value={nature}>
-                {formatNatureOption(nature)}
-              </option>
-            ))}
-          </select>
-        </label>
+          <label className="select-field">
+            <span>Atk/SpA SP</span>
+            <select
+              value={attackerSp}
+              onChange={(event) => onAttackerSpChange(Number(event.target.value))}
+            >
+              {SP_OPTIONS.map((sp) => (
+                <option key={sp} value={sp}>
+                  {sp}
+                </option>
+              ))}
+            </select>
+            <small>{move?.category === 'physical' ? 'Attacker Atk SP' : 'Attacker SpA SP'}</small>
+          </label>
 
-        <label className="select-field">
-          <span>Def nature</span>
-          <select
-            value={defenderNature}
-            onChange={(event) => onDefenderNatureChange(event.target.value)}
-          >
-            {NATURE_OPTIONS.map((nature) => (
-              <option key={nature} value={nature}>
-                {formatNatureOption(nature)}
-              </option>
-            ))}
-          </select>
-        </label>
+          <div className="damage-toggles damage-panel-toggles">
+            <label>
+              <input
+                checked={burned}
+                onChange={(event) => onBurnedChange(event.target.checked)}
+                type="checkbox"
+              />
+              Burn
+            </label>
+          </div>
+        </section>
 
-        <label className="select-field">
-          <span>Atk/SpA boost</span>
-          <select
-            value={attackerBoost}
-            onChange={(event) => onAttackerBoostChange(Number(event.target.value))}
-          >
-            {BOOST_OPTIONS.map((boost) => (
-              <option key={boost} value={boost}>
-                {boost > 0 ? `+${boost}` : boost}
-              </option>
-            ))}
-          </select>
-          <small>
-            {move?.category === 'physical' ? 'Physical move uses Atk' : 'Special move uses SpA'}
-          </small>
-        </label>
+        <section className="damage-panel damage-battle-panel" aria-label="Battle controls">
+          <h3>Battle</h3>
 
-        <label className="select-field">
-          <span>Def/SpD boost</span>
-          <select
-            value={defenderBoost}
-            onChange={(event) => onDefenderBoostChange(Number(event.target.value))}
-          >
-            {BOOST_OPTIONS.map((boost) => (
-              <option key={boost} value={boost}>
-                {boost > 0 ? `+${boost}` : boost}
-              </option>
-            ))}
-          </select>
-          <small>
-            {move?.category === 'physical' ? 'Physical move uses Def' : 'Special move uses SpD'}
-          </small>
-        </label>
+          <label className="select-field">
+            <span>Move</span>
+            <select
+              disabled={moveOptions.length === 0}
+              value={selectedMoveName}
+              onChange={(event) => onMoveChange(event.target.value)}
+            >
+              {moveOptions.length > 0 ? (
+                moveOptions.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))
+              ) : (
+                <option
+                  disabled={NO_SUPPORTED_MOVES_OPTION.disabled}
+                  key={NO_SUPPORTED_MOVES_OPTION.name}
+                  value={NO_SUPPORTED_MOVES_OPTION.value}
+                >
+                  {NO_SUPPORTED_MOVES_OPTION.name}
+                </option>
+              )}
+            </select>
+            <small>
+              {moveOptions.length} supported moves for {attacker?.displayName ?? 'selected Pokemon'}
+            </small>
+          </label>
 
-        <label className="select-field">
-          <span>Atk/SpA SP</span>
-          <select
-            value={attackerSp}
-            onChange={(event) => onAttackerSpChange(Number(event.target.value))}
-          >
-            {SP_OPTIONS.map((sp) => (
-              <option key={sp} value={sp}>
-                {sp}
-              </option>
-            ))}
-          </select>
-          <small>{move?.category === 'physical' ? 'Attacker Atk SP' : 'Attacker SpA SP'}</small>
-        </label>
+          <label className="select-field">
+            <span>Weather</span>
+            <select value={weather} onChange={(event) => onWeatherChange(event.target.value)}>
+              {WEATHER_OPTIONS.map((option) => (
+                <option key={option.label} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </label>
 
-        <label className="select-field">
-          <span>Defender HP SP</span>
-          <select
-            value={defenderHpSp}
-            onChange={(event) => onDefenderHpSpChange(Number(event.target.value))}
-          >
-            {SP_OPTIONS.map((sp) => (
-              <option key={sp} value={sp}>
-                {sp}
-              </option>
-            ))}
-          </select>
-        </label>
+          <fieldset className="segmented-field">
+            <legend>Item pool</legend>
+            <label>
+              <input
+                checked={itemMode === 'champions'}
+                name="damage-item-mode"
+                onChange={() => onItemModeChange('champions')}
+                type="radio"
+              />
+              <span>Champions set items</span>
+            </label>
+            <label>
+              <input
+                checked={itemMode === 'all'}
+                name="damage-item-mode"
+                onChange={() => onItemModeChange('all')}
+                type="radio"
+              />
+              <span>All damage items</span>
+            </label>
+          </fieldset>
 
-        <label className="select-field">
-          <span>Defender Def/SpD SP</span>
-          <select
-            value={defenderDefenseSp}
-            onChange={(event) => onDefenderDefenseSpChange(Number(event.target.value))}
-          >
-            {SP_OPTIONS.map((sp) => (
-              <option key={sp} value={sp}>
-                {sp}
-              </option>
-            ))}
-          </select>
-          <small>{move?.category === 'physical' ? 'Defender Def SP' : 'Defender SpD SP'}</small>
-        </label>
-      </div>
+          <div className="damage-toggles damage-panel-toggles">
+            <label>
+              <input
+                checked={critical}
+                onChange={(event) => onCriticalChange(event.target.checked)}
+                type="checkbox"
+              />
+              Crit
+            </label>
+          </div>
 
-      <div className="damage-toggles">
-        <label>
-          <input
-            checked={burned}
-            onChange={(event) => onBurnedChange(event.target.checked)}
-            type="checkbox"
-          />
-          Burn
-        </label>
-        <label>
-          <input
-            checked={critical}
-            onChange={(event) => onCriticalChange(event.target.checked)}
-            type="checkbox"
-          />
-          Crit
-        </label>
-        <label>
-          <input
-            checked={reflect}
-            onChange={(event) => onReflectChange(event.target.checked)}
-            type="checkbox"
-          />
-          Reflect
-        </label>
-        <label>
-          <input
-            checked={lightScreen}
-            onChange={(event) => onLightScreenChange(event.target.checked)}
-            type="checkbox"
-          />
-          Light Screen
-        </label>
-      </div>
+          <div className="optimizer-actions">
+            <fieldset className="segmented-field optimizer-ranking-field">
+              <legend>Optimizer ranking</legend>
+              <label>
+                <input
+                  checked={optimizerRankingMode === 'minimum'}
+                  name="optimizer-ranking-mode"
+                  onChange={() => onOptimizerRankingModeChange('minimum')}
+                  type="radio"
+                />
+                <span>Minimum investment</span>
+              </label>
+              <label>
+                <input
+                  checked={optimizerRankingMode === 'practical'}
+                  name="optimizer-ranking-mode"
+                  onChange={() => onOptimizerRankingModeChange('practical')}
+                  type="radio"
+                />
+                <span>Practical build</span>
+              </label>
+            </fieldset>
+            <button disabled={!optimizerContext} onClick={optimizeSurvival} type="button">
+              Find Survival
+            </button>
+            <button disabled={!optimizerContext} onClick={optimizeKo} type="button">
+              Find KO
+            </button>
+          </div>
+        </section>
 
-      <div className="optimizer-actions">
-        <button disabled={!optimizerContext} onClick={optimizeSurvival} type="button">
-          Find Survival
-        </button>
-        <button disabled={!optimizerContext} onClick={optimizeKo} type="button">
-          Find KO
-        </button>
+        <section className="damage-panel" aria-label="Defender controls">
+          <h3>Defender</h3>
+
+          <label className="select-field">
+            <span>Pokemon</span>
+            <div className="pokemon-select-preview">
+              {defender?.image && <img src={defender.image} alt="" />}
+              <select
+                value={defender?.displayName ?? ''}
+                onChange={(event) => onDefenderChange(event.target.value)}
+              >
+                {pokemon.map((entry) => (
+                  <option key={entry.displayName} value={entry.displayName}>
+                    {entry.displayName}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </label>
+
+          <label className="select-field">
+            <span>Ability</span>
+            <select
+              value={selectedDefenderAbility}
+              onChange={(event) => onDefenderAbilityChange(event.target.value)}
+            >
+              {defenderAbilityOptions.map((option) => (
+                <option
+                  disabled={option.disabled}
+                  key={`defender-${option.value}`}
+                  value={option.value}
+                >
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          <label className="select-field">
+            <span>Damage item</span>
+            <select
+              value={selectedDefenderItem}
+              onChange={(event) => onDefenderItemChange(event.target.value)}
+            >
+              {renderItemOptions(itemOptions, 'defender')}
+            </select>
+          </label>
+
+          <label className="select-field">
+            <span>Nature</span>
+            <select
+              value={defenderNature}
+              onChange={(event) => onDefenderNatureChange(event.target.value)}
+            >
+              {NATURE_OPTIONS.map((nature) => (
+                <option key={nature} value={nature}>
+                  {formatNatureOption(nature)}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          <label className="select-field">
+            <span>Def/SpD boost</span>
+            <select
+              value={defenderBoost}
+              onChange={(event) => onDefenderBoostChange(Number(event.target.value))}
+            >
+              {BOOST_OPTIONS.map((boost) => (
+                <option key={boost} value={boost}>
+                  {boost > 0 ? `+${boost}` : boost}
+                </option>
+              ))}
+            </select>
+            <small>
+              {move?.category === 'physical' ? 'Physical move uses Def' : 'Special move uses SpD'}
+            </small>
+          </label>
+
+          <label className="select-field">
+            <span>HP SP</span>
+            <select
+              value={defenderHpSp}
+              onChange={(event) => onDefenderHpSpChange(Number(event.target.value))}
+            >
+              {SP_OPTIONS.map((sp) => (
+                <option key={sp} value={sp}>
+                  {sp}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          <label className="select-field">
+            <span>Def/SpD SP</span>
+            <select
+              value={defenderDefenseSp}
+              onChange={(event) => onDefenderDefenseSpChange(Number(event.target.value))}
+            >
+              {SP_OPTIONS.map((sp) => (
+                <option key={sp} value={sp}>
+                  {sp}
+                </option>
+              ))}
+            </select>
+            <small>{move?.category === 'physical' ? 'Defender Def SP' : 'Defender SpD SP'}</small>
+          </label>
+
+          <div className="damage-toggles damage-panel-toggles">
+            <label>
+              <input
+                checked={reflect}
+                onChange={(event) => onReflectChange(event.target.checked)}
+                type="checkbox"
+              />
+              Reflect
+            </label>
+            <label>
+              <input
+                checked={lightScreen}
+                onChange={(event) => onLightScreenChange(event.target.checked)}
+                type="checkbox"
+              />
+              Light Screen
+            </label>
+          </div>
+        </section>
       </div>
 
       {result && (
@@ -953,7 +1102,37 @@ function DamageCalculator({
           result={optimizerResult}
         />
       )}
-    </section>
+    </details>
+  )
+}
+
+function renderItemOptions(options, keyPrefix) {
+  return options.map((option) => {
+    if (option.options) {
+      return (
+        <optgroup key={`${keyPrefix}-${option.label}`} label={option.label}>
+          {option.options.map((groupedOption) => (
+            <option key={`${keyPrefix}-${groupedOption.value}`} value={groupedOption.value}>
+              {groupedOption.label}
+            </option>
+          ))}
+        </optgroup>
+      )
+    }
+
+    return (
+      <option key={`${keyPrefix}-${option.value}`} value={option.value}>
+        {option.label}
+      </option>
+    )
+  })
+}
+
+function hasItemOption(options, value) {
+  return options.some((option) =>
+    option.options
+      ? option.options.some((groupedOption) => groupedOption.value === value)
+      : option.value === value,
   )
 }
 
@@ -963,12 +1142,19 @@ function OptimizerResults({ isOptimizing, moveCategory, result }) {
     result.mode === 'survival'
       ? 'No guaranteed survival found with current search rules.'
       : 'No guaranteed KO found with current search rules.'
+  const alreadySatisfiedText =
+    result.mode === 'survival'
+      ? 'Current setup already survives.'
+      : 'Current setup already guarantees KO.'
+  const headerText = result.alreadySatisfied
+    ? 'Current setup'
+    : `Showing ${result.displayed.length} best options`
 
   return (
     <div className="optimizer-results">
       <div className="optimizer-results-header">
         <strong>{title}</strong>
-        <span>Showing {result.displayed.length} best options</span>
+        <span>{headerText}</span>
       </div>
 
       {isOptimizing ? (
@@ -976,14 +1162,20 @@ function OptimizerResults({ isOptimizing, moveCategory, result }) {
           <div className="pokeball-spinner" aria-hidden="true"></div>
           <span>Calculating options</span>
         </div>
+      ) : result.alreadySatisfied ? (
+        <p>
+          {alreadySatisfiedText} Damage {result.min}-{result.max} HP (
+          {formatPercent(result.min, result.defenderHp)}% -{' '}
+          {formatPercent(result.max, result.defenderHp)}%).
+        </p>
       ) : result.displayed.length > 0 ? (
-        <ol>
-          {result.displayed.map((option, index) => (
-            <li key={`${result.mode}-${index}-${option.score}`}>
-              {formatOptimizerOption(option, moveCategory)}
-            </li>
-          ))}
-        </ol>
+        <div className="optimizer-table-wrap">
+          {result.mode === 'survival' ? (
+            <OptimizerSurvivalTable moveCategory={moveCategory} options={result.displayed} />
+          ) : (
+            <OptimizerKoTable moveCategory={moveCategory} options={result.displayed} />
+          )}
+        </div>
       ) : (
         <p>{emptyText}</p>
       )}
@@ -991,6 +1183,103 @@ function OptimizerResults({ isOptimizing, moveCategory, result }) {
   )
 }
 
+function OptimizerSurvivalTable({ moveCategory, options }) {
+  const defenseLabel = moveCategory === 'physical' ? 'Def' : 'SpD'
+
+  return (
+    <table className="optimizer-table">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Nature</th>
+          <th>Ability</th>
+          <th>Item</th>
+          <th>HP SP</th>
+          <th>{defenseLabel} SP</th>
+          <th>{defenseLabel} Boost</th>
+          <th>Screen</th>
+          <th>Weather</th>
+          <th>Condition</th>
+          <th>Damage</th>
+          <th>% HP</th>
+        </tr>
+      </thead>
+      <tbody>
+        {options.map((option, index) => (
+          <tr key={`survival-${index}-${option.score}`}>
+            <td>{index + 1}</td>
+            <td>{formatNatureOption(option.defender.nature)}</td>
+            <td>{formatTableValue(formatSelectedEffect(option.defender.ability))}</td>
+            <td>{formatTableValue(formatSelectedEffect(option.defender.item))}</td>
+            <td>{option.defender.hpSp}</td>
+            <td>{option.defender.defenseSp}</td>
+            <td>{formatBoost(option.defender.boost)}</td>
+            <td>{formatTableValue(option.field.screen)}</td>
+            <td>{formatTableValue(option.field.weather)}</td>
+            <td>{option.attacker.burned ? 'Burn attacker' : '-'}</td>
+            <td>{formatDamageRange(option.damage)}</td>
+            <td>{formatDamagePercent(option.damage, option.defender.hp)}</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  )
+}
+
+function OptimizerKoTable({ moveCategory, options }) {
+  const offenseLabel = moveCategory === 'physical' ? 'Atk' : 'SpA'
+
+  return (
+    <table className="optimizer-table">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Nature</th>
+          <th>Ability</th>
+          <th>Item</th>
+          <th>{offenseLabel} SP</th>
+          <th>{offenseLabel} Boost</th>
+          <th>Weather</th>
+          <th>Damage</th>
+          <th>% HP</th>
+        </tr>
+      </thead>
+      <tbody>
+        {options.map((option, index) => (
+          <tr key={`ko-${index}-${option.score}`}>
+            <td>{index + 1}</td>
+            <td>{formatNatureOption(option.attacker.nature)}</td>
+            <td>{formatTableValue(formatSelectedEffect(option.attacker.ability))}</td>
+            <td>{formatTableValue(formatSelectedEffect(option.attacker.item))}</td>
+            <td>{option.attacker.offenseSp}</td>
+            <td>{formatBoost(option.attacker.boost)}</td>
+            <td>{formatTableValue(option.field.weather)}</td>
+            <td>{formatDamageRange(option.damage)}</td>
+            <td>{formatDamagePercent(option.damage, option.defender.hp)}</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  )
+}
+
+function formatBoost(boost) {
+  return boost ? `+${boost}` : '-'
+}
+
+function formatDamageRange(damage) {
+  return `${damage.min}-${damage.max} HP`
+}
+
+function formatDamagePercent(damage, hp) {
+  return `${formatPercent(damage.min, hp)}% - ${formatPercent(damage.max, hp)}%`
+}
+
+function formatTableValue(value) {
+  return value || '-'
+}
+
+// oxlint-disable-next-line no-unused-vars
 function formatOptimizerOption(option, moveCategory) {
   const percentMin = formatPercent(option.damage.min, option.defender.hp)
   const percentMax = formatPercent(option.damage.max, option.defender.hp)
@@ -1178,17 +1467,83 @@ function Metric({ label, value, tone }) {
   )
 }
 
+function ComparePanel({
+  isOpen,
+  leftName,
+  onLeftChange,
+  onOpenChange,
+  onRightChange,
+  pokemon,
+  rightName,
+}) {
+  const left = pokemon.find((entry) => entry.displayName === leftName) ?? null
+  const right = pokemon.find((entry) => entry.displayName === rightName) ?? null
+
+  return (
+    <details
+      className="compare-panel"
+      onToggle={(event) => onOpenChange(event.currentTarget.open)}
+      open={isOpen}
+    >
+      <summary>Confronta</summary>
+      <div className="compare-controls">
+        <label className="select-field">
+          <span>Pokemon sinistra</span>
+          <select value={leftName} onChange={(event) => onLeftChange(event.target.value)}>
+            <option value="">Seleziona</option>
+            {pokemon.map((entry) => (
+              <option key={entry.displayName} value={entry.displayName}>
+                {entry.displayName}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="select-field">
+          <span>Pokemon destra</span>
+          <select value={rightName} onChange={(event) => onRightChange(event.target.value)}>
+            <option value="">Seleziona</option>
+            {pokemon.map((entry) => (
+              <option key={entry.displayName} value={entry.displayName}>
+                {entry.displayName}
+              </option>
+            ))}
+          </select>
+        </label>
+      </div>
+
+      <div className="compare-grid">
+        <CompareCard pokemon={left} slotLabel="Sinistra" />
+        <CompareCard pokemon={right} slotLabel="Destra" />
+      </div>
+    </details>
+  )
+}
+
+function CompareCard({ pokemon, slotLabel }) {
+  if (!pokemon) {
+    return <article className="compare-card empty">Slot {slotLabel}</article>
+  }
+
+  return <PokemonCard pokemon={pokemon} showTeamToggle={false} />
+}
+
 function TeamBuilder({
   analysis,
   highlightedTeamMember,
+  isOpen,
   onClear,
   onClearHighlight,
   onHighlight,
+  onOpenChange,
   onRemove,
   team,
 }) {
   return (
-    <details className="team-builder">
+    <details
+      className="team-builder"
+      onToggle={(event) => onOpenChange(event.currentTarget.open)}
+      open={isOpen}
+    >
       <summary>Il mio team ({team.length}/{TEAM_SIZE})</summary>
       <div className="team-header">
         <div>
@@ -1310,7 +1665,13 @@ function getTeamRowTone(score) {
   return 'balanced'
 }
 
-function PokemonCard({ isSelected, onToggleTeam, pokemon, teamIsFull }) {
+function PokemonCard({
+  isSelected = false,
+  onToggleTeam,
+  pokemon,
+  showTeamToggle = true,
+  teamIsFull = false,
+}) {
   const total = pokemon.stats.reduce((sum, stat) => sum + stat.value, 0)
   const disabled = teamIsFull && !isSelected
 
@@ -1330,6 +1691,7 @@ function PokemonCard({ isSelected, onToggleTeam, pokemon, teamIsFull }) {
         {pokemon.image && <img src={pokemon.image} alt={pokemon.displayName} loading="lazy" />}
       </div>
 
+      {showTeamToggle && (
       <button
         className={`team-toggle ${isSelected ? 'selected' : ''}`}
         disabled={disabled}
@@ -1339,6 +1701,7 @@ function PokemonCard({ isSelected, onToggleTeam, pokemon, teamIsFull }) {
       >
         {isSelected ? '−' : '+'}
       </button>
+      )}
 
       <div className="stats-block">
         <div className="section-title">

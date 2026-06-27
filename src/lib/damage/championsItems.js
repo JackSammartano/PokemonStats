@@ -25,6 +25,14 @@ export const CHAMPIONS_ITEMS = {
   'choice-specs': {
     name: 'Choice Specs',
   },
+  'chople-berry': {
+    name: 'Chople Berry',
+    resistType: 'fighting',
+  },
+  'colbur-berry': {
+    name: 'Colbur Berry',
+    resistType: 'dark',
+  },
   'dragon-fang': {
     boostType: 'dragon',
     name: 'Dragon Fang',
@@ -63,9 +71,17 @@ export const CHAMPIONS_ITEMS = {
     boostType: 'ice',
     name: 'Never-Melt Ice',
   },
+  'occa-berry': {
+    name: 'Occa Berry',
+    resistType: 'fire',
+  },
   'poison-barb': {
     boostType: 'poison',
     name: 'Poison Barb',
+  },
+  'shuca-berry': {
+    name: 'Shuca Berry',
+    resistType: 'ground',
   },
   'sharp-beak': {
     boostType: 'flying',
@@ -90,6 +106,10 @@ export const CHAMPIONS_ITEMS = {
   'twisted-spoon': {
     boostType: 'psychic',
     name: 'Twisted Spoon',
+  },
+  'yache-berry': {
+    name: 'Yache Berry',
+    resistType: 'ice',
   },
 }
 
@@ -145,20 +165,40 @@ export const CHAMPIONS_SET_ITEM_IDS = new Set([
   'yache-berry',
 ])
 
+function toItemOption([value, item]) {
+  return {
+    label: item.name,
+    value,
+  }
+}
+
+function groupDamageItemOptions(entries) {
+  const options = entries.map(toItemOption)
+  const mainOptions = options.filter(({ value }) => !CHAMPIONS_ITEMS[value]?.resistType)
+  const berryOptions = options.filter(({ value }) => CHAMPIONS_ITEMS[value]?.resistType)
+
+  if (berryOptions.length === 0) {
+    return mainOptions
+  }
+
+  return [
+    ...mainOptions,
+    {
+      label: 'Berry',
+      options: berryOptions,
+    },
+  ]
+}
+
 export function getChampionsDamageItemOptions() {
-  return Object.entries(CHAMPIONS_ITEMS)
-    .filter(([value]) => value === '' || CHAMPIONS_SET_ITEM_IDS.has(value))
-    .map(([value, item]) => ({
-      label: item.name,
-      value,
-    }))
+  return groupDamageItemOptions(
+    Object.entries(CHAMPIONS_ITEMS)
+      .filter(([value]) => value === '' || CHAMPIONS_SET_ITEM_IDS.has(value)),
+  )
 }
 
 export function getAllDamageItemOptions() {
-  return Object.entries(CHAMPIONS_ITEMS).map(([value, item]) => ({
-    label: item.name,
-    value,
-  }))
+  return groupDamageItemOptions(Object.entries(CHAMPIONS_ITEMS))
 }
 
 export function getItem(item) {
@@ -197,16 +237,25 @@ export function getItemDefenseMods({ defender, move }) {
   return []
 }
 
-export function getItemFinalMods({ attacker, effectiveness }) {
+export function getItemFinalMods({ attacker, defender, effectiveness, move }) {
+  const mods = []
   const itemId = toId(attacker.item)
 
   if (itemId === 'expert-belt' && effectiveness > 1) {
-    return [4915]
+    mods.push(4915)
+  } else if (itemId === 'life-orb') {
+    mods.push(5324)
   }
 
-  if (itemId === 'life-orb') {
-    return [5324]
+  const defenderItem = getItem(defender.item)
+
+  if (
+    defenderItem.resistType === toId(move.type) &&
+    effectiveness > 1 &&
+    toId(attacker.ability) !== 'unnerve'
+  ) {
+    mods.push(toId(defender.ability) === 'ripen' ? 1024 : 2048)
   }
 
-  return []
+  return mods
 }

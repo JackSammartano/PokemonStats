@@ -298,6 +298,95 @@ describe('Champions damage math', () => {
     assert.equal(filter.max, 73)
   })
 
+  it('applies matching resist berries to super effective damage', () => {
+    const normal = calculateChampionsDamage({
+      attacker: neutralAttacker,
+      defender: {
+        ...neutralDefender,
+        types: ['steel'],
+      },
+      move: 'Flamethrower',
+    })
+    const occaBerry = calculateChampionsDamage({
+      attacker: neutralAttacker,
+      defender: {
+        ...neutralDefender,
+        item: 'Occa Berry',
+        types: ['steel'],
+      },
+      move: 'Flamethrower',
+    })
+
+    assert.equal(normal.effectiveness, 2)
+    assert.equal(occaBerry.min, 41)
+    assert.equal(occaBerry.max, 49)
+  })
+
+  it('does not apply resist berries to neutral damage', () => {
+    const normal = calculateChampionsDamage({
+      attacker: neutralAttacker,
+      defender: neutralDefender,
+      move: 'Flamethrower',
+    })
+    const occaBerry = calculateChampionsDamage({
+      attacker: neutralAttacker,
+      defender: {
+        ...neutralDefender,
+        item: 'Occa Berry',
+      },
+      move: 'Flamethrower',
+    })
+
+    assert.equal(normal.effectiveness, 1)
+    assert.deepEqual(occaBerry.damage, normal.damage)
+  })
+
+  it('does not apply resist berries to the wrong move type', () => {
+    const wrongBerry = calculateChampionsDamage({
+      attacker: neutralAttacker,
+      defender: {
+        ...neutralDefender,
+        item: 'Yache Berry',
+        types: ['steel'],
+      },
+      move: 'Flamethrower',
+    })
+
+    assert.equal(wrongBerry.effectiveness, 2)
+    assert.equal(wrongBerry.min, 82)
+    assert.equal(wrongBerry.max, 98)
+  })
+
+  it('applies Unnerve and Ripen to resist berries', () => {
+    const unnerve = calculateChampionsDamage({
+      attacker: {
+        ...neutralAttacker,
+        ability: 'Unnerve',
+      },
+      defender: {
+        ...neutralDefender,
+        item: 'Occa Berry',
+        types: ['steel'],
+      },
+      move: 'Flamethrower',
+    })
+    const ripen = calculateChampionsDamage({
+      attacker: neutralAttacker,
+      defender: {
+        ...neutralDefender,
+        ability: 'Ripen',
+        item: 'Occa Berry',
+        types: ['steel'],
+      },
+      move: 'Flamethrower',
+    })
+
+    assert.equal(unnerve.min, 82)
+    assert.equal(unnerve.max, 98)
+    assert.equal(ripen.min, 20)
+    assert.equal(ripen.max, 24)
+  })
+
   it('applies type boosting items as base power modifiers', () => {
     const result = calculateChampionsDamage({
       attacker: {

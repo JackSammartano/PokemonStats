@@ -4,6 +4,10 @@ import { calculateChampionsStats } from './championsMath.js'
 
 export const OPTIMIZER_DISPLAY_LIMIT = 50
 export const OPTIMIZER_INTERNAL_LIMIT = 200
+export const OPTIMIZER_RANKING_MODES = {
+  minimum: 'minimum',
+  practical: 'practical',
+}
 
 const ALL_NATURES = Object.keys(CHAMPIONS_NATURES)
 const ALL_SP = Array.from({ length: 33 }, (_, index) => index)
@@ -135,13 +139,20 @@ function isNeutralNature(nature) {
   return !plus || plus === minus
 }
 
+function getNaturePreference(nature, stat) {
+  const [plus, minus] = CHAMPIONS_NATURES[nature] ?? []
+
+  if (plus === stat && minus !== stat) return 2
+  if (isNeutralNature(nature)) return 1
+  return 0
+}
+
 export function scoreOption(option) {
   const attackerNatureCost = isNeutralNature(option.attacker.nature) ? 0 : 8
   const defenderNatureCost = isNeutralNature(option.defender.nature) ? 0 : 8
   const fieldCost =
     (option.field.weather ? 12 : 0) +
-    (option.field.screen ? 18 : 0) +
-    (option.field.critical ? 30 : 0)
+    (option.field.screen ? 18 : 0)
   const conditionCost = option.attacker.burned ? 16 : 0
 
   return (
@@ -150,8 +161,8 @@ export function scoreOption(option) {
     option.attacker.offenseSp +
     option.defender.hpSp +
     option.defender.defenseSp +
-    option.attacker.boost * 20 +
-    option.defender.boost * 20 +
+    option.attacker.boost * 80 +
+    option.defender.boost * 80 +
     fieldCost +
     conditionCost
   )
@@ -166,6 +177,46 @@ function sortOptions(first, second) {
     first.defender.hpSp - second.defender.hpSp ||
     first.defender.defenseSp - second.defender.defenseSp
   )
+}
+
+function sortPracticalKoOptions(first, second) {
+  return (
+    first.attacker.boost - second.attacker.boost ||
+    second.attacker.offenseSp - first.attacker.offenseSp ||
+    getNaturePreference(second.attacker.nature, second.sort.offenseStat) -
+      getNaturePreference(first.attacker.nature, first.sort.offenseStat) ||
+    Number(Boolean(first.field.weather)) - Number(Boolean(second.field.weather)) ||
+    second.damage.min - first.damage.min ||
+    second.damage.max - first.damage.max ||
+    sortOptions(first, second)
+  )
+}
+
+function sortPracticalSurvivalOptions(first, second) {
+  return (
+    first.defender.boost - second.defender.boost ||
+    second.defender.hpSp - first.defender.hpSp ||
+    second.defender.defenseSp - first.defender.defenseSp ||
+    getNaturePreference(second.defender.nature, second.sort.defenseStat) -
+      getNaturePreference(first.defender.nature, first.sort.defenseStat) ||
+    Number(Boolean(first.field.screen)) - Number(Boolean(second.field.screen)) ||
+    Number(Boolean(first.field.weather)) - Number(Boolean(second.field.weather)) ||
+    Number(first.attacker.burned) - Number(second.attacker.burned) ||
+    first.damage.max - second.damage.max ||
+    first.damage.min - second.damage.min ||
+    sortOptions(first, second)
+  )
+}
+
+function getOptionSorter(rankingMode) {
+  if (rankingMode !== OPTIMIZER_RANKING_MODES.practical) {
+    return sortOptions
+  }
+
+  return (first, second) => {
+    if (first.kind === 'ko') return sortPracticalKoOptions(first, second)
+    return sortPracticalSurvivalOptions(first, second)
+  }
 }
 
 function hasSameSurvivalContext(first, second) {
@@ -202,16 +253,33 @@ function hasSameKoContext(first, second) {
   )
 }
 
-function isDominated(candidate, accepted) {
+function isDominated(candidate, accepted, rankingMode) {
   return accepted.some((option) => {
     if (candidate.kind !== option.kind) return false
 
     if (candidate.kind === 'survival') {
+      if (rankingMode === OPTIMIZER_RANKING_MODES.practical) {
+        return (
+          hasSameSurvivalContext(candidate, option) &&
+          option.defender.hpSp >= candidate.defender.hpSp &&
+          option.defender.defenseSp >= candidate.defender.defenseSp &&
+          option.damage.max <= candidate.damage.max
+        )
+      }
+
       return (
         hasSameSurvivalContext(candidate, option) &&
         option.defender.hpSp <= candidate.defender.hpSp &&
         option.defender.defenseSp <= candidate.defender.defenseSp &&
         option.score <= candidate.score
+      )
+    }
+
+    if (rankingMode === OPTIMIZER_RANKING_MODES.practical) {
+      return (
+        hasSameKoContext(candidate, option) &&
+        option.attacker.offenseSp >= candidate.attacker.offenseSp &&
+        option.damage.min >= candidate.damage.min
       )
     }
 
@@ -223,17 +291,17 @@ function isDominated(candidate, accepted) {
   })
 }
 
-function addIfUseful(options, candidate, internalLimit) {
-  if (isDominated(candidate, options)) return false
+function addIfUseful(options, candidate, internalLimit, rankingMode) {
+  if (isDominated(candidate, options, rankingMode)) return false
 
   for (let index = options.length - 1; index >= 0; index -= 1) {
-    if (isDominated(options[index], [candidate])) {
+    if (isDominated(options[index], [candidate], rankingMode)) {
       options.splice(index, 1)
     }
   }
 
   options.push(candidate)
-  options.sort(sortOptions)
+  options.sort(getOptionSorter(rankingMode))
 
   if (options.length > internalLimit) {
     options.length = internalLimit
@@ -242,8 +310,8 @@ function addIfUseful(options, candidate, internalLimit) {
   return true
 }
 
-function limitOptions(options, limit) {
-  const sorted = options.sort(sortOptions)
+function limitOptions(options, limit, rankingMode) {
+  const sorted = options.sort(getOptionSorter(rankingMode))
 
   return {
     displayed: sorted.slice(0, limit),
@@ -254,6 +322,7 @@ function limitOptions(options, limit) {
 export function findSurvivalOptions(context, config = {}) {
   const limit = config.limit ?? OPTIMIZER_DISPLAY_LIMIT
   const internalLimit = config.internalLimit ?? OPTIMIZER_INTERNAL_LIMIT
+  const rankingMode = config.rankingMode ?? OPTIMIZER_RANKING_MODES.minimum
   const defenseStat = getDefenseStat(context.move.category)
   const options = []
   const burnOptions = context.move.category === 'physical' ? [false, true] : [false]
@@ -299,9 +368,12 @@ export function findSurvivalOptions(context, config = {}) {
                   },
                 }
                 const enriched = withDamage(context, 'survival', option)
+                enriched.sort = {
+                  defenseStat,
+                }
 
                 if (enriched.damage.max < enriched.defender.hp) {
-                  addIfUseful(options, enriched, internalLimit)
+                  addIfUseful(options, enriched, internalLimit, rankingMode)
                 }
               }
             }
@@ -311,12 +383,13 @@ export function findSurvivalOptions(context, config = {}) {
     }
   }
 
-  return limitOptions(options, limit)
+  return limitOptions(options, limit, rankingMode)
 }
 
 export function findKoOptions(context, config = {}) {
   const limit = config.limit ?? OPTIMIZER_DISPLAY_LIMIT
   const internalLimit = config.internalLimit ?? OPTIMIZER_INTERNAL_LIMIT
+  const rankingMode = config.rankingMode ?? OPTIMIZER_RANKING_MODES.minimum
   const offenseStat = getOffenseStat(context.move.category)
   const options = []
 
@@ -324,7 +397,7 @@ export function findKoOptions(context, config = {}) {
     for (const offenseSp of config.attackerSp ?? ALL_SP) {
       for (const boost of config.attackerBoosts ?? OFFENSIVE_BOOSTS) {
         for (const weather of config.weather ?? WEATHER_OPTIONS) {
-          for (const critical of config.critical ?? [false, true]) {
+          for (const critical of config.critical ?? [false]) {
             const attackerStats = buildStats({
               baseStats: context.attacker.baseStats,
               nature,
@@ -360,9 +433,12 @@ export function findKoOptions(context, config = {}) {
               },
             }
             const enriched = withDamage(context, 'ko', option)
+            enriched.sort = {
+              offenseStat,
+            }
 
             if (enriched.damage.min >= enriched.defender.hp) {
-              addIfUseful(options, enriched, internalLimit)
+              addIfUseful(options, enriched, internalLimit, rankingMode)
             }
           }
         }
@@ -370,5 +446,5 @@ export function findKoOptions(context, config = {}) {
     }
   }
 
-  return limitOptions(options, limit)
+  return limitOptions(options, limit, rankingMode)
 }

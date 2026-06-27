@@ -4,6 +4,7 @@ import { CHAMPIONS_MOVES } from './championsData.js'
 import {
   findKoOptions,
   findSurvivalOptions,
+  OPTIMIZER_RANKING_MODES,
   scoreOption,
 } from './championsOptimizer.js'
 
@@ -116,6 +117,67 @@ describe('Champions optimizer', () => {
     )
   })
 
+  it('does not include critical hits in default KO options', () => {
+    const result = findKoOptions(specialContext, {
+      attackerBoosts: [0, 1],
+      attackerNatures: ['serious', 'modest'],
+      attackerSp: [0, 32],
+      weather: [''],
+    })
+
+    assert.ok(result.total > 0)
+    assert.equal(
+      result.displayed.some((option) => option.field.critical),
+      false,
+    )
+  })
+
+  it('can rank KO options by practical offensive investment', () => {
+    const minimum = findKoOptions(specialContext, {
+      attackerBoosts: [1],
+      attackerNatures: ['modest'],
+      attackerSp: [0, 12, 32],
+      weather: [''],
+    })
+    const practical = findKoOptions(specialContext, {
+      attackerBoosts: [1],
+      attackerNatures: ['modest'],
+      attackerSp: [0, 12, 32],
+      rankingMode: OPTIMIZER_RANKING_MODES.practical,
+      weather: [''],
+    })
+
+    assert.equal(minimum.displayed[0].attacker.offenseSp, 0)
+    assert.equal(practical.displayed[0].attacker.offenseSp, 32)
+  })
+
+  it('can rank survival options by practical defensive investment', () => {
+    const minimum = findSurvivalOptions(physicalContext, {
+      attackerBurned: [false],
+      defenderBoosts: [0],
+      defenderDefenseSp: [0, 32],
+      defenderHpSp: [0, 32],
+      defenderNatures: ['serious'],
+      screens: ['Reflect'],
+      weather: [''],
+    })
+    const practical = findSurvivalOptions(physicalContext, {
+      attackerBurned: [false],
+      defenderBoosts: [0],
+      defenderDefenseSp: [0, 32],
+      defenderHpSp: [0, 32],
+      defenderNatures: ['serious'],
+      rankingMode: OPTIMIZER_RANKING_MODES.practical,
+      screens: ['Reflect'],
+      weather: [''],
+    })
+
+    assert.equal(minimum.displayed[0].defender.hpSp, 0)
+    assert.equal(minimum.displayed[0].defender.defenseSp, 0)
+    assert.equal(practical.displayed[0].defender.hpSp, 32)
+    assert.equal(practical.displayed[0].defender.defenseSp, 32)
+  })
+
   it('removes dominated KO options', () => {
     const result = findKoOptions(specialContext, {
       attackerBoosts: [1],
@@ -180,5 +242,38 @@ describe('Champions optimizer', () => {
     }
 
     assert.ok(scoreOption(baseline) < scoreOption(boosted))
+  })
+
+  it('scores stat investment lower than battle boosts', () => {
+    const withStatInvestment = {
+      attacker: {
+        boost: 0,
+        burned: false,
+        nature: 'modest',
+        offenseSp: 32,
+      },
+      defender: {
+        boost: 0,
+        defenseSp: 0,
+        hpSp: 0,
+        nature: 'serious',
+      },
+      field: {
+        critical: false,
+        screen: '',
+        weather: '',
+      },
+    }
+    const withBoost = {
+      ...withStatInvestment,
+      attacker: {
+        ...withStatInvestment.attacker,
+        boost: 1,
+        nature: 'serious',
+        offenseSp: 0,
+      },
+    }
+
+    assert.ok(scoreOption(withStatInvestment) < scoreOption(withBoost))
   })
 })
