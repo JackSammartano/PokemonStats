@@ -1922,12 +1922,14 @@ function SearchableSelect({ label, onChange, options, value }) {
 }
 
 function ComparePanel({
-  compareLeft,
-  compareRight,
-  onChangeLeft,
-  onChangeRight,
+  isOpen,
+  onOpenChange,
+  leftName: compareLeft,
+  rightName: compareRight,
+  onLeftChange: onChangeLeft,
+  onRightChange: onChangeRight,
   onToggleTeam,
-  supported,
+  pokemon: supported,
   teamIsFull,
   teamNames,
 }) {
