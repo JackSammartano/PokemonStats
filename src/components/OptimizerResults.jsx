@@ -169,4 +169,3 @@ function formatSelectedEffect(value) {
 
   return ability?.name ?? item?.name ?? ''
 }
-
