@@ -153,6 +153,11 @@
   .squad-member-moves { grid-row: span 4; grid-template-rows: subgrid; row-gap: 4px; margin-top: 0; }
 }
 @media (min-width: 1380px) { .squad-roster { grid-template-columns: repeat(6, minmax(0, 1fr)); } .squad-member { padding: 9px; } }
+@media (min-width: 901px) {
+  .team-workspace-main { display: contents; }
+  .team-workspace-main > .squad-section, .team-workspace-main > .team-open-calculator { grid-column: 1; }
+  .team-type-summary { grid-column: 2; grid-row: 1 / span 2; align-self: stretch; contain: size; min-height: 0; max-height: none; }
+}
 @media (min-width: 901px) and (max-width: 1150px) { .team-workspace-layout { grid-template-columns: minmax(0, 1fr) 300px; gap: 16px; } .team-type-summary { padding: 16px; } .type-defense-head, .type-defense-row > summary { grid-template-columns: 66px 1fr 1fr; } }
 @media (max-width: 900px) { .team-workspace-layout { grid-template-columns: 1fr; } }
 @media (max-width: 560px) { .squad-roster { grid-template-columns: repeat(2, minmax(0, 1fr)); } .squad-section { padding: 16px; } .squad-add-controls { align-items: stretch; flex-direction: column; } .squad-header h2 { font-size: 22px; } .showdown-import-dialog { padding: 18px; } .build-identity-fields { gap: 6px; } }
