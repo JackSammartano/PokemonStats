@@ -32,3 +32,4 @@ export function createPokemonDataset() {
 }
 
 export const POKEMON_DATASET = createPokemonDataset()
+export const POKEMON_BY_NAME = new Map(POKEMON_DATASET.map((pokemon) => [pokemon.displayName, pokemon]))

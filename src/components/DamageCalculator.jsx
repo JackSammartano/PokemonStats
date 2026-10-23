@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { memo, useState } from 'react'
 import FourMoveSelector from './FourMoveSelector'
 import OptimizerResults from './OptimizerResults'
 import SpeedComparison from './SpeedComparison'
@@ -19,7 +19,7 @@ const SP_OPTIONS = Array.from({ length: 33 }, (_, index) => index)
 const BOOST_OPTIONS = Array.from({ length: 13 }, (_, index) => index - 6)
 const ITEM_OPTIONS = [{ value: '', label: 'Nessuno' }, ...CHAMPIONS_TEAM_ITEMS.map((item) => ({ value: item.id, label: item.name }))]
 
-export default function DamageCalculator({ pokemon, attackerName, defenderName, onAttackerChange, onDefenderChange, moveSets, onMoveChange, selectedMove, onSelectMove, builds, onBuildChange }) {
+export default memo(function DamageCalculator({ pokemon, attackerName, defenderName, onAttackerChange, onDefenderChange, moveSets, onMoveChange, selectedMove, onSelectMove, builds, onBuildChange }) {
   const [field, setField] = useState({ weather: '', gameType: 'Doubles', critical: false })
   const [rankingMode, setRankingMode] = useState('minimum')
   const [optimization, setOptimization] = useState(null)
@@ -125,7 +125,7 @@ export default function DamageCalculator({ pokemon, attackerName, defenderName, 
       {activeOptimization && <OptimizerResults result={activeOptimization.result} isOptimizing={activeOptimization.isOptimizing} moveCategory={selectedRow?.move?.category} />}
     </section>
   )
-}
+})
 
 function PokemonBuildControls({ side, label, pokemon, roster, build, itemOptions, onPokemonChange, onChange }) {
   const stats = getBuildStats(pokemon, build)

@@ -1,24 +1,20 @@
-import { analyzeOffensiveCoverage } from './teamTypeAnalysis.js'
+import { analyzeOffensiveCoverage, groupCoverageByAttacker } from './teamTypeAnalysis.js'
 
 function compareExposure(a, b) {
   return a.threats - b.threats || a.quadruple - b.quadruple || a.worst - b.worst || b.resisted - a.resisted
 }
 
-export function deriveTeamInsights(team, opponents, side, moveSets) {
-  const otherSide = side === 'attacker' ? 'defender' : 'attacker'
-  const incoming = analyzeOffensiveCoverage(opponents, team, otherSide, moveSets)
+function summarizeTeamInsights(team, opponents, incoming, outgoing) {
   const exposure = incoming.map((row) => {
-    const sourceMax = opponents.map((opponent) => {
-      const options = row.options.filter((option) => option.attacker === opponent.displayName)
-      return options.length ? Math.max(...options.map((option) => option.multiplier)) : null
-    }).filter((value) => value !== null)
+    const sourceMax = groupCoverageByAttacker(row.options, opponents)
+      .filter((source) => source.options.length)
+      .map((source) => Math.max(...source.options.map((option) => option.multiplier)))
     return { name: row.name, threats: sourceMax.filter((value) => value > 1).length,
       quadruple: sourceMax.filter((value) => value >= 4).length,
       worst: sourceMax.length ? Math.max(...sourceMax) : null,
       resisted: sourceMax.filter((value) => value < 1).length, evaluated: sourceMax.length }
   })
   const ranked = exposure.filter((row) => row.evaluated > 0).sort(compareExposure)
-  const outgoing = analyzeOffensiveCoverage(team, opponents, side, moveSets)
   const providers = team.map((pokemon) => ({ name: pokemon.displayName,
     covered: outgoing.filter((row) => row.options.some((option) => option.attacker === pokemon.displayName && option.multiplier > 1)).length }))
   const maxCovered = Math.max(0, ...providers.map((row) => row.covered))
@@ -32,5 +28,21 @@ export function deriveTeamInsights(team, opponents, side, moveSets) {
     hasAttacks: outgoing.some((row) => row.best !== null),
     versatile: maxCovered > 0 ? providers.filter((row) => row.covered === maxCovered) : [],
     evaluatedOpponents: most?.evaluated ?? 0,
+  }
+}
+
+export function deriveTeamInsights(team, opponents, side, moveSets) {
+  const otherSide = side === 'attacker' ? 'defender' : 'attacker'
+  return summarizeTeamInsights(team, opponents,
+    analyzeOffensiveCoverage(opponents, team, otherSide, moveSets),
+    analyzeOffensiveCoverage(team, opponents, side, moveSets))
+}
+
+export function deriveTeamMatchupInsights(team, opponents, moveSets) {
+  const outgoing = analyzeOffensiveCoverage(team, opponents, 'attacker', moveSets)
+  const incoming = analyzeOffensiveCoverage(opponents, team, 'defender', moveSets)
+  return {
+    attacker: summarizeTeamInsights(team, opponents, incoming, outgoing),
+    defender: summarizeTeamInsights(opponents, team, outgoing, incoming),
   }
 }

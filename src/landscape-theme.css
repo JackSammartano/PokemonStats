@@ -70,7 +70,6 @@ input[type="checkbox"], input[type="radio"] { accent-color: #24543d; }
 .pokemon-card,
 .compare-panel,
 .damage-calculator,
-.team-builder,
 .squad-section,
 .team-type-summary {
   background: rgba(253, 254, 248, 0.97);

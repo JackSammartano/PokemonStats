@@ -1,12 +1,13 @@
-import { deriveTeamInsights } from '../lib/teamInsights.js'
+import { deriveTeamMatchupInsights } from '../lib/teamInsights.js'
 
 export default function TeamInsights({ team, opponentTeam, moveSets }) {
+  const insights = deriveTeamMatchupInsights(team, opponentTeam, moveSets)
   return <section className="team-insights" aria-labelledby="team-insights-title">
     <h3 id="team-insights-title">Deduzioni sui dati</h3>
     <p>Esposizione ai tipi delle mosse selezionate, non previsione del danno. Abilità, oggetti, statistiche e velocità non sono considerati.</p>
     {team.length && opponentTeam.length ? <>
-      <SquadInsights label="La mia squadra" result={deriveTeamInsights(team, opponentTeam, 'attacker', moveSets)} opponents={opponentTeam.length} />
-      <SquadInsights label="Squadra avversaria" result={deriveTeamInsights(opponentTeam, team, 'defender', moveSets)} opponents={team.length} />
+      <SquadInsights label="La mia squadra" result={insights.attacker} opponents={opponentTeam.length} />
+      <SquadInsights label="Squadra avversaria" result={insights.defender} opponents={team.length} />
     </> : <p>Aggiungi Pokémon a entrambe le squadre per confrontarne i matchup.</p>}
   </section>
 }

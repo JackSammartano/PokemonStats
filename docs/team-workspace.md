@@ -15,9 +15,9 @@ del calcolatore restano nella sessione della pagina.
 
 ## Passaggio dal team
 
-Nel team si sceglie un attaccante tra i membri della propria squadra, un avversario dalla squadra avversaria e fino a quattro mosse
-per ciascuno, tra quelle gestite dal calcolatore. Il pulsante "Usa come attaccante" su un membro
-aggiorna anche questa selezione.
+Nel team si sceglie un membro per ciascuna squadra con "Confronta". "Configura"
+apre direttamente il calcolatore sul membro scelto. Le quattro mosse si modificano
+nel calcolatore oppure si importano da Showdown; non c'è un pannello duplicato di preparazione.
 
 "Apri nel damage calculator" trasferisce i due Pokémon e tutte le otto selezioni.
 Lo stesso trasferimento avviene usando la navigazione verso il calcolatore dalla vista team.
@@ -35,7 +35,7 @@ Anche avanti/indietro del browser conserva il contesto della voce di cronologia.
 
 ## Azioni sulle schede
 
-Il `+` nelle schede del catalogo e del confronto apre un menu specifico per quel Pokémon.
+Il pulsante `Aggiungi` nelle schede del catalogo e del confronto apre un menu specifico per quel Pokémon.
 Non esiste più un controllo globale di destinazione. Il menu contiene:
 
 - Mia squadra e Squadra avversaria: aggiunge alla squadra scelta o rimuove se già presente.
@@ -46,7 +46,7 @@ Non esiste più un controllo globale di destinazione. Il menu contiene:
 
 La scelta del confronto apre il pannello e lo porta in vista. È visibile anche una singola
 scheda con l'altro slot vuoto; i pulsanti Libera Confronta 1/2 permettono di riutilizzare gli slot.
-Il menu supporta frecce, Home/End, Escape e chiusura cliccando fuori. Il `+` non cambia
+Il menu supporta frecce, Home/End, Escape e chiusura cliccando fuori. `Aggiungi` non cambia
 mai attaccante o difensore del calcolatore.
 Nel calcolatore non viene mostrato il catalogo: i Pokémon si cambiano attraverso i selettori.
 

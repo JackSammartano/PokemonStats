@@ -1,8 +1,9 @@
+import { memo } from 'react'
 import { analyzeTeamTypes } from '../lib/teamTypeAnalysis.js'
 import { formatTypeMultiplier } from '../lib/typeLabels.js'
 import TeamInsights from './TeamInsights'
 
-export default function TeamTypeSummary({ team, opponentTeam, moveSets }) {
+export default memo(function TeamTypeSummary({ team, opponentTeam, moveSets }) {
   const own = analyzeTeamTypes(team)
   const enemy = analyzeTeamTypes(opponentTeam)
   const risks = own.filter((row) => row.weak.length >= 2).sort((a, b) => b.weak.length - a.weak.length)
@@ -17,7 +18,7 @@ export default function TeamTypeSummary({ team, opponentTeam, moveSets }) {
       </section>
     </aside>
   )
-}
+})
 
 function DefenseCount({ row }) {
   return <span className="type-defense-count"><b className={row.weak.length ? 'type-weak-count' : ''}>{row.weak.length} D</b><span>{row.resistant.length} R</span><span>{row.immune.length} I</span></span>

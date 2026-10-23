@@ -1,4 +1,4 @@
-import { lazy, Suspense, useDeferredValue, useEffect, useRef, useState } from 'react'
+import { lazy, memo, Suspense, useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from 'react'
 import './App.css'
 import './components/TeamWorkspace.css'
 import './landscape-theme.css'
@@ -13,7 +13,7 @@ import { resolveTeamMatchup } from './lib/teamDamageLink'
 import { useWorkspaceNavigation } from './lib/workspaceNavigation'
 import DamageCalculator from './components/DamageCalculator'
 import { updatePokemonMoveSlot } from './lib/damage/championsMoveSets'
-import { formatName, POKEMON_DATASET } from './lib/pokemonDataset'
+import { formatName, POKEMON_BY_NAME, POKEMON_DATASET } from './lib/pokemonDataset'
 import PokemonImage from './components/PokemonImage'
 import { getMegaAction, toggleMegaEvolution } from './lib/megaEvolution'
 const PokemonCoverageDialog = lazy(() => import('./components/PokemonCoverageDialog'))
@@ -99,16 +99,17 @@ function App() {
   }, [view])
 
   const supported = pokemon
-  const team = teamNames
-    .map((name) => pokemon.find((entry) => entry.displayName === name))
-    .filter(Boolean)
-  const opponentTeam = opponentNames.map((name) => pokemon.find((entry) => entry.displayName === name)).filter(Boolean)
+  const team = useMemo(() => teamNames.map((name) => POKEMON_BY_NAME.get(name)).filter(Boolean), [teamNames])
+  const opponentTeam = useMemo(() => opponentNames.map((name) => POKEMON_BY_NAME.get(name)).filter(Boolean), [opponentNames])
+  const matchup = useMemo(() => resolveTeamMatchup(team, opponentTeam, teamDamageDraft, moveSets), [team, opponentTeam, teamDamageDraft, moveSets])
   const coveragePokemon = (coverageTarget?.side === 'attacker' ? team : opponentTeam).find((entry) => entry.displayName === coverageTarget?.name)
-  const filtered = [
-    ...pokemon.filter((entry) => {
+  const filtered = useMemo(() => {
+    const search = deferredQuery.trim().toLowerCase()
+    const [stat, direction] = sortBy.split(':')
+    return pokemon.filter((entry) => {
       const matchesText = entry.displayName
         .toLowerCase()
-        .includes(deferredQuery.trim().toLowerCase())
+        .includes(search)
       const matchesType =
         selectedType === 'all' ||
         (entry.status === 'ready' && entry.types.includes(selectedType))
@@ -116,18 +117,18 @@ function App() {
         selectedCategory === 'all' || entry.category === selectedCategory
 
       return matchesText && matchesType && matchesCategory
-    }),
-  ].sort((first, second) => comparePokemon(first, second, ...sortBy.split(':')))
+    }).sort((first, second) => comparePokemon(first, second, stat, direction))
+  }, [pokemon, deferredQuery, selectedType, selectedCategory, sortBy])
 
-  function setSquadNames(side, update) {
+  const setSquadNames = useCallback((side, update) => {
     setWorkspace((current) => ({ ...current, teams: { ...current.teams, [side]: typeof update === 'function' ? update(current.teams[side]) : update } }))
-  }
+  }, [setWorkspace])
 
   function addMember(side, name) {
     setSquadNames(side, (names) => names.length < TEAM_SIZE && !names.includes(name) ? [...names, name] : names)
   }
 
-  function handleCardAction(entry, action) {
+  const handleCardAction = useCallback((entry, action) => {
     if (entry.status !== 'ready') return
     if (action === 'attacker' || action === 'defender') {
       setSquadNames(action, (names) => names.includes(entry.displayName)
@@ -140,20 +141,20 @@ function App() {
     else return
     setActivePanel('compare')
     setCompareRequest((value) => value + 1)
-  }
+  }, [setSquadNames])
 
   function handleTeamImport(side, imported) {
     setWorkspace((current) => applyImportedTeam(current, side, imported))
     setTeamDamageDraft((current) => ({ ...current, [side === 'attacker' ? 'attackerName' : 'defenderName']: imported.members[0].name }))
   }
 
-  function changeBuild(side, entry, changes) {
+  const changeBuild = useCallback((side, entry, changes) => {
     if (!entry) return
     setWorkspace((current) => ({ ...current, builds: updateWorkspaceBuild(current.builds, side, entry.displayName, changes) }))
-  }
+  }, [setWorkspace])
 
   function changeMegaForm(side, name) {
-    const entry = pokemon.find((candidate) => candidate.displayName === name)
+    const entry = POKEMON_BY_NAME.get(name)
     const action = getMegaAction(entry, getWorkspaceBuild(builds, side, name), workspace.teams[side])
     if (!action || action.disabled) return
     setWorkspace((current) => toggleMegaEvolution(current, side, name))
@@ -185,12 +186,11 @@ function App() {
     setActivePanel(isOpen ? panelName : null)
   }
 
-  function changeMoveSlot(side, entry, slot, moveId) {
+  const changeMoveSlot = useCallback((side, entry, slot, moveId) => {
     setWorkspace((current) => ({ ...current, moveSets: updatePokemonMoveSlot(current.moveSets, side, entry, slot, moveId) }))
-  }
+  }, [setWorkspace])
 
   function openDamageFromTeam() {
-    const matchup = resolveTeamMatchup(team, opponentTeam, teamDamageDraft, moveSets)
     if (matchup.attacker && matchup.defender) {
       setDamageAttackerName(matchup.attacker.displayName)
       setDamageDefenderName(matchup.defender.displayName)
@@ -308,8 +308,8 @@ function App() {
         <section className="pokemon-grid">
           {filtered.map((entry) => <PokemonCard
             key={entry.displayName}
-            actions={getPokemonCardActions(entry.displayName, workspace.teams, compareLeftName, compareRightName)}
-            onAction={(action) => handleCardAction(entry, action)}
+            teams={workspace.teams} compareLeftName={compareLeftName} compareRightName={compareRightName}
+            onAction={handleCardAction}
             pokemon={entry}
           />)}
         </section>
@@ -321,7 +321,7 @@ function App() {
             {['attacker', 'defender'].map((side) => <SquadSection
               key={side} side={side} title={side === 'attacker' ? 'La mia squadra' : 'La squadra avversaria'}
               team={side === 'attacker' ? team : opponentTeam} roster={supported} builds={builds} moveSets={moveSets}
-              selected={resolveTeamMatchup(team, opponentTeam, teamDamageDraft, moveSets)[side === 'attacker' ? 'attacker' : 'defender']?.displayName}
+              selected={matchup[side]?.displayName}
               onSelect={(name) => setTeamDamageDraft((draft) => ({ ...draft, [side === 'attacker' ? 'attackerName' : 'defenderName']: name }))}
               onConfigure={(name) => configureMember(side, name)}
               onInfo={(name) => setCoverageTarget({ side, name })}
@@ -389,12 +389,13 @@ function getStatValue(pokemon, statName) {
   return pokemon.stats.find((stat) => stat.name === statName)?.value ?? null
 }
 
-function PokemonCard({ pokemon, actions, onAction }) {
+const PokemonCard = memo(function PokemonCard({ pokemon, teams, compareLeftName, compareRightName, onAction }) {
+  const actions = getPokemonCardActions(pokemon.displayName, teams, compareLeftName, compareRightName)
   const total = pokemon.stats.reduce((sum, stat) => sum + stat.value, 0)
 
   return (
     <article className="pokemon-card">
-      <PokemonActionMenu name={pokemon.displayName} actions={actions} onAction={onAction} />
+      <PokemonActionMenu name={pokemon.displayName} actions={actions} onAction={(action) => onAction(pokemon, action)} />
       <div className="pokemon-heading">
         <div>
           <h2>{pokemon.displayName}</h2>
@@ -482,7 +483,7 @@ function PokemonCard({ pokemon, actions, onAction }) {
       </div>
     </article>
   )
-}
+})
 
 function SearchableSelect({ label, onChange, options, value }) {
   const [inputValue, setInputValue] = useState(value)
@@ -574,9 +575,9 @@ function ComparePanel({
   pokemon: supported,
   teams,
 }) {
-  const options = [...supported]
+  const options = useMemo(() => [...supported]
     .sort((a, b) => a.displayName.localeCompare(b.displayName))
-    .map((p) => p.displayName)
+    .map((p) => p.displayName), [supported])
 
   const leftPokemon = supported.find((p) => p.displayName === compareLeft)
   const rightPokemon = supported.find((p) => p.displayName === compareRight)
@@ -605,8 +606,8 @@ function ComparePanel({
       <div className="compare-grid">
         {[leftPokemon, rightPokemon].map((entry, index) => entry ? (
           <PokemonCard key={index} pokemon={entry}
-            actions={getPokemonCardActions(entry.displayName, teams, compareLeft, compareRight)}
-            onAction={(action) => onCardAction(entry, action)} />
+            teams={teams} compareLeftName={compareLeft} compareRightName={compareRight}
+            onAction={onCardAction} />
         ) : <article className="compare-card empty" key={index}>Confronta {index + 1}: scegli un Pokémon dal pulsante +</article>)}
       </div>
     </details>

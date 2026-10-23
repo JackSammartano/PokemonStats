@@ -1,12 +1,20 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { deriveTeamInsights } from './teamInsights.js'
+import { deriveTeamInsights, deriveTeamMatchupInsights } from './teamInsights.js'
 import { derivePokemonInsights, getPokemonCoverage } from './pokemonInsights.js'
 
 const charizard = { displayName: 'Charizard', showdownId: 'charizard', types: ['fire', 'flying'] }
 const venusaur = { displayName: 'Venusaur', showdownId: 'venusaur', types: ['grass', 'poison'] }
 const blastoise = { displayName: 'Blastoise', showdownId: 'blastoise', types: ['water'] }
 const moves = { 'attacker:Charizard': ['flamethrower', 'protect', '', ''], 'attacker:Blastoise': ['surf', '', '', ''], 'defender:Venusaur': ['giga-drain', 'protect', '', ''] }
+
+test('shared matchup analysis matches independent analyses for both sides including empty teams and mirror matches', () => {
+  for (const [team, opponents] of [[[charizard, blastoise], [venusaur]], [[charizard], [charizard]], [[], [venusaur]], [[charizard], []]]) {
+    const shared = deriveTeamMatchupInsights(team, opponents, moves)
+    assert.deepEqual(shared.attacker, deriveTeamInsights(team, opponents, 'attacker', moves))
+    assert.deepEqual(shared.defender, deriveTeamInsights(opponents, team, 'defender', moves))
+  }
+})
 
 test('individual deductions describe only the selected Pokemon and retain its perspective', () => {
   const own = derivePokemonInsights(getPokemonCoverage(charizard, 'attacker', [charizard, blastoise], [venusaur], moves))

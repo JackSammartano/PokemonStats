@@ -10,6 +10,7 @@ export default defineConfig({
       output: {
         codeSplitting: {
           groups: [
+            { name: 'react-vendor', test: /node_modules[\\/](react|react-dom|scheduler)[\\/]/ },
             { name: 'champions-learnsets', test: /champions(DamageLearnsets|TeamData)\.js$/ },
             { name: 'mega-evolutions', test: /megaEvolutions\.js$/ },
           ],

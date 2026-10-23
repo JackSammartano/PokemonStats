@@ -8,6 +8,24 @@ const right = makePokemon('Right', ['grass', 'poison'], [80, 82, 83, 100, 100, 8
 const field = { weather: '', gameType: 'Singles', critical: false }
 const ids = ['earthquake', 'flamethrower', 'air-slash', 'dragon-claw']
 
+test('empty and status-only sets do not need to calculate battle stats', () => {
+  const partial = { displayName: 'Ditto' }
+  const rows = calculateMoveRows(partial, partial, createDamageBuild(), createDamageBuild(), ['', 'protect', 'toxic', 'transform'], field)
+  assert.equal(rows.length, 4)
+  assert.ok(rows.every((row) => row.result === null))
+})
+
+test('shared battle stats produce the same rows as independent calculations without mutating builds', () => {
+  const a = createDamageBuild(), b = createDamageBuild()
+  a.sps.atk = 32
+  a.boosts.atk = 1
+  b.reflect = true
+  const original = structuredClone({ a, b })
+  const rows = calculateMoveRows(left, right, a, b, ids, field)
+  ids.forEach((id, index) => assert.deepEqual(rows[index].result, calculateMoveRows(left, right, a, b, [id], field)[0].result))
+  assert.deepEqual({ a, b }, original)
+})
+
 test('four independent results use the correct physical or special stats', () => {
   const a = createDamageBuild(), b = createDamageBuild()
   a.sps.atk = 32

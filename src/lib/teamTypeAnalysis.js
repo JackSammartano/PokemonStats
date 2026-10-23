@@ -27,3 +27,12 @@ export function analyzeOffensiveCoverage(team, opponents, side, moveSets) {
     return { name: pokemon.displayName, best: options[0]?.multiplier ?? null, options }
   })
 }
+
+export function groupCoverageByAttacker(options, attackers) {
+  const grouped = new Map()
+  for (const option of options) {
+    if (!grouped.has(option.attacker)) grouped.set(option.attacker, [])
+    grouped.get(option.attacker).push(option)
+  }
+  return attackers.map((pokemon) => ({ name: pokemon.displayName, options: grouped.get(pokemon.displayName) ?? [] }))
+}

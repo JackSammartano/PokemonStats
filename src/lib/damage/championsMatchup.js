@@ -32,6 +32,7 @@ function toDamagePokemon(pokemon, build) {
 }
 
 export function calculateMoveRows(attacker, defender, attackingBuild, defendingBuild, moveIds, field) {
+  let battlePokemon
   return moveIds.map((moveId, slot) => {
     const move = CHAMPIONS_MOVES[moveId]
     if (!move) {
@@ -40,16 +41,17 @@ export function calculateMoveRows(attacker, defender, attackingBuild, defendingB
     }
     if (!attacker || !defender) return { slot, moveId, move, result: null }
     if ((attackingBuild.level ?? 50) !== 50 || (defendingBuild.level ?? 50) !== 50) return { slot, moveId, move, result: null, reason: 'Il calcolo Champions supporta il livello 50; il livello importato è conservato.' }
+    battlePokemon ??= { attacker: toDamagePokemon(attacker, attackingBuild), defender: toDamagePokemon(defender, defendingBuild) }
     const result = calculateChampionsDamage({
-      attacker: toDamagePokemon(attacker, attackingBuild),
-      defender: toDamagePokemon(defender, defendingBuild),
+      attacker: battlePokemon.attacker,
+      defender: battlePokemon.defender,
       move,
       field: {
         gameType: field.gameType, weather: field.weather, isCritical: field.critical,
         defenderSide: { isReflect: defendingBuild.reflect, isLightScreen: defendingBuild.lightScreen },
       },
     })
-    const defenderHp = getBuildStats(defender, defendingBuild).hp
+    const defenderHp = battlePokemon.defender.stats.hp
     return { slot, moveId, move, result, defenderHp, minPercent: result.min / defenderHp * 100, maxPercent: result.max / defenderHp * 100 }
   })
 }

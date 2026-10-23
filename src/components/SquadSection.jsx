@@ -5,6 +5,7 @@ import { getPokemonMoveSlots } from '../lib/damage/championsMoveSets.js'
 import { getTeamMove } from '../lib/teamData.js'
 import PokemonImage from './PokemonImage'
 import { getMegaAction } from '../lib/megaEvolution.js'
+import MegaToggleButton from './MegaToggleButton'
 
 export default function SquadSection({ side, title, team, roster, builds, moveSets, selected, onSelect, onConfigure, onInfo, onMegaToggle, onAdd, onRemove, onClear, onImport, onCatalog }) {
   const [message, setMessage] = useState('')
@@ -69,7 +70,7 @@ export default function SquadSection({ side, title, team, roster, builds, moveSe
           return (
             <article className={`squad-member ${selected === pokemon.displayName ? 'selected' : ''}`} key={pokemon.displayName} data-pokemon-name={pokemon.displayName}>
               <button type="button" className="pokemon-info-button" aria-label={`Copertura e matchup di ${pokemon.displayName} · ${title}`} aria-haspopup="dialog" onClick={() => onInfo(pokemon.displayName)}>i</button>
-              {mega && <button type="button" className={`pokemon-mega-toggle${mega.evolving ? '' : ' is-mega'}`} title={mega.label} aria-label={`${mega.label} · ${title}`} disabled={mega.disabled} onClick={() => { megaFocusTarget.current = mega.targetName; onMegaToggle(pokemon.displayName) }}>{mega.evolving ? 'M' : 'm'}</button>}
+              <MegaToggleButton action={mega} context={title} onToggle={() => { megaFocusTarget.current = mega.targetName; onMegaToggle(pokemon.displayName) }} />
               <div className="squad-member-heading">
                 <PokemonImage pokemon={pokemon} size={52} />
                 <div><strong>{pokemon.displayName}</strong><div className="type-row mini">{pokemon.types.map((type) => <span className={`type-badge type-${type}`} key={type}>{type}</span>)}</div></div>

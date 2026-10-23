@@ -3,15 +3,17 @@ import { REGULATION_MC_ROSTER } from '../data/regulationMc.js'
 import { toId } from './damage/championsMath.js'
 import { getPokemonMoveSlots, moveSetKey } from './damage/championsMoveSets.js'
 import { getWorkspaceBuild } from './teamWorkspace.js'
+import { normalizeShowdownId } from './teamData.js'
 
 const byId = new Map(REGULATION_MC_ROSTER.map((entry) => [entry.showdownId, entry]))
 const byName = new Map(REGULATION_MC_ROSTER.map((entry) => [entry.displayName, entry]))
-const normalize = (value) => String(value ?? '').toLowerCase().replace(/[^a-z0-9]/g, '')
+const byMegaId = new Map(MEGA_EVOLUTIONS.map((link) => [link.megaId, link]))
+const byBaseAndStone = new Map(MEGA_EVOLUTIONS.map((link) => [`${link.baseId}:${normalizeShowdownId(link.itemId)}`, link]))
 
 export function getMegaAction(pokemon, build, memberNames = []) {
   if (!pokemon) return null
-  const reverse = MEGA_EVOLUTIONS.find((link) => link.megaId === pokemon.showdownId)
-  const forward = reverse ? null : MEGA_EVOLUTIONS.find((link) => link.baseId === pokemon.showdownId && normalize(link.itemId) === normalize(build.item))
+  const reverse = byMegaId.get(pokemon.showdownId)
+  const forward = reverse ? null : byBaseAndStone.get(`${pokemon.showdownId}:${normalizeShowdownId(build.item)}`)
   const link = reverse ?? forward
   if (!link) return null
   const target = byId.get(reverse ? link.baseId : link.megaId)
