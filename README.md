@@ -6,6 +6,7 @@ Frontend React + Vite per consultare Regulation Set M-C, con roster e dati essen
 
 - Roster Regulation Set M-C generato da Pokémon Showdown, con Pokémon base, forme funzionali e Mega Evolutions.
 - Ricerca testuale, filtro per tipo e filtro per categoria.
+- Menu sul `+` di ogni Pokémon per scegliere Mia squadra, Squadra avversaria o il primo slot libero di Confronta.
 - Stats base, tipi, debolezze difensive e abilita con descrizione.
 - Due squadre da sei Pokémon, import Showdown dagli appunti e confronto laterale dei tipi.
 - Configurazioni complete per Pokémon condivise con il calcolatore e salvate localmente nel browser.

@@ -2,6 +2,8 @@ import { useDeferredValue, useEffect, useRef, useState } from 'react'
 import './App.css'
 import './components/TeamWorkspace.css'
 import { formatTypeMultiplier } from './lib/typeLabels'
+import PokemonActionMenu from './components/PokemonActionMenu'
+import { getPokemonCardActions } from './lib/pokemonCardActions'
 import TeamDamageLink from './components/TeamDamageLink'
 import SquadSection from './components/SquadSection'
 import TeamTypeSummary from './components/TeamTypeSummary'
@@ -61,14 +63,13 @@ function App() {
   const { moveSets, builds } = workspace
   const teamNames = workspace.teams.attacker
   const opponentNames = workspace.teams.defender
-  const [catalogTeamSide, setCatalogTeamSide] = useState('attacker')
-  const catalogNames = workspace.teams[catalogTeamSide]
   const [activePanel, setActivePanel] = useState(null)
   const { view, fromTeam, navigate } = useWorkspaceNavigation()
   const [teamDamageDraft, setTeamDamageDraft] = useState({ attackerName: '', defenderName: '' })
   const [selectedDamageMove, setSelectedDamageMove] = useState({ side: 'attacker', slot: 0 })
   const [compareLeftName, setCompareLeftName] = useState('')
   const [compareRightName, setCompareRightName] = useState('')
+  const [compareRequest, setCompareRequest] = useState(0)
   const [loadedCount, setLoadedCount] = useState(0)
   const [status, setStatus] = useState('loading')
   const [error, setError] = useState(null)
@@ -80,6 +81,13 @@ function App() {
   const [damageAttackerName, setDamageAttackerName] = useState('')
   const [damageDefenderName, setDamageDefenderName] = useState('')
   const deferredQuery = useDeferredValue(query)
+
+  useEffect(() => {
+    if (!compareRequest) return
+    const panel = document.querySelector('.compare-panel')
+    panel?.scrollIntoView({ block: 'start', behavior: 'smooth' })
+    panel?.querySelector('summary')?.focus({ preventScroll: true })
+  }, [compareRequest])
 
   useEffect(() => {
     document.querySelector('.workspace-view:not([hidden]) h1')?.focus({ preventScroll: true })
@@ -146,11 +154,19 @@ function App() {
     setSquadNames(side, (names) => names.length < TEAM_SIZE && !names.includes(name) ? [...names, name] : names)
   }
 
-  function toggleTeamMember(entry) {
+  function handleCardAction(entry, action) {
     if (entry.status !== 'ready') return
-    setSquadNames(catalogTeamSide, (names) => names.includes(entry.displayName)
-      ? names.filter((name) => name !== entry.displayName)
-      : names.length < TEAM_SIZE ? [...names, entry.displayName] : names)
+    if (action === 'attacker' || action === 'defender') {
+      setSquadNames(action, (names) => names.includes(entry.displayName)
+        ? names.filter((name) => name !== entry.displayName)
+        : names.length < TEAM_SIZE ? [...names, entry.displayName] : names)
+      return
+    }
+    if (action === 'compare-1') setCompareLeftName(entry.displayName)
+    else if (action === 'compare-2') setCompareRightName(entry.displayName)
+    else return
+    setActivePanel('compare')
+    setCompareRequest((value) => value + 1)
   }
 
   function handleTeamImport(side, imported) {
@@ -261,11 +277,6 @@ function App() {
           </div>
         </section>
 
-        <label className="catalog-team-target select-field">
-          <span>Destinazione dei pulsanti +</span>
-          <select value={catalogTeamSide} onChange={(event) => setCatalogTeamSide(event.target.value)}><option value="attacker">La mia squadra</option><option value="defender">La squadra avversaria</option></select>
-        </label>
-
         <details className="toolbar" open aria-label="Filtri">
           <summary>Cerca e filtra</summary>
           <div className="toolbar-fields">
@@ -331,10 +342,8 @@ function App() {
         </details>
 
         <ComparePanel
-          onToggleTeam={toggleTeamMember}
-          teamIsFull={catalogNames.length >= TEAM_SIZE}
-          teamNames={catalogNames}
-          teamLabel={catalogTeamSide === 'attacker' ? 'al mio team' : 'alla squadra avversaria'}
+          teams={workspace.teams}
+          onCardAction={handleCardAction}
           isOpen={activePanel === 'compare'}
           leftName={compareLeftName}
           onLeftChange={setCompareLeftName}
@@ -348,12 +357,10 @@ function App() {
           {filtered.map((entry) =>
             entry.status === 'ready' ? (
               <PokemonCard
-                isSelected={catalogNames.includes(entry.displayName)}
                 key={entry.displayName}
-                onToggleTeam={() => toggleTeamMember(entry)}
-                teamLabel={catalogTeamSide === 'attacker' ? 'al mio team' : 'alla squadra avversaria'}
+                actions={getPokemonCardActions(entry.displayName, workspace.teams, compareLeftName, compareRightName)}
+                onAction={(action) => handleCardAction(entry, action)}
                 pokemon={entry}
-                teamIsFull={catalogNames.length >= TEAM_SIZE}
               />
             ) : (
               <UnsupportedCard key={entry.displayName} pokemon={entry} />
@@ -381,7 +388,7 @@ function App() {
               onAdd={(name) => addMember(side, name)}
               onRemove={(name) => setSquadNames(side, (names) => names.filter((entry) => entry !== name))}
               onClear={() => setSquadNames(side, [])} onImport={(imported) => handleTeamImport(side, imported)}
-              onCatalog={() => { setCatalogTeamSide(side); navigate('catalog') }}
+              onCatalog={() => navigate('catalog')}
             />)}
             <TeamDamageLink team={team} pokemon={opponentTeam} draft={teamDamageDraft} onChange={setTeamDamageDraft} onCalculate={openDamageFromTeam} moveSets={moveSets} onMoveChange={changeMoveSlot} />
           </div>
@@ -453,16 +460,8 @@ function Metric({ label, value, tone }) {
   )
 }
 
-function PokemonCard({
-  isSelected = false,
-  onToggleTeam,
-  pokemon,
-  showTeamToggle = true,
-  teamIsFull = false,
-  teamLabel = 'al mio team',
-}) {
+function PokemonCard({ pokemon, actions, onAction }) {
   const total = pokemon.stats.reduce((sum, stat) => sum + stat.value, 0)
-  const disabled = teamIsFull && !isSelected
 
   return (
     <article className="pokemon-card">
@@ -480,18 +479,7 @@ function PokemonCard({
         {pokemon.image && <img src={pokemon.image} alt={pokemon.displayName} loading="lazy" />}
       </div>
 
-      {showTeamToggle && (
-      <button
-        className={`team-toggle ${isSelected ? 'selected' : ''}`}
-        disabled={disabled}
-        aria-label={isSelected ? `Rimuovi ${pokemon.displayName} ${teamLabel.replace(/^al /, 'dal ').replace(/^alla /, 'dalla ')}` : `Aggiungi ${pokemon.displayName} ${teamLabel}`}
-        title={isSelected ? `Rimuovi ${teamLabel.replace(/^al /, 'dal ').replace(/^alla /, 'dalla ')}` : disabled ? 'Squadra completa (6/6)' : `Aggiungi ${teamLabel}`}
-        onClick={onToggleTeam}
-        type="button"
-      >
-        {isSelected ? '−' : '+'}
-      </button>
-      )}
+      <PokemonActionMenu name={pokemon.displayName} actions={actions} onAction={onAction} />
 
       <div className="stats-block">
         <div className="section-title">
@@ -654,11 +642,9 @@ function ComparePanel({
   rightName: compareRight,
   onLeftChange: onChangeLeft,
   onRightChange: onChangeRight,
-  onToggleTeam,
+  onCardAction,
   pokemon: supported,
-  teamIsFull,
-  teamNames,
-  teamLabel,
+  teams,
 }) {
   const options = [...supported]
     .sort((a, b) => a.displayName.localeCompare(b.displayName))
@@ -684,28 +670,17 @@ function ComparePanel({
           value={compareRight}
         />
       </div>
-      {leftPokemon && rightPokemon ? (
-        <div className="compare-grid">
-          <PokemonCard
-            isSelected={teamNames.includes(leftPokemon.displayName)}
-            onToggleTeam={() => onToggleTeam(leftPokemon)}
-            teamLabel={teamLabel}
-            pokemon={leftPokemon}
-            teamIsFull={teamIsFull}
-          />
-          <PokemonCard
-            isSelected={teamNames.includes(rightPokemon.displayName)}
-            onToggleTeam={() => onToggleTeam(rightPokemon)}
-            teamLabel={teamLabel}
-            pokemon={rightPokemon}
-            teamIsFull={teamIsFull}
-          />
-        </div>
-      ) : (
-        <p className="team-empty-message">
-          Seleziona due Pokémon per confrontarli fianco a fianco.
-        </p>
-      )}
+      <div className="compare-slot-actions">
+        <button type="button" className="secondary-button" disabled={!compareLeft} onClick={() => onChangeLeft('')}>Libera Confronta 1</button>
+        <button type="button" className="secondary-button" disabled={!compareRight} onClick={() => onChangeRight('')}>Libera Confronta 2</button>
+      </div>
+      <div className="compare-grid">
+        {[leftPokemon, rightPokemon].map((entry, index) => entry ? (
+          <PokemonCard key={index} pokemon={entry}
+            actions={getPokemonCardActions(entry.displayName, teams, compareLeft, compareRight)}
+            onAction={(action) => onCardAction(entry, action)} />
+        ) : <article className="compare-card empty" key={index}>Confronta {index + 1}: scegli un Pokémon dal pulsante +</article>)}
+      </div>
     </details>
   )
 }

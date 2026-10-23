@@ -1548,9 +1548,56 @@ button:focus-visible,
   line-height: 1;
 }
 
-.team-toggle.selected {
-  color: #dc2626;
+.pokemon-card-actions { position: absolute; top: 14px; right: 18px; z-index: 3; }
+.pokemon-card-actions .team-toggle {
+  position: static;
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  border: 1px solid var(--border);
+  border-radius: 13px;
+  background: rgba(255, 255, 255, 0.95);
+  font-size: 28px;
 }
+.pokemon-card-actions .team-toggle[aria-expanded="true"] { background: #17233e; color: #fff; }
+.pokemon-card:has(.pokemon-action-menu) { z-index: 30; }
+.pokemon-action-menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  width: min(270px, calc(100vw - 64px));
+  max-height: min(440px, calc(100dvh - 48px));
+  overflow-y: auto;
+  box-sizing: border-box;
+  padding: 8px;
+  border: 1px solid #dbe2ec;
+  border-radius: 16px;
+  background: #fff;
+  box-shadow: 0 18px 48px rgba(15, 23, 42, 0.24);
+}
+.pokemon-action-menu > p { margin: 3px 8px 8px; color: var(--muted); font-size: 11px; font-weight: 800; overflow-wrap: anywhere; }
+.pokemon-action-menu.above { top: auto; bottom: calc(100% + 8px); }
+.pokemon-action-menu > button {
+  display: block;
+  width: 100%;
+  padding: 12px;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--text);
+  text-align: left;
+  font: inherit;
+  cursor: pointer;
+}
+.pokemon-action-menu > button > span { font-size: 13px; font-weight: 900; }
+.pokemon-action-menu > button > small { display: block; margin-top: 4px; color: var(--muted); font-size: 11px; line-height: 1.4; }
+.pokemon-action-menu > button:hover,
+.pokemon-action-menu > button:focus-visible { background: #eff6ff; }
+.pokemon-action-menu > button[aria-checked="true"] { background: #f0fdf4; }
+.pokemon-action-menu > button:disabled { cursor: not-allowed; opacity: 0.45; }
+.compare-slot-actions { display: flex; gap: 12px; padding: 0 20px 18px; }
+.compare-panel { scroll-margin-top: 120px; }
 
 .section-title {
   display: flex;

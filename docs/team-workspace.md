@@ -35,11 +35,19 @@ Anche avanti/indietro del browser conserva il contesto della voce di cronologia.
 
 ## Azioni sulle schede
 
-I pulsanti `+` e `−` nelle schede del catalogo e del confronto aggiungono o rimuovono
-dalla squadra scelta nel controllo di destinazione, La mia squadra o La squadra avversaria.
-Il limite di sei membri vale per entrambe.
-Testo accessibile e tooltip indicano l'azione, il nome del Pokémon e l'eventuale team pieno.
-I pulsanti non selezionano più implicitamente attaccante o difensore in base al pannello aperto.
+Il `+` nelle schede del catalogo e del confronto apre un menu specifico per quel Pokémon.
+Non esiste più un controllo globale di destinazione. Il menu contiene:
+
+- Mia squadra e Squadra avversaria: aggiunge alla squadra scelta o rimuove se già presente.
+  Il limite di sei membri è indipendente: una squadra piena non disabilita le altre azioni.
+- Confronta 1 o Confronta 2: usa il primo slot libero. Se il Pokémon è già selezionato,
+  riapre il suo confronto senza duplicarlo. Con entrambi gli slot pieni, mostra due
+  destinazioni esplicite indicando il Pokémon che verrebbe sostituito.
+
+La scelta del confronto apre il pannello e lo porta in vista. È visibile anche una singola
+scheda con l'altro slot vuoto; i pulsanti Libera Confronta 1/2 permettono di riutilizzare gli slot.
+Il menu supporta frecce, Home/End, Escape e chiusura cliccando fuori. Il `+` non cambia
+mai attaccante o difensore del calcolatore.
 Nel calcolatore non viene mostrato il catalogo: i Pokémon si cambiano attraverso i selettori.
 
 ## Ambito di questa modifica

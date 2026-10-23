@@ -59,7 +59,6 @@
 .squad-member-actions button[aria-pressed="true"] { background: #1d4ed8; color: #fff; }
 .squad-defender .squad-member-actions button[aria-pressed="true"] { background: #b45309; }
 .squad-member-actions .squad-remove { flex-basis: 100%; color: #9f1239; background: #fff1f2; }
-.catalog-team-target { max-width: 400px; margin-top: 24px; }
 .team-type-summary {
   position: sticky;
   top: 16px;

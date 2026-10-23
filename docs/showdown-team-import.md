@@ -69,4 +69,4 @@ I test coprono anche profili indipendenti nei mirror match, aggiornamenti manual
 Verifica browser eseguita in sviluppo e sulla build di produzione: import degli appunti
 simulati in entrambe le squadre, modifica nel calcolatore e ritorno, ricaricamento,
 import invalido senza perdita dati, incolla manuale con appunti non disponibili,
-destinazione avversaria dei pulsanti del catalogo, riepilogo dei tipi e larghezze 390/320 px.
+scelta della squadra avversaria dal menu `+` del catalogo, riepilogo dei tipi e larghezze 390/320 px.
