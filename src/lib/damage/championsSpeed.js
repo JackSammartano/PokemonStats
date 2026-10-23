@@ -16,6 +16,21 @@ export function getBattleSpeed(pokemon, build, weather = '') {
   return Math.max(1, Math.floor(boosted * modifier))
 }
 
+export function getSpeedTableRow(pokemon, build, weather = '') {
+  const base = pokemon?.stats.find((stat) => stat.name === 'speed')?.value
+  const speed = (nature, sp, scarf = false) => getBattleSpeed(pokemon, { nature, sps: { spe: sp }, item: scarf ? 'choice-scarf' : '' })
+  return {
+    base: base ?? null,
+    current: getBattleSpeed(pokemon, build, weather),
+    max: speed('timid', 32),
+    neutral32: speed('serious', 32),
+    neutral0: speed('serious', 0),
+    minus0: speed('brave', 0),
+    maxScarf: speed('timid', 32, true),
+    neutralScarf: speed('serious', 32, true),
+  }
+}
+
 export function describeSpeedOrder(leftSpeed, rightSpeed) {
   if (leftSpeed === null || rightSpeed === null) return 'Confronto disponibile al livello 50.'
   if (leftSpeed === rightSpeed) return 'Parità di Velocità: speed tie.'

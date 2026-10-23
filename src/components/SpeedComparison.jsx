@@ -1,26 +1,34 @@
-import { describeSpeedOrder, getBattleSpeed } from '../lib/damage/championsSpeed.js'
+import { getSpeedTableRow } from '../lib/damage/championsSpeed.js'
 import './SpeedComparison.css'
 
+const COLUMNS = [
+  { key: 'base', label: 'Base' },
+  { key: 'current', label: 'Attuale' },
+  { key: 'max', label: '+Spe', detail: '32 SP' },
+  { key: 'neutral32', label: 'Neutra', detail: '32 SP' },
+  { key: 'neutral0', label: 'Neutra', detail: '0 SP' },
+  { key: 'minus0', label: '−Spe', detail: '0 SP' },
+  { key: 'maxScarf', label: '+Spe · Scarf', detail: '32 SP' },
+  { key: 'neutralScarf', label: 'Neutra · Scarf', detail: '32 SP' },
+]
+
 export default function SpeedComparison({ attacker, defender, leftBuild, rightBuild, weather }) {
-  const leftSpeed = getBattleSpeed(attacker, leftBuild, weather)
-  const rightSpeed = getBattleSpeed(defender, rightBuild, weather)
-  const maxSpeed = Math.max(leftSpeed ?? 0, rightSpeed ?? 0, 1)
   return (
     <section className="speed-comparison" aria-labelledby="speed-comparison-title">
       <h3 id="speed-comparison-title">Scala Velocità</h3>
-      <p className="speed-intro">Velocità effettiva dei due Pokémon selezionati, aggiornata con le configurazioni del calcolatore al livello 50.</p>
-      <div className="speed-current" aria-live="polite">
-        {[[attacker, leftSpeed], [defender, rightSpeed]].map(([entry, speed], index) => (
-          <div key={index} data-speed-side={index === 0 ? 'attacker' : 'defender'}>
-            <small>Pokémon {index + 1}</small>
-            <span>{entry?.displayName ?? 'Da scegliere'}</span>
-            <strong>{speed ?? '—'}</strong>
-            <div className="speed-bar" aria-hidden="true"><span style={{ width: `${speed === null ? 0 : speed / maxSpeed * 100}%` }} /></div>
-          </div>
-        ))}
+      <div className="speed-table-scroll" tabIndex={0} role="region" aria-label="Velocità dei due Pokémon selezionati">
+        <table className="speed-table">
+          <caption>Livello 50 · Attuale segue il calcolatore; gli altri valori sono scenari senza boost o abilità. Scarf = Choice Scarf.</caption>
+          <thead><tr><th scope="col">Pokémon</th>{COLUMNS.map(({ key, label, detail }) => <th className={key === 'current' ? 'speed-current-column' : undefined} key={key} scope="col">{label}{detail && <small>{detail}</small>}</th>)}</tr></thead>
+          <tbody>{[[attacker, leftBuild], [defender, rightBuild]].map(([pokemon, build], index) => {
+            const row = getSpeedTableRow(pokemon, build, weather)
+            return <tr key={index} data-speed-side={index === 0 ? 'attacker' : 'defender'}>
+              <th scope="row">{pokemon?.displayName ?? 'Da scegliere'}<small>Pokémon {index + 1}</small></th>
+              {COLUMNS.map(({ key }) => <td data-speed-column={key} className={key === 'current' ? 'speed-current-column' : undefined} key={key}>{row[key] ?? '—'}</td>)}
+            </tr>
+          })}</tbody>
+        </table>
       </div>
-      <p className="speed-order" aria-live="polite">{describeSpeedOrder(leftSpeed, rightSpeed)}</p>
-      <p className="speed-note">SP, natura, boost Spe, Choice Scarf, strumenti che dimezzano la Velocità e abilità meteo sono inclusi. Altre condizioni e priorità delle mosse non sono incluse.</p>
     </section>
   )
 }

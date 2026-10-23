@@ -1,9 +1,17 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { describeSpeedOrder, getBattleSpeed } from './championsSpeed.js'
+import { describeSpeedOrder, getBattleSpeed, getSpeedTableRow } from './championsSpeed.js'
 
 const pokemon = (name, speed) => ({ displayName: name, stats: [{ name: 'speed', value: speed }] })
 const charizard = pokemon('Charizard', 100)
+
+test('two-Pokemon table exposes every numeric reference and a live current column', () => {
+  const row = getSpeedTableRow(charizard, { nature: 'timid', sps: { spe: 32 }, boosts: { spe: 1 }, item: 'choice-scarf' })
+  assert.deepEqual(row, { base: 100, current: 375, max: 167, neutral32: 152, neutral0: 120, minus0: 108, maxScarf: 250, neutralScarf: 228 })
+  assert.equal(getSpeedTableRow(charizard, {}).current, 120)
+  assert.equal(getSpeedTableRow(pokemon('Fast', 151), {}).max, 223)
+  assert.equal(getSpeedTableRow(null, {}).max, null)
+})
 
 test('Speed uses Champions SP and natures and rounds Scarf after boosts', () => {
   assert.equal(getBattleSpeed(charizard, {}), 120)
