@@ -10,6 +10,7 @@ import { resolveAbilityWeather } from '../lib/damage/championsAbilities.js'
 import { getPokemonMoveSlots } from '../lib/damage/championsMoveSets.js'
 import { calculateMoveRows, createOptimizerContext, getBuildStats } from '../lib/damage/championsMatchup.js'
 import { findKoOptions, findSurvivalOptions } from '../lib/damage/championsOptimizer.js'
+import { describeTypeEffectiveness } from '../lib/typeLabels.js'
 
 const STAT_LABELS = { hp: 'HP', atk: 'Atk', def: 'Def', spa: 'SpA', spd: 'SpD', spe: 'Spe' }
 const SP_OPTIONS = Array.from({ length: 33 }, (_, index) => index)
@@ -17,7 +18,7 @@ const BOOST_OPTIONS = Array.from({ length: 13 }, (_, index) => index - 6)
 const ITEM_OPTIONS = [{ value: '', label: 'Nessuno' }, ...CHAMPIONS_TEAM_ITEMS.map((item) => ({ value: item.id, label: item.name }))]
 
 export default function DamageCalculator({ pokemon, attackerName, defenderName, onAttackerChange, onDefenderChange, moveSets, onMoveChange, selectedMove, onSelectMove, builds, onBuildChange }) {
-  const [field, setField] = useState({ weather: '', gameType: 'Singles', critical: false })
+  const [field, setField] = useState({ weather: '', gameType: 'Doubles', critical: false })
   const [rankingMode, setRankingMode] = useState('minimum')
   const [optimization, setOptimization] = useState(null)
   const attacker = pokemon.find((entry) => entry.displayName === attackerName) ?? pokemon[0]
@@ -83,7 +84,7 @@ export default function DamageCalculator({ pokemon, attackerName, defenderName, 
         </div>
         {selectedRow?.result ? (
           <div className="damage-result">
-            <span>{selectedRow.move.category === 'physical' ? 'Fisica' : 'Speciale'} · efficacia ×{selectedRow.result.effectiveness}</span>
+            <span>{selectedRow.move.category === 'physical' ? 'Fisica' : 'Speciale'} · {describeTypeEffectiveness(selectedRow.result.effectiveness)}</span>
             <strong>{selectedRow.result.min}–{selectedRow.result.max} HP</strong>
             <small>{selectedRow.minPercent.toFixed(1)}–{selectedRow.maxPercent.toFixed(1)}% di {target.displayName}</small>
           </div>
@@ -162,12 +163,6 @@ function PokemonBuildControls({ side, label, pokemon, roster, build, itemOptions
         <small>I valori mostrati includono SP e natura; i boost si applicano al calcolo.</small>
         <small className={Object.values(build.sps).reduce((sum, value) => sum + value, 0) > 66 ? 'invalid-sp-total' : ''}>SP totali: {Object.values(build.sps).reduce((sum, value) => sum + value, 0)}/66</small>
       </div>
-      <details className="build-extra-data"><summary>IV e dati aggiuntivi</summary>
-        <p>Gli IV vengono conservati; il calcolo Champions usa IV fissi a 31.</p>
-        <div className="build-iv-grid">{Object.entries(STAT_LABELS).map(([id, text]) => <label className="select-field" key={id}><span>{text} IV</span><input type="number" min="0" max="31" aria-label={`${label} ${text} IV`} value={build.ivs?.[id] ?? 31} onChange={(event) => onChange({ ivs: { ...build.ivs, [id]: Number(event.target.value) } })} /></label>)}</div>
-        {build.extraLines?.length > 0 && <pre>{build.extraLines.join('\n')}</pre>}
-        {build.sourceText && <details><summary>Export originale importato</summary><pre>{build.sourceText}</pre></details>}
-      </details>
       <div className="damage-toggles damage-panel-toggles">
         {[['burned', 'Scottato'], ['reflect', 'Reflect'], ['lightScreen', 'Light Screen']].map(([key, text]) => <label key={key}><input type="checkbox" checked={build[key]} onChange={(event) => onChange({ [key]: event.target.checked })} />{text}</label>)}
       </div>

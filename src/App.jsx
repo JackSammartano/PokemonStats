@@ -1,6 +1,7 @@
 import { useDeferredValue, useEffect, useRef, useState } from 'react'
 import './App.css'
 import './components/TeamWorkspace.css'
+import { formatTypeMultiplier } from './lib/typeLabels'
 import TeamDamageLink from './components/TeamDamageLink'
 import SquadSection from './components/SquadSection'
 import TeamTypeSummary from './components/TeamTypeSummary'
@@ -517,11 +518,11 @@ function PokemonCard({
                 className={`weakness-chip type-${weakness.type}`}
                 key={weakness.type}
               >
-                {formatName(weakness.type)} x{weakness.multiplier}
+                {formatName(weakness.type)} {formatTypeMultiplier(weakness.multiplier)}
               </span>
             ))
           ) : (
-            <span className="muted">Nessuna debolezza sopra x1</span>
+            <span className="muted">Nessuna debolezza</span>
           )}
         </div>
       </div>
@@ -538,7 +539,7 @@ function PokemonCard({
                 key={resistance.type}
               >
                 {formatName(resistance.type)}{' '}
-                {resistance.multiplier === 0 ? 'Immune' : `x${resistance.multiplier}`}
+                {formatTypeMultiplier(resistance.multiplier)}
               </span>
             ))
           ) : (

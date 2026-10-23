@@ -14,7 +14,8 @@ un errore lascia invariati dati e configurazioni. Se il browser non consente la 
 degli appunti, si apre una finestra dove incollare manualmente lo stesso export.
 
 Il parser gestisce specie e forme Showdown, nickname, genere, oggetto, abilità,
-livello, natura, EVs/SPs, IVs e quattro mosse ordinate. Mantiene anche le righe
+livello, natura, EVs/SPs e quattro mosse ordinate. Le righe IVs vengono ignorate perché
+Champions usa IV fissi. Mantiene anche le altre righe
 aggiuntive e il testo originale per consultazione. Il nome della specie viene risolto
 contro il roster M-C; un Pokémon sconosciuto, un duplicato o più di sei membri blocca
 l'importazione senza modifiche parziali.
@@ -28,14 +29,14 @@ Una mossa conosciuta ma esterna al learnset verificato viene conservata con un a
 Il dataset completo di mosse e oggetti deriva dal medesimo commit Showdown del roster,
 tramite `npm run data:regulation-mc`. Le abilità e gli oggetti non applicati dal motore
 restano impostati e sono segnalati come effetti non implementati. Livelli diversi da 50
-e IV diversi da 31 vengono conservati, ma non producono risultati con la formula Champions.
+vengono conservati, ma non producono risultati con la formula Champions.
 
 ## Stato condiviso e salvataggio
 
 Lo stato applicativo condiviso contiene le due liste di membri, le configurazioni e
 i set mossa. Ogni profilo è identificato dal lato e dal nome del Pokémon, quindi due
 esemplari della stessa specie in squadre opposte rimangono indipendenti.
-Una modifica manuale a natura, abilità, oggetto, livello, nickname, genere, SP, IV,
+Una modifica manuale a natura, abilità, oggetto, livello, nickname, genere, SP,
 boost, stato o schermi nel calcolatore aggiorna lo stesso profilo usato dalla pagina team.
 
 Le informazioni sono salvate nel browser con chiave `pokemonstats.team-workspace.v1`.
@@ -54,6 +55,8 @@ memorizzati per poterli recuperare aggiungendoli nuovamente.
 
 Il riepilogo è esplicitamente basato sui tipi: non include abilità, oggetti, danni,
 SP o condizioni di campo. Le mosse di stato non vengono contate come copertura offensiva.
+Le etichette omettono i moltiplicatori standard di debolezza (×2) e resistenza (×0.5),
+mostrando quelli eccezionali (come ×4 e ×0.25) e le immunità.
 Su desktop il resoconto è a destra, su mobile segue le due squadre.
 
 ## Verifiche

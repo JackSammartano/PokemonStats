@@ -40,12 +40,17 @@ Questa modifica non completa la copertura di mosse di stato, formule speciali o 
 
 I due Pokémon hanno configurazioni indipendenti: natura, abilità, oggetto, SP e boost
 per statistica, scottatura e schermi sul proprio lato.
+Il formato iniziale è Doubles, con possibilità di selezionare Singles.
 Gli SP iniziali sono zero e vengono impostati esplicitamente per ciascuna statistica,
 oppure letti direttamente dalle righe EVs/SPs dell'export Champions.
 Ogni riga usa Atk/Def per le mosse fisiche e SpA/SpD per le speciali; percentuali riferite
 agli HP del bersaglio effettivo. Reflect e Light Screen proteggono il lato su cui sono attivati,
 anche quando si calcola nella direzione opposta. Il brutto colpo condiviso si applica alle otto mosse.
 La tabella dei valori mostra statistiche con natura e SP; i boost vengono applicati dal motore al danno.
+Gli IV non sono configurabili e non condizionano il calcolo Champions, anche se presenti
+in vecchi dati salvati. Non viene mostrata la sezione IV e dati aggiuntivi.
+Nel dettaglio dell'efficacia si usano etichette testuali per i valori standard e moltiplicatori
+espliciti solo per i valori eccezionali.
 
 ## Organizzazione
 

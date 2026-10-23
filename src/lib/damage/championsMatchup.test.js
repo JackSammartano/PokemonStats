@@ -70,14 +70,14 @@ test('imported status and unsupported formula moves stay visible without fabrica
   assert.equal(createOptimizerContext(left, right, a, b, rows[3].move, field), null)
 })
 
-test('non-Champions level and IV values are retained but do not produce incorrect results', () => {
+test('non-Champions levels are blocked while legacy IV values do not affect Champions calculations', () => {
   const a = createDamageBuild(), b = createDamageBuild()
   a.level = 100
   const levelRow = calculateMoveRows(left, right, a, b, ['flamethrower'], field)[0]
   assert.equal(levelRow.result, null)
   assert.equal(createOptimizerContext(left, right, a, b, levelRow.move, field), null)
   a.level = 50
-  a.ivs.atk = 0
-  assert.equal(calculateMoveRows(left, right, a, b, ['earthquake'], field)[0].result, null)
-  assert.equal(a.ivs.atk, 0)
+  const normal = calculateMoveRows(left, right, a, b, ['earthquake'], field)[0].result
+  a.ivs = { atk: 0 }
+  assert.deepEqual(calculateMoveRows(left, right, a, b, ['earthquake'], field)[0].result, normal)
 })

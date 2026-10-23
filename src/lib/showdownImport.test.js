@@ -45,11 +45,11 @@ test('both squads retain independent builds, full move sets and later manual edi
   assert.equal(getPokemonMoveSlots(restored.moveSets, 'attacker', pokemon)[3], 'protect')
 })
 
-test('nickname, gender, IVs, level and additional fields are preserved', () => {
+test('nickname, gender, level and additional fields are preserved while irrelevant IVs are ignored', () => {
   const imported = parseShowdownTeam('Chomp (Garchomp-Mega-Z) (M) @ Garchompite Z\r\nAbility: Levitate\r\nLevel: 50\r\nIVs: 0 Atk\r\nModest Nature\r\nShiny: Yes\r\n- Protect')
   assert.equal(imported.members[0].build.nickname, 'Chomp')
   assert.equal(imported.members[0].build.gender, 'M')
-  assert.equal(imported.members[0].build.ivs.atk, 0)
+  assert.equal(imported.members[0].build.ivs, undefined)
   assert.deepEqual(imported.members[0].build.extraLines, ['Shiny: Yes'])
 })
 

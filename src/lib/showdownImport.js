@@ -52,7 +52,8 @@ export function parseShowdownTeam(text) {
         if (Object.values(spread).reduce((sum, value) => sum + value, 0) > 66) throw new Error(`SP di ${entry.displayName}: il totale supera 66. L'export deve usare i valori Champions, non gli EV da 252.`)
         build.sps = { ...build.sps, ...spread }
       } else if (/^IVs:/i.test(line)) {
-        build.ivs = { ...build.ivs, ...parseSpread(line.replace(/^IVs:\s*/i, ''), 31, 'IV') }
+        // Champions uses fixed IVs; ignore this line in main-series exports.
+        continue
       } else if (/ Nature$/i.test(line)) {
         build.nature = line.replace(/ Nature$/i, '').toLowerCase()
         if (!Object.hasOwn(CHAMPIONS_NATURES, build.nature)) throw new Error(`Natura non riconosciuta: ${line}.`)

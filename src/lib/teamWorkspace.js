@@ -10,16 +10,20 @@ export const createTeamWorkspace = () => ({ version: 1, teams: { attacker: [], d
 export function getWorkspaceBuild(builds, side, name) {
   const defaults = createDamageBuild()
   const saved = builds[moveSetKey(side, name)] ?? {}
-  return { ...defaults, ...saved, sps: { ...defaults.sps, ...saved.sps }, boosts: { ...defaults.boosts, ...saved.boosts }, ivs: { ...defaults.ivs, ...saved.ivs } }
+  const build = { ...defaults, ...saved, sps: { ...defaults.sps, ...saved.sps }, boosts: { ...defaults.boosts, ...saved.boosts } }
+  delete build.ivs
+  return build
 }
 
 export function updateWorkspaceBuild(builds, side, name, changes) {
   if (!knownNames.has(name)) return builds
   const current = getWorkspaceBuild(builds, side, name)
-  return { ...builds, [moveSetKey(side, name)]: {
+  const build = {
     ...current, ...changes,
-    sps: { ...current.sps, ...changes.sps }, boosts: { ...current.boosts, ...changes.boosts }, ivs: { ...current.ivs, ...changes.ivs },
-  } }
+    sps: { ...current.sps, ...changes.sps }, boosts: { ...current.boosts, ...changes.boosts },
+  }
+  delete build.ivs
+  return { ...builds, [moveSetKey(side, name)]: build }
 }
 
 export function applyImportedTeam(workspace, side, imported) {
