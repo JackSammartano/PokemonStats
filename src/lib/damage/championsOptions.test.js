@@ -8,6 +8,18 @@ import {
 } from './championsOptions.js'
 
 describe('champions option filters', () => {
+  it('uses the full verified Champions learnset instead of only example set moves', () => {
+    const options = getSupportedMoveOptions({ showdownId: 'venusaur', apiName: 'venusaur', moves: [{ id: 'surf' }] })
+    assert.ok(options.some((option) => option.value === 'earth-power'))
+    assert.ok(options.some((option) => option.value === 'solar-beam'))
+    assert.ok(options.length >= 4)
+    assert.equal(options.some((option) => option.value === 'surf'), false)
+  })
+
+  it('recognizes implemented abilities with Showdown ids and readable names', () => {
+    const options = getSupportedAbilityOptions({ abilities: [{ id: 'hugepower', name: 'Huge Power', isHidden: false }] })
+    assert.ok(options.some((option) => option.value === 'huge-power' && !option.disabled))
+  })
   it('keeps only moves learned by the pokemon and implemented in Champions', () => {
     const options = getSupportedMoveOptions({
       moves: [

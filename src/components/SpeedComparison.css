@@ -1,0 +1,13 @@
+.speed-comparison { min-width: 0; margin-top: 24px; padding-top: 22px; border-top: 1px solid var(--border); }
+.speed-comparison > h3 { margin: 0 0 12px; }
+.speed-table-scroll { overflow-x: auto; border: 1px solid var(--border); border-radius: 14px; background: #fffef9; }
+.speed-table { width: 100%; border-spacing: 0; font-size: 12px; font-variant-numeric: tabular-nums; }
+.speed-table caption { padding: 10px 12px; caption-side: bottom; text-align: left; color: var(--muted); font-size: 10px; }
+.speed-table th, .speed-table td { padding: 12px 10px; text-align: center; white-space: nowrap; border-bottom: 1px solid var(--border); }
+.speed-table thead th { background: #e9f0e2; font-size: 11px; }
+.speed-table th:first-child { position: sticky; left: 0; z-index: 1; text-align: left; background: #f6f8ef; }
+.speed-table th small { display: block; margin-top: 3px; color: var(--muted); font-size: 10px; font-weight: 400; }
+.speed-table tbody tr:last-child > * { border-bottom: 0; }
+.speed-table td { font-weight: 800; }
+.speed-table .speed-current-column { background: #e2f0db; color: #1c5135; font-weight: 900; }
+.speed-table td.speed-current-column { font-size: 16px; }

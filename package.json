@@ -7,8 +7,11 @@
     "dev": "vite",
     "build": "vite build",
     "lint": "oxlint",
-    "test": "node --test src/lib/damage/*.test.js",
-    "preview": "vite preview"
+    "test": "node --test src/lib/damage/*.test.js src/lib/*.test.js scripts/*.test.mjs",
+    "data:regulation-mc": "node scripts/import-regulation-mc.mjs",
+    "preview": "vite preview",
+    "assets:background": "node scripts/optimize-background.mjs",
+    "assets:pokemon": "node scripts/import-pokemon-images.mjs"
   },
   "dependencies": {
     "react": "^19.2.7",
@@ -19,6 +22,7 @@
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^6.0.2",
     "oxlint": "^1.69.0",
+    "sharp": "^0.35.5",
     "vite": "^8.1.0"
   }
 }
