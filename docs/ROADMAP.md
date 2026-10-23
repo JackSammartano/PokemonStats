@@ -6,7 +6,7 @@ le specifiche dettagliate verranno definite prima dell'implementazione.
 ## 1. Regulation M-C
 
 - Implementata sul branch `feature/next-updates`: roster generato dal repository Pokémon Showdown.
-- Importazione di 358 voci con tipi, statistiche e abilità verificati, anche senza PokeAPI.
+- Importazione di 351 voci con tipi, statistiche e abilità verificati, anche senza PokeAPI; escluse le forme solo cosmetiche tramite confronto dei learnset Showdown.
 - Dettagli e criteri in [regulation-mc.md](regulation-mc.md). Pubblicazione su `main` da effettuare.
 
 ## 2. Il mio team: confronto tra due team

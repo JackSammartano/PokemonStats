@@ -13,6 +13,7 @@ File sorgente del medesimo commit:
 - `data/mods/champions/formats-data.ts`: disponibilità delle specie e delle forme.
 - `data/pokedex.ts`: identità, forme, tipi, statistiche e abilità.
 - `data/text/abilities.ts`: descrizioni brevi di fallback delle abilità.
+- `data/mods/champions/learnsets.ts` e `data/learnsets.ts`: mosse apprendibili, con l'ereditarietà definita da Showdown.
 
 Comando riproducibile, con Node.js 24:
 
@@ -31,17 +32,26 @@ L'output generato è `src/data/regulationMc.js`. La licenza MIT upstream è cons
 - Le forme senza tier proprio ereditano quello della forma di origine o della specie base,
   seguendo la distinzione usata da Showdown.
 - Le forme nominate in `cosmeticFormes` non vengono duplicate.
-- Restano separate le altre forme: generi, forme regionali, dimensioni, famiglie,
-  trasformazioni in battaglia e Mega. Il catalogo serve alla consultazione:
+- Tra le forme della stessa specie si mantiene una sola voce quando tipi, statistiche base,
+  abilità (incluse quelle nascoste) e mosse apprendibili coincidono. Si confrontano le mosse
+  effettive, non i metodi con cui vengono apprese; un learnset mancante interrompe l'importazione.
+- Si conservano le forme con differenze funzionali e gli stati di battaglia che cambiano
+  il comportamento di mosse o abilità, come Morpeko Hangry e Mimikyu Busted.
+  Il catalogo serve alla consultazione:
   una forma in battaglia non implica che possa essere scelta come tale all'inizio di un match.
 
-Risultato: **358 voci, di cui 82 forme Mega**. Non è un conteggio di specie uniche.
+Risultato: **351 voci, di cui 82 forme Mega**. Non è un conteggio di specie uniche.
 Sono incluse le sei nuove Mega annunciate per M-C: Absol Z, Salamence, Garchomp Z,
 Lucario Z, Golisopod e Baxcalibur.
 Riferimento ufficiale: [annuncio Regulation Set M-C](https://champions-news.pokemon-home.com/en/page/816.html).
 
 Rispetto alla precedente lista manuale, fra le correzioni ci sono Watchog al posto di Patrat
 e Floette Eternal al posto di Floette normale, oltre alle forme precedentemente mancanti.
+
+Forme equivalenti eliminate: Polteageist Antique, Sinistcha Masterpiece, Vivillon Fancy,
+Vivillon Pokeball, Maushold Four, Squawkabilly Blue e Squawkabilly White.
+Per Squawkabilly rimangono verde e giallo, con abilità nascoste diverse.
+Toxtricity Low Key rimane perché il learnset differisce da quello della forma Amped.
 
 ## Caricamento nell'app
 
@@ -64,8 +74,7 @@ Il damage calculator conserva le limitazioni documentate nel suo worklog.
 integrità dello snapshot, identità delle Mega Z e caricamento dell'intero roster senza rete.
 Include anche i test esistenti del calcolatore. Eseguire inoltre `npm run lint` e `npm run build`.
 
-Verifica reale del 23 ottobre 2026: 358/358 schede caricate, nessuna richiesta HTTP fallita,
-354 schede con immagine e 349 con mosse restituite da PokeAPI.
-Polteageist Antique, Sinistcha Masterpiece, Vivillon Fancy e Vivillon Pokeball non hanno
-una risorsa Pokémon separata in PokeAPI e usano i dati Showdown senza immagine.
-Verificati nel browser il catalogo completo e la ricerca di Mega Garchomp Z, senza errori JavaScript.
+La prima verifica reale del 23 ottobre 2026, prima della rimozione dei duplicati,
+ha caricato 358/358 schede senza richieste HTTP fallite. Il catalogo e la ricerca di
+Mega Garchomp Z sono stati verificati nel browser senza errori JavaScript.
+Le quattro forme allora prive di immagine sono ora escluse in quanto equivalenti.

@@ -27,7 +27,7 @@ npm run build
 ## Dati
 
 Il roster M-C è generato in `src/data/regulationMc.js` da un commit fissato del repository `smogon/pokemon-showdown`.
-Contiene 358 voci, comprese 82 forme Mega; le varianti esplicitamente cosmetiche non vengono duplicate.
+Contiene 351 voci, comprese 82 forme Mega; le forme equivalenti per tipi, statistiche, abilità e mosse apprendibili non vengono duplicate.
 
 Per rigenerarlo (Node.js 24):
 

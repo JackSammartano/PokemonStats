@@ -23,18 +23,33 @@ const API_NAMES = {
   taurospaldeacombat: 'tauros-paldea-combat-breed',
   taurospaldeablaze: 'tauros-paldea-blaze-breed',
   taurospaldeaaqua: 'tauros-paldea-aqua-breed',
-  maushold: 'maushold-family-of-three', mausholdfour: 'maushold-family-of-four',
+  maushold: 'maushold-family-of-three',
   squawkabilly: 'squawkabilly-green-plumage',
-  squawkabillyblue: 'squawkabilly-blue-plumage',
   squawkabillyyellow: 'squawkabilly-yellow-plumage',
-  squawkabillywhite: 'squawkabilly-white-plumage',
-  // These forms have no separate pokemon resource. Never use the base form's data.
-  vivillonfancy: null, vivillonpokeball: null,
-  polteageistantique: null, sinistchamasterpiece: null,
 }
 
-export function buildRoster(pokedex, formats, abilityText) {
+export function mergeLearnsets(base, champions) {
+  const result = { ...base, ...champions }
+  for (const [id, entry] of Object.entries(champions)) {
+    if (entry === null) delete result[id]
+    else if (entry.inherit) result[id] = { ...base[id], ...entry }
+  }
+  return result
+}
+
+export function getLearnedMoves(id, pokedex, learnsets, visited = new Set()) {
+  if (visited.has(id)) throw new Error(`Circular learnset inheritance: ${id}`)
+  visited.add(id)
+  if (learnsets[id]?.learnset) return Object.keys(learnsets[id].learnset).filter((move) => learnsets[id].learnset[move]).sort()
+  const species = pokedex[id]
+  const parent = toId(species?.changesFrom || species?.battleOnly || species?.baseSpecies || '')
+  if (parent && parent !== id) return getLearnedMoves(parent, pokedex, learnsets, visited)
+  throw new Error(`Missing Champions learnset: ${id}`)
+}
+
+export function buildRoster(pokedex, formats, abilityText, learnsets) {
   const cosmetics = new Set(Object.values(pokedex).flatMap((entry) => entry.cosmeticFormes ?? []).map(toId))
+  const seenForms = new Set()
   return Object.entries(pokedex).flatMap(([id, species]) => {
     const format = formats[id] ?? {}
     const parent = formats[toId(species.battleOnly || species.baseSpecies || species.name)] ?? {}
@@ -43,6 +58,17 @@ export function buildRoster(pokedex, formats, abilityText) {
     if (cosmetics.has(id) || nonstandard || !tier || tier === 'Illegal' || species.num <= 0) return []
     const tags = species.tags ?? pokedex[toId(species.baseSpecies)]?.tags ?? []
     if (tags.some((tag) => ['Mythical', 'Restricted Legendary'].includes(tag))) return []
+
+    const signature = JSON.stringify([
+      toId(species.baseSpecies || species.name),
+      [...species.types].sort(), Object.entries(species.baseStats).sort(),
+      Object.entries(species.abilities).map(([slot, ability]) => `${slot === 'H' ? 'hidden' : 'regular'}:${toId(ability)}`).sort(),
+      getLearnedMoves(id, pokedex, learnsets),
+      // Battle states can change ability/move behaviour without changing their names.
+      species.battleOnly ? id : null,
+    ])
+    if (seenForms.has(signature)) return []
+    seenForms.add(signature)
 
     const isMega = species.forme?.includes('Mega') ?? false
     let displayName = species.forme ? species.name.replaceAll('-', ' ') : species.name
@@ -92,16 +118,19 @@ async function readSource(path, key) {
 
 async function main() {
   await mkdir(new URL(`.cache/showdown/${SHOWDOWN_COMMIT}/`, root), { recursive: true })
-  const [pokedex, formats, abilityText, config, license] = await Promise.all([
+  const [pokedex, formats, abilityText, baseLearnsets, championsLearnsets, config, license] = await Promise.all([
     readSource('data/pokedex.ts', 'Pokedex'),
     readSource('data/mods/champions/formats-data.ts', 'FormatsData'),
     readSource('data/text/abilities.ts', 'AbilitiesText'),
+    readSource('data/learnsets.ts', 'Learnsets'),
+    readSource('data/mods/champions/learnsets.ts', 'Learnsets'),
     readSource('config/formats.ts'), readSource('LICENSE'),
   ])
   if (!/name: "\[Gen 9 Champions\] VGC 2026 Reg M-C",\s+mod: 'champions'/.test(config)) {
     throw new Error('The pinned Showdown source no longer defines M-C with the champions mod')
   }
-  const roster = buildRoster(pokedex, formats, abilityText)
+  const learnsets = mergeLearnsets(baseLearnsets, championsLearnsets)
+  const roster = buildRoster(pokedex, formats, abilityText, learnsets)
   if (!roster.length || new Set(roster.map((entry) => entry.displayName)).size !== roster.length) {
     throw new Error('Empty roster or duplicate display names')
   }

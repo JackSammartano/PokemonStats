@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { buildRoster, SHOWDOWN_COMMIT } from './import-regulation-mc.mjs'
+import { buildRoster, getLearnedMoves, mergeLearnsets, SHOWDOWN_COMMIT } from './import-regulation-mc.mjs'
 import { REGULATION_MC_ROSTER, REGULATION_MC_SOURCE } from '../src/data/regulationMc.js'
 
 const byId = new Map(REGULATION_MC_ROSTER.map((entry) => [entry.showdownId, entry]))
@@ -37,7 +37,7 @@ test('Mega Z identities keep their distinct typing, stats and abilities', () => 
   assert.equal(byId.get('garchompmegaz').abilities[0].id, 'levitate')
   assert.notEqual(byId.get('garchompmega').apiName, byId.get('garchompmegaz').apiName)
   assert.equal(byId.get('maushold').apiName, 'maushold-family-of-three')
-  assert.equal(byId.get('mausholdfour').apiName, 'maushold-family-of-four')
+  assert.equal(byId.has('mausholdfour'), false)
 })
 
 test('import inherits legal form tiers without importing illegal or cosmetic forms', () => {
@@ -49,6 +49,54 @@ test('import inherits legal form tiers without importing illegal or cosmetic for
     examplepast: { ...species, name: 'Example-Past', baseSpecies: 'Example', forme: 'Past' },
     unrelated: { ...species, name: 'Unrelated' },
   }
-  const roster = buildRoster(pokedex, { example: { tier: 'UU' }, examplepast: { isNonstandard: 'Past' } }, {})
+  const roster = buildRoster(pokedex, { example: { tier: 'UU' }, examplepast: { isNonstandard: 'Past' } }, {}, {
+    example: { learnset: { tackle: ['9M'] } }, exampleform: { learnset: { growl: ['9M'] } },
+  })
   assert.deepEqual(roster.map((entry) => entry.showdownId), ['example', 'exampleform'])
+})
+
+test('equivalent forms are excluded while stat, ability, type and move differences stay distinct', () => {
+  const base = { num: 1, name: 'Example', types: ['Grass'], baseStats: { hp: 50 }, abilities: { 0: 'Overgrow' } }
+  const form = (name, changes = {}) => ({ ...base, name: `Example-${name}`, baseSpecies: 'Example', forme: name, ...changes })
+  const dex = {
+    example: base, examplepretty: form('Pretty'),
+    examplestats: form('Stats', { baseStats: { hp: 60 } }),
+    exampleability: form('Ability', { abilities: { 0: 'Chlorophyll' } }),
+    exampletype: form('Type', { types: ['Fire'] }),
+    examplemoves: form('Moves'),
+  }
+  const rows = buildRoster(dex, { example: { tier: 'UU' } }, {}, {
+    example: { learnset: { tackle: ['9M'] } },
+    examplemoves: { learnset: { tackle: ['9M'], growl: ['9M'] } },
+  })
+  assert.deepEqual(new Set(rows.map((entry) => entry.showdownId)), new Set([
+    'example', 'examplestats', 'exampleability', 'exampletype', 'examplemoves',
+  ]))
+})
+
+test('roster excludes cosmetic duplicates and preserves functional forms and battle states', () => {
+  for (const id of ['polteageistantique', 'sinistchamasterpiece', 'vivillonfancy', 'vivillonpokeball', 'mausholdfour', 'squawkabillyblue', 'squawkabillywhite']) {
+    assert.equal(byId.has(id), false, id)
+  }
+  for (const id of ['polteageist', 'sinistcha', 'vivillon', 'maushold', 'squawkabilly', 'squawkabillyyellow', 'toxtricitylowkey', 'meowsticf', 'morpekohangry', 'mimikyubusted']) {
+    assert.ok(byId.has(id), id)
+  }
+  assert.notDeepEqual(byId.get('squawkabilly').abilities, byId.get('squawkabillyyellow').abilities)
+})
+
+test('missing or cyclic learnsets fail the import rather than treating unknown moves as identical', () => {
+  assert.throws(() => getLearnedMoves('missing', {}, {}), /Missing Champions learnset/)
+  assert.throws(() => getLearnedMoves('a', { a: { baseSpecies: 'B' }, b: { baseSpecies: 'A' } }, {}), /Circular/)
+})
+
+test('Champions learnsets replace inherited move tables instead of adding obsolete base moves', () => {
+  const result = mergeLearnsets({
+    example: { eventData: ['event'], learnset: { oldmove: ['7M'] } },
+    removed: { learnset: { tackle: ['9M'] } },
+  }, {
+    example: { inherit: true, learnset: { newmove: ['9M'] } }, removed: null,
+  })
+  assert.deepEqual(result.example.learnset, { newmove: ['9M'] })
+  assert.deepEqual(result.example.eventData, ['event'])
+  assert.equal(result.removed, undefined)
 })
