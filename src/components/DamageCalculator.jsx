@@ -87,8 +87,8 @@ export default function DamageCalculator({ pokemon, attackerName, defenderName, 
         {selectedRow?.result ? (
           <div className="damage-result">
             <span>{selectedRow.move.category === 'physical' ? 'Fisica' : 'Speciale'} · {describeTypeEffectiveness(selectedRow.result.effectiveness)}</span>
-            <strong>{selectedRow.result.min}–{selectedRow.result.max} HP</strong>
-            <small>{selectedRow.minPercent.toFixed(1)}–{selectedRow.maxPercent.toFixed(1)}% di {target.displayName}</small>
+            <strong>{selectedRow.minPercent.toFixed(1)}–{selectedRow.maxPercent.toFixed(1)}%</strong>
+            <small>di {target.displayName}</small>
           </div>
         ) : <p>{selectedRow?.reason || <>Compila lo slot oppure scegli “Dettagli” su un'altra mossa.</>}</p>}
       </div>

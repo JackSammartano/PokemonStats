@@ -29,7 +29,6 @@ export default function FourMoveSelector({ pokemon, moves, onChange, rows = [], 
                 <span className={`type-badge type-${row.move.type}`}>{row.move.type}</span>
                 <span className="move-category">{row.move.category === 'physical' ? 'Fisica' : 'Speciale'}</span>
                 <strong>{row.minPercent.toFixed(1)}–{row.maxPercent.toFixed(1)}%</strong>
-                <span>{row.result.min}–{row.result.max} HP</span>
                 <div className="move-damage-track" aria-hidden="true"><span style={{ width: `${Math.min(100, row.maxPercent)}%` }} /></div>
               </div>
             )}

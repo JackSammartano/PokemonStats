@@ -41,7 +41,10 @@
 .squad-add-controls > button { min-height: 46px; }
 .squad-roster { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
 .squad-empty-slot { display: grid; place-items: center; min-height: 150px; border: 1px dashed #cbd5e1; border-radius: 16px; color: #94a3b8; font-size: 12px; }
-.squad-member { min-width: 0; padding: 12px; border: 1px solid var(--border); border-radius: 16px; background: #fff; }
+.squad-member { position: relative; min-width: 0; padding: 12px; border: 1px solid var(--border); border-radius: 16px; background: #fff; }
+.pokemon-info-button { position: absolute; top: 6px; right: 6px; display: grid; place-items: center; width: 28px; height: 28px; padding: 0; border: 1px solid var(--border); border-radius: 50%; color: #24543d; background: #f3f8ed; font: bold 14px Georgia, serif; cursor: pointer; }
+.pokemon-info-button:hover { background: #dfeeda; }
+.squad-member-heading { padding-right: 20px; }
 .squad-member.selected { border-color: #2563eb; box-shadow: 0 0 0 1px #2563eb; }
 .squad-defender .squad-member.selected { border-color: #d97706; box-shadow: 0 0 0 1px #d97706; }
 .squad-member-heading { display: flex; align-items: center; gap: 8px; min-width: 0; }
@@ -80,9 +83,6 @@
 .type-risk-list small { flex-basis: 100%; color: var(--muted); line-height: 1.5; }
 .type-risk-list .type-badge { padding: 4px 7px; font-size: 9px; }
 .type-risk-list strong { width: 100%; color: #b45309; font-size: 10px; }
-.offensive-coverage { display: grid; grid-template-columns: 1fr auto; gap: 7px; margin: 12px 0; padding: 12px; border-radius: 12px; background: #f1f5f9; font-size: 11px; }
-.offensive-coverage > span { color: #1d4ed8; font-weight: 900; }
-.offensive-coverage > small { grid-column: 1 / -1; color: var(--muted); line-height: 1.5; }
 .coverage-targets { grid-column: 1 / -1; min-width: 0; display: grid; gap: 10px; }
 .coverage-target { padding: 10px; border: 1px solid var(--border); border-radius: 10px; background: #fffefa; }
 .coverage-target > summary { display: flex; justify-content: space-between; align-items: center; gap: 8px; min-height: 24px; list-style: none; cursor: pointer; color: var(--text); font-size: 11px; }
@@ -95,6 +95,23 @@
 .coverage-move strong, .coverage-move > div > span { font-size: 10px; }
 .coverage-move .type-badge { font-size: 8px; padding: 3px 6px; }
 .coverage-move > small { display: block; margin-top: 3px; color: var(--muted); font-size: 9px; }
+.pokemon-coverage-dialog { width: min(920px, calc(100% - 32px)); max-height: calc(100dvh - 48px); overflow: auto; box-sizing: border-box; padding: 26px; border: 1px solid var(--border); border-radius: 24px; background: #fcfdf7; color: var(--text); box-shadow: 0 24px 70px rgba(12, 40, 28, 0.3); }
+.pokemon-coverage-dialog::backdrop { background: rgba(15, 40, 30, 0.6); backdrop-filter: blur(3px); }
+.coverage-dialog-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
+.coverage-dialog-header h2 { margin: 0; font-size: 28px; overflow-wrap: anywhere; }
+.coverage-dialog-header .eyebrow { margin-top: 0; font-size: 10px; }
+.coverage-dialog-header > button { flex-shrink: 0; }
+.pokemon-coverage-dialog p { color: var(--muted); font-size: 12px; line-height: 1.5; }
+.coverage-dialog-columns { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 22px; margin-top: 24px; }
+.coverage-dialog-columns h3 { margin: 0 0 12px; font-size: 15px; }
+.pokemon-coverage-dialog .coverage-move strong, .pokemon-coverage-dialog .coverage-move > div > span { font-size: 12px; }
+.pokemon-coverage-dialog .coverage-move > small { font-size: 11px; }
+.squad-insights { margin-top: 16px; padding: 12px; border: 1px solid var(--border); border-radius: 12px; background: #f5f8f0; }
+.squad-insights h4 { margin: 0 0 12px; font-size: 12px; }
+.squad-insights dl { margin: 0; font-size: 11px; }
+.squad-insights dt { margin-top: 12px; font-weight: 900; }
+.squad-insights dd { margin: 4px 0 0; color: var(--muted); line-height: 1.6; }
+@media (max-width: 640px) { .pokemon-coverage-dialog { padding: 18px; } .coverage-dialog-columns { grid-template-columns: 1fr; } .coverage-dialog-header h2 { font-size: 22px; } }
 .type-defense-head, .type-defense-row > summary { display: grid; grid-template-columns: 76px 1fr 1fr; align-items: center; gap: 7px; }
 .type-defense-head { padding-bottom: 9px; color: var(--muted); font-size: 10px; }
 .type-defense-row { border-top: 1px solid #f1f5f9; }

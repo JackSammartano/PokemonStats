@@ -5,7 +5,7 @@ import { getPokemonMoveSlots } from '../lib/damage/championsMoveSets.js'
 import { getTeamMove } from '../lib/teamData.js'
 import PokemonImage from './PokemonImage'
 
-export default function SquadSection({ side, title, team, roster, builds, moveSets, selected, onSelect, onConfigure, onAdd, onRemove, onClear, onImport, onCatalog }) {
+export default function SquadSection({ side, title, team, roster, builds, moveSets, selected, onSelect, onConfigure, onInfo, onAdd, onRemove, onClear, onImport, onCatalog }) {
   const [message, setMessage] = useState('')
   const [editor, setEditor] = useState(null)
   const [busy, setBusy] = useState(false)
@@ -58,6 +58,7 @@ export default function SquadSection({ side, title, team, roster, builds, moveSe
           const moves = getPokemonMoveSlots(moveSets, side, pokemon)
           return (
             <article className={`squad-member ${selected === pokemon.displayName ? 'selected' : ''}`} key={pokemon.displayName}>
+              <button type="button" className="pokemon-info-button" aria-label={`Copertura e matchup di ${pokemon.displayName} · ${title}`} aria-haspopup="dialog" onClick={() => onInfo(pokemon.displayName)}>i</button>
               <div className="squad-member-heading">
                 <PokemonImage pokemon={pokemon} size={52} />
                 <div><strong>{build.nickname || pokemon.displayName}</strong>{build.nickname && <small>{pokemon.displayName}</small>}<div className="type-row mini">{pokemon.types.map((type) => <span className={`type-badge type-${type}`} key={type}>{type}</span>)}</div></div>

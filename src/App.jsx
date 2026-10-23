@@ -1,4 +1,4 @@
-import { useDeferredValue, useEffect, useRef, useState } from 'react'
+import { lazy, Suspense, useDeferredValue, useEffect, useRef, useState } from 'react'
 import './App.css'
 import './components/TeamWorkspace.css'
 import './landscape-theme.css'
@@ -15,6 +15,7 @@ import DamageCalculator from './components/DamageCalculator'
 import { updatePokemonMoveSlot } from './lib/damage/championsMoveSets'
 import { formatName, POKEMON_DATASET } from './lib/pokemonDataset'
 import PokemonImage from './components/PokemonImage'
+const PokemonCoverageDialog = lazy(() => import('./components/PokemonCoverageDialog'))
 
 const STAT_LABELS = {
   hp: 'HP',
@@ -73,6 +74,7 @@ function App() {
   const { view, fromTeam, navigate } = useWorkspaceNavigation()
   const [teamDamageDraft, setTeamDamageDraft] = useState({ attackerName: '', defenderName: '' })
   const [selectedDamageMove, setSelectedDamageMove] = useState({ side: 'attacker', slot: 0 })
+  const [coverageTarget, setCoverageTarget] = useState(null)
   const [compareLeftName, setCompareLeftName] = useState('')
   const [compareRightName, setCompareRightName] = useState('')
   const [compareRequest, setCompareRequest] = useState(0)
@@ -100,6 +102,7 @@ function App() {
     .map((name) => pokemon.find((entry) => entry.displayName === name))
     .filter(Boolean)
   const opponentTeam = opponentNames.map((name) => pokemon.find((entry) => entry.displayName === name)).filter(Boolean)
+  const coveragePokemon = (coverageTarget?.side === 'attacker' ? team : opponentTeam).find((entry) => entry.displayName === coverageTarget?.name)
   const filtered = [
     ...pokemon.filter((entry) => {
       const matchesText = entry.displayName
@@ -301,6 +304,7 @@ function App() {
               selected={resolveTeamMatchup(team, opponentTeam, teamDamageDraft, moveSets)[side === 'attacker' ? 'attacker' : 'defender']?.displayName}
               onSelect={(name) => setTeamDamageDraft((draft) => ({ ...draft, [side === 'attacker' ? 'attackerName' : 'defenderName']: name }))}
               onConfigure={(name) => configureMember(side, name)}
+              onInfo={(name) => setCoverageTarget({ side, name })}
               onAdd={(name) => addMember(side, name)}
               onRemove={(name) => setSquadNames(side, (names) => names.filter((entry) => entry !== name))}
               onClear={() => setSquadNames(side, [])} onImport={(imported) => handleTeamImport(side, imported)}
@@ -310,6 +314,7 @@ function App() {
           </div>
           <TeamTypeSummary team={team} opponentTeam={opponentTeam} moveSets={moveSets} />
         </div>
+        {view === 'team' && coveragePokemon && <Suspense fallback={<p role="status">Apertura dettagli…</p>}><PokemonCoverageDialog key={`${coverageTarget.side}:${coverageTarget.name}`} pokemon={coveragePokemon} side={coverageTarget.side} team={team} opponentTeam={opponentTeam} moveSets={moveSets} onClose={() => setCoverageTarget(null)} /></Suspense>}
       </div>
       <div className="workspace-view" hidden={view !== 'damage'}>
         <DamageCalculator
