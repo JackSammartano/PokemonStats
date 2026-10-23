@@ -1,16 +1,5 @@
 import { analyzeOffensiveCoverage } from './teamTypeAnalysis.js'
 
-export function getPokemonCoverage(pokemon, side, ownTeam, opposingTeam, moveSets) {
-  const otherSide = side === 'attacker' ? 'defender' : 'attacker'
-  const opponents = side === 'attacker' ? opposingTeam : ownTeam
-  const outgoing = analyzeOffensiveCoverage([pokemon], opponents, side, moveSets)
-  const incoming = analyzeOffensiveCoverage(opponents, [pokemon], otherSide, moveSets)[0]?.options ?? []
-  return {
-    outgoing,
-    incoming: opponents.map((opponent) => ({ name: opponent.displayName, options: incoming.filter((option) => option.attacker === opponent.displayName) })),
-  }
-}
-
 function compareExposure(a, b) {
   return a.threats - b.threats || a.quadruple - b.quadruple || a.worst - b.worst || b.resisted - a.resisted
 }

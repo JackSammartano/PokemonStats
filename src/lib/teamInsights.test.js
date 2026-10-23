@@ -1,11 +1,37 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { deriveTeamInsights, getPokemonCoverage } from './teamInsights.js'
+import { deriveTeamInsights } from './teamInsights.js'
+import { derivePokemonInsights, getPokemonCoverage } from './pokemonInsights.js'
 
 const charizard = { displayName: 'Charizard', showdownId: 'charizard', types: ['fire', 'flying'] }
 const venusaur = { displayName: 'Venusaur', showdownId: 'venusaur', types: ['grass', 'poison'] }
 const blastoise = { displayName: 'Blastoise', showdownId: 'blastoise', types: ['water'] }
 const moves = { 'attacker:Charizard': ['flamethrower', 'protect', '', ''], 'attacker:Blastoise': ['surf', '', '', ''], 'defender:Venusaur': ['giga-drain', 'protect', '', ''] }
+
+test('individual deductions describe only the selected Pokemon and retain its perspective', () => {
+  const own = derivePokemonInsights(getPokemonCoverage(charizard, 'attacker', [charizard, blastoise], [venusaur], moves))
+  assert.deepEqual(own.threats, [])
+  assert.deepEqual(own.resisted, ['Venusaur'])
+  assert.deepEqual(own.covered, ['Venusaur'])
+  assert.deepEqual(own.bestMoves, [{ name: 'Flamethrower', targets: ['Venusaur'] }])
+  const enemy = derivePokemonInsights(getPokemonCoverage(venusaur, 'defender', [charizard, blastoise], [venusaur], moves))
+  assert.deepEqual(enemy.threats, [{ name: 'Charizard', worst: 2 }])
+  assert.deepEqual(enemy.resisted, ['Blastoise'])
+  assert.deepEqual(enemy.covered, ['Blastoise'])
+  assert.deepEqual(enemy.gaps, ['Charizard'])
+})
+
+test('individual deductions keep tied moves and distinguish missing data from favorable matchups', () => {
+  const state = { ...moves, 'attacker:Charizard': ['flamethrower', 'heat-wave', '', ''], 'defender:Venusaur': ['protect', '', '', ''] }
+  const insights = derivePokemonInsights(getPokemonCoverage(charizard, 'attacker', [charizard], [venusaur], state))
+  assert.deepEqual(insights.bestMoves.map((move) => move.name), ['Flamethrower', 'Heat Wave'])
+  assert.equal(insights.evaluated, 0)
+  assert.deepEqual(insights.resisted, [])
+  assert.deepEqual(insights.unknown, ['Venusaur'])
+  const empty = derivePokemonInsights({ outgoing: [], incoming: [] })
+  assert.equal(empty.hasAttacks, false)
+  assert.deepEqual(empty.bestMoves, [])
+})
 
 test('own Pokemon modal keeps outgoing and incoming directions separate', () => {
   const own = getPokemonCoverage(charizard, 'attacker', [charizard, blastoise], [venusaur], moves)
