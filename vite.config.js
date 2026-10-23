@@ -5,4 +5,13 @@ import react from '@vitejs/plugin-react'
 export default defineConfig({
   base: '/PokemonStats/',
   plugins: [react()],
+  build: {
+    rolldownOptions: {
+      output: {
+        codeSplitting: {
+          groups: [{ name: 'champions-learnsets', test: /championsDamageLearnsets\.js$/ }],
+        },
+      },
+    },
+  },
 })

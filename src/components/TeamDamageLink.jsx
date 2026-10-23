@@ -1,14 +1,15 @@
 import { resolveTeamMatchup } from '../lib/teamDamageLink.js'
+import FourMoveSelector from './FourMoveSelector'
 
-export default function TeamDamageLink({ team, pokemon, draft, onChange, onCalculate }) {
-  const { attacker, defender, move, moveOptions, canCalculate } = resolveTeamMatchup(team, pokemon, draft)
+export default function TeamDamageLink({ team, pokemon, draft, onChange, onCalculate, moveSets, onMoveChange }) {
+  const { attacker, defender, attackerMoves, defenderMoves, canCalculate } = resolveTeamMatchup(team, pokemon, draft, moveSets)
 
   return (
     <section className="team-damage-link" aria-labelledby="team-damage-title">
       <div className="team-damage-intro">
         <p className="eyebrow compact">Dal team al calcolo</p>
         <h2 id="team-damage-title">Prepara un confronto</h2>
-        <p>Scegli un membro del team, il Pokémon avversario e la mossa da simulare.</p>
+        <p>Scegli i due Pokémon e prepara fino a quattro mosse per ciascuno. Le ritroverai tutte nel calcolatore.</p>
       </div>
       <div className="team-damage-fields">
         <label className="select-field">
@@ -16,7 +17,7 @@ export default function TeamDamageLink({ team, pokemon, draft, onChange, onCalcu
           <select
             value={attacker?.displayName ?? ''}
             disabled={!team.length}
-            onChange={(event) => onChange({ ...draft, attackerName: event.target.value, moveName: '' })}
+            onChange={(event) => onChange({ ...draft, attackerName: event.target.value })}
           >
             {!team.length && <option value="">Aggiungi un Pokémon al team</option>}
             {team.map((entry) => <option key={entry.displayName} value={entry.displayName}>{entry.displayName}</option>)}
@@ -33,19 +34,10 @@ export default function TeamDamageLink({ team, pokemon, draft, onChange, onCalcu
             {pokemon.map((entry) => <option key={entry.displayName} value={entry.displayName}>{entry.displayName}</option>)}
           </select>
         </label>
-        <label className="select-field">
-          <span>Mossa da simulare</span>
-          <select
-            value={move?.value ?? ''}
-            disabled={!team.length || !moveOptions.options.length}
-            onChange={(event) => onChange({ ...draft, moveName: event.target.value })}
-          >
-            {moveOptions.options.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
-          </select>
-          {team.length > 0 && moveOptions.source === 'manual' && (
-            <small className="weather-override-hint">Learnset supportato non disponibile: verifica manualmente che il Pokémon possa usare la mossa.</small>
-          )}
-        </label>
+      </div>
+      <div className="team-move-sets">
+        <FourMoveSelector label={`Mosse di ${attacker?.displayName ?? 'un membro del team'}`} pokemon={attacker} moves={attackerMoves} onChange={(slot, value) => onMoveChange('attacker', attacker, slot, value)} />
+        <FourMoveSelector label={`Mosse di ${defender?.displayName ?? 'un avversario'}`} pokemon={team.length ? defender : null} moves={defenderMoves} onChange={(slot, value) => onMoveChange('defender', defender, slot, value)} />
       </div>
       {attacker && defender && (
         <div className="team-matchup-preview" aria-live="polite">

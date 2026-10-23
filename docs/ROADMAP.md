@@ -11,7 +11,7 @@ le specifiche dettagliate verranno definite prima dell'implementazione.
 
 ## 2. Il mio team: confronto tra due team
 
-- Implementate viste dedicate per team e calcolatore, con passaggio della coppia e della mossa e ritorno contestuale. Dettagli in [team-workspace.md](team-workspace.md).
+- Implementate viste dedicate per team e calcolatore, con passaggio della coppia e di quattro mosse per ciascun Pokémon e ritorno contestuale. Dettagli in [team-workspace.md](team-workspace.md).
 - Ampliare la gestione de "Il mio team" per confrontare due team.
 - Mostrare i tipi dei Pokémon e delle loro mosse.
 - Consentire di affiancare i Pokémon dei due team a due a due.
@@ -21,6 +21,7 @@ le specifiche dettagliate verranno definite prima dell'implementazione.
 
 ## 3. Damage calculator
 
+- Implementati quattro slot per lato, otto risultati simultanei, statistiche configurabili in entrambe le direzioni e optimizer sulla mossa selezionata. Dettagli in [four-move-calculator.md](four-move-calculator.md).
 - Completare il calcolatore esistente.
 - Attività rimandata rispetto a Regulation M-C e confronto tra team.
 - Definire successivamente le funzionalità mancanti e i criteri di completamento.

@@ -1,10 +1,10 @@
-import { getDamageMoveOptions } from './damage/championsOptions.js'
+import { getPokemonMoveSlots } from './damage/championsMoveSets.js'
 
-export function resolveTeamMatchup(team, roster, draft) {
+export function resolveTeamMatchup(team, roster, draft, moveSets = {}) {
   const attacker = team.find((entry) => entry.displayName === draft.attackerName) ?? team[0] ?? null
   const defender = roster.find((entry) => entry.displayName === draft.defenderName)
     ?? roster.find((entry) => entry.displayName !== attacker?.displayName) ?? roster[0] ?? null
-  const moveOptions = getDamageMoveOptions(attacker)
-  const move = moveOptions.options.find((option) => option.value === draft.moveName) ?? moveOptions.options[0] ?? null
-  return { attacker, defender, move, moveOptions, canCalculate: Boolean(attacker && defender && move?.value) }
+  const attackerMoves = getPokemonMoveSlots(moveSets, 'attacker', attacker)
+  const defenderMoves = getPokemonMoveSlots(moveSets, 'defender', defender)
+  return { attacker, defender, attackerMoves, defenderMoves, canCalculate: Boolean(attacker && defender && (attackerMoves.some(Boolean) || defenderMoves.some(Boolean))) }
 }

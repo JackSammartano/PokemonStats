@@ -22,7 +22,10 @@ npm run data:regulation-mc
 ```
 
 La cache dei sorgenti è separata per commit in `.cache/showdown/` e non entra in Git.
-L'output generato è `src/data/regulationMc.js`. La licenza MIT upstream è conservata in
+Gli output generati sono `src/data/regulationMc.js` e `src/data/championsDamageLearnsets.js`.
+Il secondo contiene l'intersezione fra learnset Champions e mosse implementate dal motore danni,
+condividendo i pool identici tra forme per limitare le dimensioni.
+La licenza MIT upstream è conservata in
 `docs/licenses/pokemon-showdown.txt`.
 
 ## Criteri del roster

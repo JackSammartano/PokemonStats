@@ -1,4 +1,5 @@
 import { CHAMPIONS_SET_MOVE_IDS } from '../../data/championsSetMoves.js'
+import { CHAMPIONS_DAMAGE_LEARNSETS } from '../../data/championsDamageLearnsets.js'
 import { CHAMPIONS_ABILITIES } from './championsAbilities.js'
 import { CHAMPIONS_MOVES } from './championsData.js'
 import { toId } from './championsMath.js'
@@ -20,7 +21,8 @@ export function getAllDamageMoveOptions() {
 }
 
 export function getSupportedMoveOptions(pokemon) {
-  const championsSetMoves = CHAMPIONS_SET_MOVE_IDS[toId(pokemon?.apiName)]
+  const championsSetMoves = CHAMPIONS_DAMAGE_LEARNSETS[pokemon?.showdownId]
+    ?? CHAMPIONS_SET_MOVE_IDS[toId(pokemon?.apiName)]
   const learnset = new Set(
     championsSetMoves ??
       (pokemon?.moves ?? []).map((move) => toId(move.id ?? move.name)),
@@ -50,7 +52,7 @@ export function getSupportedAbilityOptions(pokemon) {
   const seen = new Set([''])
 
   for (const ability of pokemon?.abilities ?? []) {
-    const abilityId = toId(ability.id ?? ability.name)
+    const abilityId = toId(ability.name ?? ability.id)
 
     if (!abilityId || seen.has(abilityId)) {
       continue
