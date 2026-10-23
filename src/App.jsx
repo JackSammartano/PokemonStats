@@ -1,5 +1,8 @@
 import { useDeferredValue, useEffect, useMemo, useRef, useState } from 'react'
 import './App.css'
+import TeamDamageLink from './components/TeamDamageLink'
+import { resolveTeamMatchup } from './lib/teamDamageLink'
+import { useWorkspaceNavigation } from './lib/workspaceNavigation'
 import { REGULATION_MC_POKEMON } from './data/regulationMc'
 import { calculateChampionsDamage } from './lib/damage/championsDamage'
 import { CHAMPIONS_MOVES, CHAMPIONS_NATURES } from './lib/damage/championsData'
@@ -95,6 +98,8 @@ function App() {
   const [teamNames, setTeamNames] = useState([])
   const [highlightedTeamMember, setHighlightedTeamMember] = useState(null)
   const [activePanel, setActivePanel] = useState(null)
+  const { view, fromTeam, navigate } = useWorkspaceNavigation()
+  const [teamDamageDraft, setTeamDamageDraft] = useState({ attackerName: '', defenderName: '', moveName: '' })
   const [compareLeftName, setCompareLeftName] = useState('')
   const [compareRightName, setCompareRightName] = useState('')
   const [loadedCount, setLoadedCount] = useState(0)
@@ -128,6 +133,10 @@ function App() {
   const [damageLightScreen, setDamageLightScreen] = useState(false)
   const [optimizerRankingMode, setOptimizerRankingMode] = useState('minimum')
   const deferredQuery = useDeferredValue(query)
+
+  useEffect(() => {
+    document.querySelector('.workspace-view:not([hidden]) h1')?.focus({ preventScroll: true })
+  }, [view])
 
   useEffect(() => {
     let ignore = false
@@ -202,53 +211,40 @@ function App() {
     setActivePanel(isOpen ? panelName : null)
   }
 
-  function selectForPair(entry, leftName, rightName, setLeftName, setRightName) {
-    if (!leftName || leftName === entry.displayName) {
-      setLeftName(entry.displayName)
-      return
+  function openDamageFromTeam() {
+    const matchup = resolveTeamMatchup(team, supported, teamDamageDraft)
+    if (matchup.canCalculate) {
+      const { attacker, defender, move } = matchup
+      if (attacker.displayName !== damageAttackerName) {
+        setDamageAttackerAbility('')
+        setDamageAttackerItem('')
+        setDamageAttackerNature('serious')
+        setDamageAttackerSp(32)
+        setDamageAttackerBoost(0)
+        setDamageBurned(false)
+      }
+      if (defender.displayName !== damageDefenderName) {
+        setDamageDefenderAbility('')
+        setDamageDefenderItem('')
+        setDamageDefenderNature('serious')
+        setDamageDefenderHpSp(32)
+        setDamageDefenderDefenseSp(32)
+        setDamageDefenderBoost(0)
+      }
+      setDamageAttackerName(attacker.displayName)
+      setDamageDefenderName(defender.displayName)
+      setDamageMoveName(move.value)
     }
-
-    if (!rightName || rightName === entry.displayName) {
-      setRightName(entry.displayName)
-      return
-    }
-
-    const shouldReset = window.confirm(
-      `Vuoi annullare il confronto corrente e iniziarne uno nuovo con ${entry.displayName}?`,
-    )
-
-    if (shouldReset) {
-      setLeftName(entry.displayName)
-      setRightName('')
-    }
+    navigate('damage', { fromTeam: true })
   }
 
-  function handlePokemonAction(entry) {
-    if (entry.status !== 'ready') return
-
-    if (activePanel === 'compare') {
-      selectForPair(
-        entry,
-        compareLeftName,
-        compareRightName,
-        setCompareLeftName,
-        setCompareRightName,
-      )
-      return
-    }
-
-    if (activePanel === 'damage') {
-      selectForPair(
-        entry,
-        damageAttackerName,
-        damageDefenderName,
-        setDamageAttackerName,
-        setDamageDefenderName,
-      )
-      return
-    }
-
-    toggleTeamMember(entry)
+  function returnToTeam() {
+    setTeamDamageDraft((draft) => ({
+      attackerName: teamNames.includes(damageAttackerName) ? damageAttackerName : draft.attackerName,
+      defenderName: damageDefenderName || draft.defenderName,
+      moveName: damageMoveName,
+    }))
+    navigate('team')
   }
 
   function clearTeamHighlight() {
@@ -257,89 +253,24 @@ function App() {
 
   return (
     <main className="app-shell">
-      <details className="debug-panel">
-        <summary>Debug</summary>
-        <div className="debug-grid">
-          <Metric label="Caricati" value={`${loadedCount}/${REGULATION_MC_POKEMON.length}`} />
-          <Metric label="Supportati" value={supported.length} />
-          <Metric label="Non risolti" value={unsupported.length} tone="warning" />
-          <Metric label="Base" value={baseCount} />
-          <Metric label="Forme alternative" value={formCount} />
-          <Metric label="Mega" value={megaCount} />
+      <nav className="workspace-nav" aria-label="Navigazione principale">
+        <a className="workspace-brand" href="#/catalogo" onClick={(event) => { event.preventDefault(); navigate('catalog') }}>Pokémon stats <span>M-C</span></a>
+        <div className="workspace-nav-buttons">
+          <button type="button" aria-current={view === 'catalog' ? 'page' : undefined} onClick={() => navigate('catalog')}>Catalogo</button>
+          <button type="button" aria-current={view === 'team' ? 'page' : undefined} onClick={() => view === 'damage' && fromTeam ? returnToTeam() : navigate('team')}>Il mio team <span className="nav-count">{team.length}/{TEAM_SIZE}</span></button>
+          <button
+            type="button"
+            aria-current={view === 'damage' ? 'page' : undefined}
+            onClick={() => {
+              if (view === 'damage') return
+              if (view === 'team') openDamageFromTeam()
+              else navigate('damage')
+            }}
+          >
+            Damage calculator
+          </button>
         </div>
-      </details>
-
-      <section className="hero-section">
-        <div className="hero-copy">
-          <p className="eyebrow">Regulation M-C</p>
-          <h1>Pokemon stats expo</h1>
-        </div>
-      </section>
-
-      <details className="toolbar" open aria-label="Filtri">
-        <summary>Cerca e filtra</summary>
-        <div className="toolbar-fields">
-          <label className="search-field">
-            <span>Cerca Pokémon</span>
-            <input
-              type="search"
-              value={query}
-              onChange={(event) => setQuery(event.target.value)}
-              placeholder="Es. Garchomp, Mega Raichu..."
-            />
-          </label>
-
-          <label className="select-field">
-            <span>Tipo</span>
-            <select
-              value={selectedType}
-              onChange={(event) => setSelectedType(event.target.value)}
-            >
-              {TYPE_OPTIONS.map((type) => (
-                <option key={type} value={type}>
-                  {type === 'all' ? 'Tutti i tipi' : formatName(type)}
-                </option>
-              ))}
-            </select>
-          </label>
-
-          <label className="select-field">
-            <span>Categoria</span>
-            <select
-              value={selectedCategory}
-              onChange={(event) => setSelectedCategory(event.target.value)}
-            >
-              <option value="all">Tutte</option>
-              <option value="base">Base</option>
-              <option value="form">Forme alternative</option>
-              <option value="mega">Mega</option>
-            </select>
-          </label>
-
-          <label className="select-field">
-            <span>Ordina per</span>
-            <select value={sortBy} onChange={(event) => setSortBy(event.target.value)}>
-              {SORT_OPTIONS.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
-          </label>
-
-          <label className="select-field">
-            <span>Direzione</span>
-            <select
-              value={sortDirection}
-              onChange={(event) => setSortDirection(event.target.value)}
-            >
-              <option value="asc">Crescente</option>
-              <option value="desc">Decrescente</option>
-            </select>
-          </label>
-        </div>
-      </details>
-
+      </nav>
       {status === 'error' && (
         <section className="notice error">
           <strong>Caricamento non riuscito.</strong>
@@ -359,98 +290,203 @@ function App() {
         </section>
       )}
 
-      <TeamBuilder
-        analysis={teamAnalysis}
-        highlightedTeamMember={highlightedTeamMember}
-        isOpen={activePanel === 'team'}
-        onClearHighlight={clearTeamHighlight}
-        onClear={() => setTeamNames([])}
-        onHighlight={setHighlightedTeamMember}
-        onOpenChange={(isOpen) => handlePanelToggle('team', isOpen)}
-        onRemove={(name) =>
-          setTeamNames((currentTeam) => currentTeam.filter((entry) => entry !== name))
-        }
-        team={team}
-      />
+      <div className="workspace-view" hidden={view !== 'catalog'}>
+        <details className="debug-panel">
+          <summary>Debug</summary>
+          <div className="debug-grid">
+            <Metric label="Caricati" value={`${loadedCount}/${REGULATION_MC_POKEMON.length}`} />
+            <Metric label="Supportati" value={supported.length} />
+            <Metric label="Non risolti" value={unsupported.length} tone="warning" />
+            <Metric label="Base" value={baseCount} />
+            <Metric label="Forme alternative" value={formCount} />
+            <Metric label="Mega" value={megaCount} />
+          </div>
+        </details>
 
-      <ComparePanel
-        onToggleTeam={toggleTeamMember}
-        teamIsFull={teamNames.length >= TEAM_SIZE}
-        teamNames={teamNames}
-        isOpen={activePanel === 'compare'}
-        leftName={compareLeftName}
-        onLeftChange={setCompareLeftName}
-        onOpenChange={(isOpen) => handlePanelToggle('compare', isOpen)}
-        onRightChange={setCompareRightName}
-        pokemon={supported}
-        rightName={compareRightName}
-      />
+        <section className="hero-section">
+          <div className="hero-copy">
+            <p className="eyebrow">Regulation M-C</p>
+            <h1 tabIndex={-1}>Pokemon stats expo</h1>
+          </div>
+        </section>
 
-      <DamageCalculator
-        attackerBoost={damageAttackerBoost}
-        attackerAbility={damageAttackerAbility}
-        attackerItem={damageAttackerItem}
-        attackerName={damageAttackerName}
-        attackerNature={damageAttackerNature}
-        attackerSp={damageAttackerSp}
-        burned={damageBurned}
-        critical={damageCritical}
-        defenderBoost={damageDefenderBoost}
-        defenderAbility={damageDefenderAbility}
-        defenderDefenseSp={damageDefenderDefenseSp}
-        defenderHpSp={damageDefenderHpSp}
-        defenderItem={damageDefenderItem}
-        defenderName={damageDefenderName}
-        defenderNature={damageDefenderNature}
-        gameType={damageGameType}
-        itemMode={damageItemMode}
-        isOpen={activePanel === 'damage'}
-        lightScreen={damageLightScreen}
-        moveName={damageMoveName}
-        onAttackerBoostChange={setDamageAttackerBoost}
-        onAttackerAbilityChange={setDamageAttackerAbility}
-        onAttackerChange={setDamageAttackerName}
-        onAttackerItemChange={setDamageAttackerItem}
-        onAttackerNatureChange={setDamageAttackerNature}
-        onAttackerSpChange={setDamageAttackerSp}
-        onBurnedChange={setDamageBurned}
-        onCriticalChange={setDamageCritical}
-        onDefenderDefenseSpChange={setDamageDefenderDefenseSp}
-        onDefenderAbilityChange={setDamageDefenderAbility}
-        onDefenderBoostChange={setDamageDefenderBoost}
-        onDefenderChange={setDamageDefenderName}
-        onDefenderHpSpChange={setDamageDefenderHpSp}
-        onDefenderItemChange={setDamageDefenderItem}
-        onDefenderNatureChange={setDamageDefenderNature}
-        onGameTypeChange={setDamageGameType}
-        onItemModeChange={setDamageItemMode}
-        onLightScreenChange={setDamageLightScreen}
-        onMoveChange={setDamageMoveName}
-        onOpenChange={(isOpen) => handlePanelToggle('damage', isOpen)}
-        onOptimizerRankingModeChange={setOptimizerRankingMode}
-        onReflectChange={setDamageReflect}
-        onWeatherChange={setDamageWeather}
-        optimizerRankingMode={optimizerRankingMode}
-        pokemon={supported}
-        reflect={damageReflect}
-        weather={damageWeather}
-      />
+        <details className="toolbar" open aria-label="Filtri">
+          <summary>Cerca e filtra</summary>
+          <div className="toolbar-fields">
+            <label className="search-field">
+              <span>Cerca Pokémon</span>
+              <input
+                type="search"
+                value={query}
+                onChange={(event) => setQuery(event.target.value)}
+                placeholder="Es. Garchomp, Mega Raichu..."
+              />
+            </label>
 
-      <section className="pokemon-grid">
-        {filtered.map((entry) =>
-          entry.status === 'ready' ? (
-            <PokemonCard
-              isSelected={teamNames.includes(entry.displayName)}
-              key={entry.displayName}
-              onToggleTeam={() => handlePokemonAction(entry)}
-              pokemon={entry}
-              teamIsFull={activePanel !== 'team' ? false : teamNames.length >= TEAM_SIZE}
-            />
-          ) : (
-            <UnsupportedCard key={entry.displayName} pokemon={entry} />
-          ),
-        )}
-      </section>
+            <label className="select-field">
+              <span>Tipo</span>
+              <select
+                value={selectedType}
+                onChange={(event) => setSelectedType(event.target.value)}
+              >
+                {TYPE_OPTIONS.map((type) => (
+                  <option key={type} value={type}>
+                    {type === 'all' ? 'Tutti i tipi' : formatName(type)}
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            <label className="select-field">
+              <span>Categoria</span>
+              <select
+                value={selectedCategory}
+                onChange={(event) => setSelectedCategory(event.target.value)}
+              >
+                <option value="all">Tutte</option>
+                <option value="base">Base</option>
+                <option value="form">Forme alternative</option>
+                <option value="mega">Mega</option>
+              </select>
+            </label>
+
+            <label className="select-field">
+              <span>Ordina per</span>
+              <select value={sortBy} onChange={(event) => setSortBy(event.target.value)}>
+                {SORT_OPTIONS.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            <label className="select-field">
+              <span>Direzione</span>
+              <select
+                value={sortDirection}
+                onChange={(event) => setSortDirection(event.target.value)}
+              >
+                <option value="asc">Crescente</option>
+                <option value="desc">Decrescente</option>
+              </select>
+            </label>
+          </div>
+        </details>
+
+        <ComparePanel
+          onToggleTeam={toggleTeamMember}
+          teamIsFull={teamNames.length >= TEAM_SIZE}
+          teamNames={teamNames}
+          isOpen={activePanel === 'compare'}
+          leftName={compareLeftName}
+          onLeftChange={setCompareLeftName}
+          onOpenChange={(isOpen) => handlePanelToggle('compare', isOpen)}
+          onRightChange={setCompareRightName}
+          pokemon={supported}
+          rightName={compareRightName}
+        />
+
+        <section className="pokemon-grid">
+          {filtered.map((entry) =>
+            entry.status === 'ready' ? (
+              <PokemonCard
+                isSelected={teamNames.includes(entry.displayName)}
+                key={entry.displayName}
+                onToggleTeam={() => toggleTeamMember(entry)}
+                pokemon={entry}
+                teamIsFull={teamNames.length >= TEAM_SIZE}
+              />
+            ) : (
+              <UnsupportedCard key={entry.displayName} pokemon={entry} />
+            ),
+          )}
+        </section>
+
+      </div>
+      <div className="workspace-view" hidden={view !== 'team'}>
+        <header className="workspace-heading">
+          <div>
+            <p className="eyebrow compact">La tua squadra · Regulation M-C</p>
+            <h1 tabIndex={-1}>Il mio team</h1>
+            <p>Gestisci i tuoi Pokémon e prepara il confronto da aprire nel calcolatore.</p>
+          </div>
+          <button type="button" className="ghost-button" onClick={() => navigate('catalog')}>Aggiungi Pokémon dal catalogo</button>
+        </header>
+        <TeamBuilder
+          analysis={teamAnalysis}
+          highlightedTeamMember={highlightedTeamMember}
+          onClearHighlight={clearTeamHighlight}
+          onClear={() => setTeamNames([])}
+          onHighlight={setHighlightedTeamMember}
+          onRemove={(name) =>
+            setTeamNames((currentTeam) => currentTeam.filter((entry) => entry !== name))
+          }
+          onSelectForDamage={(name) => setTeamDamageDraft((draft) => ({ ...draft, attackerName: name, moveName: '' }))}
+          selectedForDamage={resolveTeamMatchup(team, supported, teamDamageDraft).attacker?.displayName}
+          team={team}
+        />
+
+        <TeamDamageLink team={team} pokemon={supported} draft={teamDamageDraft} onChange={setTeamDamageDraft} onCalculate={openDamageFromTeam} />
+      </div>
+      <div className="workspace-view" hidden={view !== 'damage'}>
+        <header className="workspace-heading">
+          <div>
+            <p className="eyebrow compact">Pokémon Champions</p>
+            <h1 tabIndex={-1}>Damage calculator</h1>
+            <p>Configura i due Pokémon e analizza il danno della mossa selezionata.</p>
+          </div>
+          {fromTeam && <button type="button" className="ghost-button back-to-team" onClick={returnToTeam}><span aria-hidden="true">← </span>Torna al mio team</button>}
+        </header>
+        <DamageCalculator
+          attackerBoost={damageAttackerBoost}
+          attackerAbility={damageAttackerAbility}
+          attackerItem={damageAttackerItem}
+          attackerName={damageAttackerName}
+          attackerNature={damageAttackerNature}
+          attackerSp={damageAttackerSp}
+          burned={damageBurned}
+          critical={damageCritical}
+          defenderBoost={damageDefenderBoost}
+          defenderAbility={damageDefenderAbility}
+          defenderDefenseSp={damageDefenderDefenseSp}
+          defenderHpSp={damageDefenderHpSp}
+          defenderItem={damageDefenderItem}
+          defenderName={damageDefenderName}
+          defenderNature={damageDefenderNature}
+          gameType={damageGameType}
+          itemMode={damageItemMode}
+          lightScreen={damageLightScreen}
+          moveName={damageMoveName}
+          onAttackerBoostChange={setDamageAttackerBoost}
+          onAttackerAbilityChange={setDamageAttackerAbility}
+          onAttackerChange={setDamageAttackerName}
+          onAttackerItemChange={setDamageAttackerItem}
+          onAttackerNatureChange={setDamageAttackerNature}
+          onAttackerSpChange={setDamageAttackerSp}
+          onBurnedChange={setDamageBurned}
+          onCriticalChange={setDamageCritical}
+          onDefenderDefenseSpChange={setDamageDefenderDefenseSp}
+          onDefenderAbilityChange={setDamageDefenderAbility}
+          onDefenderBoostChange={setDamageDefenderBoost}
+          onDefenderChange={setDamageDefenderName}
+          onDefenderHpSpChange={setDamageDefenderHpSp}
+          onDefenderItemChange={setDamageDefenderItem}
+          onDefenderNatureChange={setDamageDefenderNature}
+          onGameTypeChange={setDamageGameType}
+          onItemModeChange={setDamageItemMode}
+          onLightScreenChange={setDamageLightScreen}
+          onMoveChange={setDamageMoveName}
+          onOptimizerRankingModeChange={setOptimizerRankingMode}
+          onReflectChange={setDamageReflect}
+          onWeatherChange={setDamageWeather}
+          optimizerRankingMode={optimizerRankingMode}
+          pokemon={supported}
+          reflect={damageReflect}
+          weather={damageWeather}
+        />
+
+      </div>
     </main>
   )
 }
@@ -473,7 +509,6 @@ function DamageCalculator({
   defenderNature,
   gameType,
   itemMode,
-  isOpen,
   lightScreen,
   moveName,
   onAttackerAbilityChange,
@@ -495,7 +530,6 @@ function DamageCalculator({
   onItemModeChange,
   onLightScreenChange,
   onMoveChange,
-  onOpenChange,
   onOptimizerRankingModeChange,
   onReflectChange,
   onWeatherChange,
@@ -757,12 +791,7 @@ function DamageCalculator({
   }
 
   return (
-    <details
-      className="damage-calculator"
-      onToggle={(event) => onOpenChange(event.currentTarget.open)}
-      open={isOpen}
-    >
-      <summary>Damage calculator</summary>
+    <section className="damage-calculator" aria-label="Configurazione del calcolo danni">
       <div className="damage-header">
         <div>
           <p className="eyebrow compact">Damage preview</p>
@@ -1199,7 +1228,7 @@ function DamageCalculator({
           result={optimizerResult}
         />
       )}
-    </details>
+    </section>
   )
 }
 
@@ -1586,21 +1615,17 @@ function Metric({ label, value, tone }) {
 function TeamBuilder({
   analysis,
   highlightedTeamMember,
-  isOpen,
   onClear,
   onClearHighlight,
   onHighlight,
-  onOpenChange,
+  onSelectForDamage,
+  selectedForDamage,
   onRemove,
   team,
 }) {
   return (
-    <details
-      className="team-builder"
-      onToggle={(event) => onOpenChange(event.currentTarget.open)}
-      open={isOpen}
-    >
-      <summary>Il mio team ({team.length}/{TEAM_SIZE})</summary>
+    <section className="team-builder" aria-label="Membri e analisi difensiva del team">
+      <h2 className="team-section-title">La mia squadra <span>{team.length}/{TEAM_SIZE}</span></h2>
       {team.length > 0 && (
         <div className="team-header">
           <button
@@ -1637,6 +1662,14 @@ function TeamBuilder({
                     ))}
                   </div>
                 </div>
+                <button
+                  type="button"
+                  className="team-analyze"
+                  aria-pressed={selectedForDamage === pokemon.displayName}
+                  onClick={() => onSelectForDamage(pokemon.displayName)}
+                >
+                  {selectedForDamage === pokemon.displayName ? 'Attaccante selezionato' : 'Usa come attaccante'}
+                </button>
                 <button
                   aria-label={`Rimuovi ${pokemon.displayName} dal team`}
                   onClick={() => onRemove(pokemon.displayName)}
@@ -1679,7 +1712,7 @@ function TeamBuilder({
           copertura difensiva del team.
         </p>
       )}
-    </details>
+    </section>
   )
 }
 
@@ -1748,7 +1781,8 @@ function PokemonCard({
       <button
         className={`team-toggle ${isSelected ? 'selected' : ''}`}
         disabled={disabled}
-        aria-label={isSelected ? 'Rimuovi dal team' : 'Aggiungi al team'}
+        aria-label={isSelected ? `Rimuovi ${pokemon.displayName} dal team` : `Aggiungi ${pokemon.displayName} al team`}
+        title={isSelected ? 'Rimuovi dal mio team' : disabled ? 'Il mio team ? completo (6/6)' : 'Aggiungi al mio team'}
         onClick={onToggleTeam}
         type="button"
       >

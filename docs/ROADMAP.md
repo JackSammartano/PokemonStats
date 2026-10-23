@@ -11,6 +11,7 @@ le specifiche dettagliate verranno definite prima dell'implementazione.
 
 ## 2. Il mio team: confronto tra due team
 
+- Implementate viste dedicate per team e calcolatore, con passaggio della coppia e della mossa e ritorno contestuale. Dettagli in [team-workspace.md](team-workspace.md).
 - Ampliare la gestione de "Il mio team" per confrontare due team.
 - Mostrare i tipi dei Pokémon e delle loro mosse.
 - Consentire di affiancare i Pokémon dei due team a due a due.

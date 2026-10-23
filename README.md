@@ -8,6 +8,8 @@ Frontend React + Vite per consultare Regulation Set M-C, con roster e dati essen
 - Ricerca testuale, filtro per tipo e filtro per categoria.
 - Stats base, tipi, debolezze difensive e abilita con descrizione.
 - Team builder con analisi difensiva.
+- Viste dedicate Catalogo, Il mio team e Damage calculator, con navigazione avanti/indietro.
+- Passaggio dal team al calcolatore con attaccante, avversario e mossa già impostati e ritorno contestuale al team.
 - Tab Confronta per vedere due card Pokemon complete affiancate.
 - Damage calculator Champions con selezione attacker/defender, mosse, item, abilita, nature, SP, boost e condizioni di campo.
 - Optimizer `Find KO` / `Find Survival` con ranking `Minimum investment` o `Practical build`.
@@ -36,6 +38,7 @@ npm run data:regulation-mc
 ```
 
 Dettagli su fonti, forme e verifiche in [docs/regulation-mc.md](docs/regulation-mc.md).
+Flusso delle viste e trasferimento dati in [docs/team-workspace.md](docs/team-workspace.md).
 La vecchia lista `src/data/regulationMb.js` resta come riferimento storico e non viene caricata dall'app.
 
 Tipi, statistiche base e identità delle abilità provengono dallo snapshot Showdown.
