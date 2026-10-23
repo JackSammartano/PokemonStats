@@ -1,5 +1,5 @@
 import { analyzeOffensiveCoverage, analyzeTeamTypes } from '../lib/teamTypeAnalysis.js'
-import { formatTypeMultiplier } from '../lib/typeLabels.js'
+import { describeTypeEffectiveness, formatTypeMultiplier } from '../lib/typeLabels.js'
 
 export default function TeamTypeSummary({ team, opponentTeam, moveSets }) {
   const own = analyzeTeamTypes(team)
@@ -22,7 +22,23 @@ export default function TeamTypeSummary({ team, opponentTeam, moveSets }) {
 
 function Coverage({ label, rows }) {
   const covered = rows.filter((row) => row.best > 1)
-  return <div className="offensive-coverage"><strong>{label}</strong><span>{rows.length ? `${covered.length}/${rows.length} bersagli` : '—'}</span>{rows.length > 0 && <small>{rows.filter((row) => row.best === null).length === rows.length ? 'Nessuna mossa offensiva selezionata.' : rows.filter((row) => row.best <= 1).map((row) => row.name).join(', ') || 'Copertura superefficace su tutti i bersagli.'}</small>}</div>
+  return <div className="offensive-coverage">
+    <strong>{label}</strong><span>{rows.length ? `${covered.length}/${rows.length} bersagli` : '—'}</span>
+    <div className="coverage-targets">
+      {!rows.length && <p>Nessun bersaglio: aggiungi Pokémon alla squadra da confrontare.</p>}
+      {rows.map((row) => <article className="coverage-target" key={row.name}>
+        <header><strong>{row.name}</strong><small>{row.best === null ? 'Nessuna mossa offensiva selezionata' : describeTypeEffectiveness(row.best)}</small></header>
+        <ul>{row.options.slice(0, 2).map((option) => <CoverageMove key={`${option.attacker}:${option.slot}`} option={option} />)}</ul>
+        {row.options.length > 2 && <details><summary>Altre {row.options.length - 2} mosse</summary><ul>{row.options.slice(2).map((option) => <CoverageMove key={`${option.attacker}:${option.slot}`} option={option} />)}</ul></details>}
+      </article>)}
+    </div>
+  </div>
+}
+function CoverageMove({ option }) {
+  return <li className="coverage-move">
+    <div><strong>{option.attacker}</strong><span>→ {option.moveName}</span><span className={`type-badge type-${option.type}`}>{option.type}</span></div>
+    <small>{describeTypeEffectiveness(option.multiplier)}</small>
+  </li>
 }
 function DefenseCount({ row }) {
   return <span className="type-defense-count"><b className={row.weak.length ? 'type-weak-count' : ''}>{row.weak.length} D</b><span>{row.resistant.length} R</span><span>{row.immune.length} I</span></span>

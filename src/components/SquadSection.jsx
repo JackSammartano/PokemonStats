@@ -3,6 +3,7 @@ import { parseShowdownTeam } from '../lib/showdownImport.js'
 import { getWorkspaceBuild } from '../lib/teamWorkspace.js'
 import { getPokemonMoveSlots } from '../lib/damage/championsMoveSets.js'
 import { getTeamMove } from '../lib/teamData.js'
+import PokemonImage from './PokemonImage'
 
 export default function SquadSection({ side, title, team, roster, builds, moveSets, selected, onSelect, onConfigure, onAdd, onRemove, onClear, onImport, onCatalog }) {
   const [message, setMessage] = useState('')
@@ -58,7 +59,7 @@ export default function SquadSection({ side, title, team, roster, builds, moveSe
           return (
             <article className={`squad-member ${selected === pokemon.displayName ? 'selected' : ''}`} key={pokemon.displayName}>
               <div className="squad-member-heading">
-                {pokemon.image && <img src={pokemon.image} alt="" />}
+                <PokemonImage pokemon={pokemon} size={52} />
                 <div><strong>{build.nickname || pokemon.displayName}</strong>{build.nickname && <small>{pokemon.displayName}</small>}<div className="type-row mini">{pokemon.types.map((type) => <span className={`type-badge type-${type}`} key={type}>{type}</span>)}</div></div>
               </div>
               <p className="squad-member-build">{build.nature[0].toUpperCase() + build.nature.slice(1)} · L{build.level}{build.gender ? ` · ${build.gender}` : ''}</p>

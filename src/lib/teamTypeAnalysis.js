@@ -17,10 +17,13 @@ export function analyzeTeamTypes(team) {
 }
 
 export function analyzeOffensiveCoverage(team, opponents, side, moveSets) {
-  const moves = team.flatMap((pokemon) => getPokemonMoveSlots(moveSets, side, pokemon).map(getTeamMove))
-    .filter((move) => move && move.category !== 'status')
+  const moves = team.flatMap((pokemon) => getPokemonMoveSlots(moveSets, side, pokemon).flatMap((id, slot) => {
+    const move = getTeamMove(id)
+    return move && move.category !== 'status' ? [{ attacker: pokemon.displayName, moveId: id, moveName: move.name, type: move.type, slot }] : []
+  }))
   return opponents.map((pokemon) => {
-    const best = moves.length ? Math.max(...moves.map((move) => getTypeEffectiveness(move.type, pokemon.types))) : null
-    return { name: pokemon.displayName, best }
+    const options = moves.map((move) => ({ ...move, multiplier: getTypeEffectiveness(move.type, pokemon.types) }))
+      .sort((a, b) => b.multiplier - a.multiplier)
+    return { name: pokemon.displayName, best: options[0]?.multiplier ?? null, options }
   })
 }

@@ -1,57 +1,66 @@
-# Piano: apertura immediata senza dipendere da PokéAPI
+# Caricamento locale del roster M-C
 
-Stato: proposta; questo documento non modifica il caricamento attuale.
+Stato: implementato. L'apertura del sito non richiede più risposte da PokéAPI.
 
-## Problema verificato
+## Dati disponibili subito
 
-`src/lib/pokeapi.js` carica prima i 18 tipi, poi il roster in gruppi sequenziali di
-10 Pokémon. Per ogni risorsa Pokémon richiede anche le descrizioni delle abilità.
-`App.jsx` pubblica il dataset solo alla fine: il contatore avanza, ma il catalogo
-aspetta l'ultimo gruppo. Il timeout di ogni richiesta è 10 secondi.
+`src/lib/pokemonDataset.js` costruisce il dataset in modo sincrono dallo snapshot
+Showdown già versionato nel repository: identità delle 351 forme, statistiche,
+tipi, abilità e descrizioni, learnset Champions. La tabella dei tipi locale
+calcola debolezze e resistenze con le stesse regole del calcolatore.
 
-La cache è una Map in memoria: non sopravvive al ricaricamento e memorizza le
-risposte concluse, non le richieste in corso. Richieste simultanee della stessa
-abilità possono quindi duplicarsi. Le risposte non riuscite attivano un fallback
-locale valido, ma soltanto dopo aver atteso la rete.
+`App.jsx` usa il dataset al primo render. Sono stati rimossi il client HTTP
+globale, i gruppi sequenziali e la schermata di attesa. Nessun servizio esterno
+decide quando catalogo, team e calcolatore diventano utilizzabili. Le chiavi
+localStorage di squadre, build e mosse restano quelle esistenti.
 
-Abbiamo già nel repository il roster M-C fissato a un commit Showdown, statistiche,
-tipi, abilità con descrizioni, tabella dei tipi e learnset Champions. I dati
-competitivi provengono già da questo snapshot: PokéAPI aggiunge soprattutto immagini
-e descrizioni, senza dover essere un prerequisito per l'apertura.
+Le descrizioni delle abilità sono quelle Showdown, in inglese. Non viene fatto
+un arricchimento automatico con PokéAPI. Eventuali traduzioni potranno essere
+aggiunte al processo di aggiornamento dati, mantenendo l'avvio privo di richieste API.
 
-## Intervento proposto
+## Immagini locali
 
-1. **Dataset locale immediato.** Estrarre un adapter puro che trasformi il roster
-   Showdown nel formato usato dalle card, calcolando debolezze e resistenze con la
-   tabella locale. Inizializzare lo stato React da questo dataset, senza attendere
-   fetch. Preservare nomi, ID, chiavi di salvataggio, import Showdown e forme distinte.
-2. **Immagini indipendenti.** Generare una mappa versionata forma → immagine con uno
-   script eseguito durante l'aggiornamento dei dati, fuori dalla navigazione utente.
-   Preferire asset locali ottimizzati; caricare solo le immagini vicine al viewport,
-   con dimensioni fisse e fallback grafico per quelle mancanti. Non sostituire una
-   Mega o una forma recente con una forma diversa. Valutare il peso totale degli
-   asset prima di includere tutte le illustrazioni.
-3. **PokéAPI come arricchimento opzionale.** Mantenere le descrizioni Showdown già
-   disponibili. Se servono traduzioni aggiuntive, generare anche queste nello script
-   di aggiornamento. Per eventuali arricchimenti a runtime: solo su richiesta/apertura
-   del dettaglio, concorrenza limitata, deduplicazione delle promise, cache persistente
-   versionata e interruzione delle richieste non più necessarie. Nessun blocco globale.
-4. **Separazione dei moduli.** Spostare formattazione, tipi e adapter in moduli locali;
-   confinare il client HTTP in un modulo opzionale. Eliminare il caricamento batch
-   globale e la notifica che obbliga ad aspettare tutti i Pokémon.
-5. **Misurazione e verifica.** Confrontare apertura con cache vuota, rete lenta e
-   PokéAPI bloccata. Controllare roster completo, forme, selezioni, import, mosse e
-   round trip team/calcolatore. Misurare richieste API, byte e tempo al catalogo
-   utilizzabile, senza promettere tempi prima della misurazione.
+- 351 WebP, una per forma esatta, complessivamente 4.466.408 byte.
+- Dimensioni massime 256 × 256, trasparenza conservata, qualità 82.
+- Fonte: `PokeAPI/sprites`, commit `97a7832d307311c0e1c6ea9035308bf80cc94f81`.
+- Mappa delle risorse: `src/data/pokemonImages.js`.
+- Indice nomi/ID versionato: `scripts/data/pokeapi-image-index.json`.
+- Nessun rimpiazzo di una forma con un'altra; se manca un'immagine viene usato
+  un segnaposto neutro, anche in caso di errore di caricamento.
 
-## Criteri di completamento
+`PokemonImage` usa caricamento lazy, decodifica asincrona e dimensioni fisse.
+Le immagini sono servite dallo stesso sito, con il base path di Vite; non
+sono incluse nel JavaScript e non vengono scaricate tutte all'apertura.
 
-- Tutti i 351 Pokémon utilizzabili senza richieste JSON a PokéAPI all'avvio.
-- Il blocco di PokéAPI non impedisce catalogo, filtri, team o calcolatore.
-- Immagini caricate progressivamente senza spostare il layout.
-- Aggiornamenti riproducibili tramite script con fonte e versione esplicite.
-- Nessuna perdita di squadre, build o mosse già salvate.
+Per rigenerare le immagini dal mapping versionato:
 
-Ordine consigliato: adapter locale + rimozione dell'attesa globale; quindi mappa
-immagini e ottimizzazione; infine eventuale arricchimento e cache. La prima fase
-risolve il blocco principale senza introdurre un backend.
+```powershell
+npm run assets:pokemon
+```
+
+Dopo un aggiornamento del roster, aggiornare deliberatamente l'indice se necessario:
+
+```powershell
+npm run assets:pokemon -- --refresh-index
+```
+
+Lo script usa al massimo sei download contemporanei. Per ogni ID prova prima
+Home, poi artwork e sprite, sempre della stessa identità. Un errore di rete
+interrompe la generazione senza pubblicare una mappa incompleta. Le sole
+assenze confermate da HTTP 404 sono registrate nel manifest come mancanti.
+Il normale comando di build non richiede PokéAPI né rigenera gli asset.
+
+## Verifica
+
+Test unitari: dataset sincrono con fetch che non risponde, corrispondenza di
+statistiche/tipi/abilità con lo snapshot, forme distinte e presenza degli asset.
+
+Verifica browser sulla build di produzione, Edge headless, localhost, cache
+disabilitata e servizi esterni bloccati: 351 card disponibili a circa 463 ms
+dalla navigazione, sei immagini Pokémon richieste inizialmente, zero richieste
+esterne. È una misura locale, non una garanzia sui tempi di hosting o dispositivi.
+
+Verificati inoltre fallback immagine, squadre/build già salvate, modifiche alle
+mosse e ritorno dal calcolatore, copertura offensiva in entrambe le direzioni e
+assenza di overflow su smartphone. Per l'uso senza connessione dal primo accesso
+resta necessario poter scaricare i file del sito: non è stato introdotto un service worker.

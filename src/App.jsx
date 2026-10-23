@@ -11,10 +11,10 @@ import TeamTypeSummary from './components/TeamTypeSummary'
 import { applyImportedTeam, updateWorkspaceBuild, useTeamWorkspace } from './lib/teamWorkspace'
 import { resolveTeamMatchup } from './lib/teamDamageLink'
 import { useWorkspaceNavigation } from './lib/workspaceNavigation'
-import { REGULATION_MC_POKEMON } from './data/regulationMc'
 import DamageCalculator from './components/DamageCalculator'
 import { updatePokemonMoveSlot } from './lib/damage/championsMoveSets'
-import { formatName, loadPokemonDataset } from './lib/pokeapi'
+import { formatName, POKEMON_DATASET } from './lib/pokemonDataset'
+import PokemonImage from './components/PokemonImage'
 
 const STAT_LABELS = {
   hp: 'HP',
@@ -64,7 +64,7 @@ const VIEW_CONTENT = {
   damage: { title: 'Damage calculator', description: 'Configura i due Pokémon e analizza danni e Velocità.' },
 }
 function App() {
-  const [pokemon, setPokemon] = useState([])
+  const pokemon = POKEMON_DATASET
   const { workspace, setWorkspace, saveError } = useTeamWorkspace()
   const { moveSets, builds } = workspace
   const teamNames = workspace.teams.attacker
@@ -76,9 +76,6 @@ function App() {
   const [compareLeftName, setCompareLeftName] = useState('')
   const [compareRightName, setCompareRightName] = useState('')
   const [compareRequest, setCompareRequest] = useState(0)
-  const [loadedCount, setLoadedCount] = useState(0)
-  const [status, setStatus] = useState('loading')
-  const [error, setError] = useState(null)
   const [query, setQuery] = useState('')
   const [selectedType, setSelectedType] = useState('all')
   const [selectedCategory, setSelectedCategory] = useState('all')
@@ -98,36 +95,7 @@ function App() {
     document.querySelector('.workspace-nav h1')?.focus({ preventScroll: true })
   }, [view])
 
-  useEffect(() => {
-    let ignore = false
-
-    async function load() {
-      try {
-        setStatus('loading')
-        const dataset = await loadPokemonDataset(REGULATION_MC_POKEMON, (count) => {
-          if (!ignore) setLoadedCount(count)
-        })
-
-        if (!ignore) {
-          setPokemon(dataset)
-          setStatus('ready')
-        }
-      } catch (loadError) {
-        if (!ignore) {
-          setError(loadError.message)
-          setStatus('error')
-        }
-      }
-    }
-
-    load()
-
-    return () => {
-      ignore = true
-    }
-  }, [])
-
-  const supported = pokemon.filter((entry) => entry.status === 'ready')
+  const supported = pokemon
   const team = teamNames
     .map((name) => pokemon.find((entry) => entry.displayName === name))
     .filter(Boolean)
@@ -246,25 +214,6 @@ function App() {
           {view === 'damage' && fromTeam && <button type="button" className="secondary-button back-to-team" onClick={returnToTeam}>← Torna al mio team</button>}
         </div>
       </nav>
-      {status === 'error' && (
-        <section className="notice error">
-          <strong>Caricamento non riuscito.</strong>
-          <span>{error}</span>
-        </section>
-      )}
-
-      {status === 'loading' && (
-        <section className="notice loading-notice">
-          <div className="pokeball-spinner" aria-hidden="true"></div>
-          <div>
-            <strong>Caricamento da PokéAPI in corso.</strong>
-            <span>
-              {loadedCount}/{REGULATION_MC_POKEMON.length} Pokémon caricati
-            </span>
-          </div>
-        </section>
-      )}
-
       {saveError && <p className="notice error" role="status">{saveError}</p>}
       <div className="workspace-view" hidden={view !== 'catalog'}>
         <details className="toolbar" open aria-label="Filtri">
@@ -334,18 +283,12 @@ function App() {
         />
 
         <section className="pokemon-grid">
-          {filtered.map((entry) =>
-            entry.status === 'ready' ? (
-              <PokemonCard
-                key={entry.displayName}
-                actions={getPokemonCardActions(entry.displayName, workspace.teams, compareLeftName, compareRightName)}
-                onAction={(action) => handleCardAction(entry, action)}
-                pokemon={entry}
-              />
-            ) : (
-              <UnsupportedCard key={entry.displayName} pokemon={entry} />
-            ),
-          )}
+          {filtered.map((entry) => <PokemonCard
+            key={entry.displayName}
+            actions={getPokemonCardActions(entry.displayName, workspace.teams, compareLeftName, compareRightName)}
+            onAction={(action) => handleCardAction(entry, action)}
+            pokemon={entry}
+          />)}
         </section>
 
       </div>
@@ -437,7 +380,7 @@ function PokemonCard({ pokemon, actions, onAction }) {
             ))}
           </div>
         </div>
-        {pokemon.image && <img src={pokemon.image} alt={pokemon.displayName} loading="lazy" />}
+        <PokemonImage pokemon={pokemon} alt={pokemon.displayName} />
       </div>
 
       <div className="stats-block">
@@ -641,28 +584,6 @@ function ComparePanel({
         ) : <article className="compare-card empty" key={index}>Confronta {index + 1}: scegli un Pokémon dal pulsante +</article>)}
       </div>
     </details>
-  )
-}
-
-function UnsupportedCard({ pokemon }) {
-  return (
-    <article className="pokemon-card unsupported-card">
-      <h2>{pokemon.displayName}</h2>
-      <p>
-        PokéAPI non ha risposto per gli slug provati. Non mostro stats o tipi
-        alternativi perché sarebbero dati non verificati.
-      </p>
-      {pokemon.isNewOrUnverifiedMega && (
-        <p className="hint">
-          Forma Mega recente o non ancora presente nel dataset PokéAPI pubblico.
-        </p>
-      )}
-      <div className="slug-list">
-        {pokemon.candidates.map((candidate) => (
-          <code key={candidate}>{candidate}</code>
-        ))}
-      </div>
-    </article>
   )
 }
 

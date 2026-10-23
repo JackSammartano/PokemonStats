@@ -2,6 +2,7 @@ import { useState } from 'react'
 import FourMoveSelector from './FourMoveSelector'
 import OptimizerResults from './OptimizerResults'
 import SpeedComparison from './SpeedComparison'
+import PokemonImage from './PokemonImage'
 import { CHAMPIONS_NATURES } from '../lib/damage/championsData.js'
 import { CHAMPIONS_ITEMS as IMPLEMENTED_ITEMS } from '../lib/damage/championsItems.js'
 import { CHAMPIONS_TEAM_ITEMS, getAbilityOptions } from '../lib/teamData.js'
@@ -132,7 +133,7 @@ function PokemonBuildControls({ side, label, pokemon, roster, build, itemOptions
     <section className="damage-panel" aria-label={side === 'attacker' ? 'Attacker controls' : 'Defender controls'}>
       <h3>{label}</h3>
       <label className="select-field"><span>Pokémon</span>
-        <div className="pokemon-select-preview">{pokemon?.image && <img src={pokemon.image} alt="" />}
+        <div className="pokemon-select-preview">{pokemon && <PokemonImage pokemon={pokemon} size={54} />}
           <select value={pokemon?.displayName ?? ''} onChange={(event) => onPokemonChange(event.target.value)}>
             {roster.map((entry) => <option key={entry.displayName} value={entry.displayName}>{entry.displayName}</option>)}
           </select>

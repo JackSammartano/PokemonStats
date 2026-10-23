@@ -83,6 +83,18 @@
 .offensive-coverage { display: grid; grid-template-columns: 1fr auto; gap: 7px; margin: 12px 0; padding: 12px; border-radius: 12px; background: #f1f5f9; font-size: 11px; }
 .offensive-coverage > span { color: #1d4ed8; font-weight: 900; }
 .offensive-coverage > small { grid-column: 1 / -1; color: var(--muted); line-height: 1.5; }
+.coverage-targets { grid-column: 1 / -1; min-width: 0; display: grid; gap: 10px; }
+.coverage-target { padding: 10px; border: 1px solid var(--border); border-radius: 10px; background: #fffefa; }
+.coverage-target > header { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: 4px 8px; }
+.coverage-target header small { color: var(--muted); font-size: 9px; }
+.coverage-target ul { display: grid; gap: 8px; list-style: none; padding: 0; margin: 10px 0 0; }
+.coverage-target ul:empty { display: none; }
+.coverage-move > div { display: flex; flex-wrap: wrap; gap: 4px 6px; align-items: center; overflow-wrap: anywhere; }
+.coverage-move strong, .coverage-move > div > span { font-size: 10px; }
+.coverage-move .type-badge { font-size: 8px; padding: 3px 6px; }
+.coverage-move > small { display: block; margin-top: 3px; color: var(--muted); font-size: 9px; }
+.coverage-target details { margin-top: 10px; }
+.coverage-target summary { cursor: pointer; color: #24543d; font-size: 10px; font-weight: 800; }
 .type-defense-head, .type-defense-row > summary { display: grid; grid-template-columns: 76px 1fr 1fr; align-items: center; gap: 7px; }
 .type-defense-head { padding-bottom: 9px; color: var(--muted); font-size: 10px; }
 .type-defense-row { border-top: 1px solid #f1f5f9; }

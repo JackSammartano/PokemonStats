@@ -10,7 +10,8 @@
     "test": "node --test src/lib/damage/*.test.js src/lib/*.test.js scripts/*.test.mjs",
     "data:regulation-mc": "node scripts/import-regulation-mc.mjs",
     "preview": "vite preview",
-    "assets:background": "node scripts/optimize-background.mjs"
+    "assets:background": "node scripts/optimize-background.mjs",
+    "assets:pokemon": "node scripts/import-pokemon-images.mjs"
   },
   "dependencies": {
     "react": "^19.2.7",
