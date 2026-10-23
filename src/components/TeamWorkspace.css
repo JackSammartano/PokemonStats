@@ -62,6 +62,10 @@
 .squad-defender .squad-member-actions button[aria-pressed="true"] { background: #b45309; }
 .squad-member-actions .squad-remove { flex-basis: 100%; color: #9f1239; background: #fff1f2; }
 .team-type-summary {
+  box-sizing: border-box;
+  max-height: min(760px, calc(100dvh - 48px));
+  overflow-y: auto;
+  scrollbar-gutter: stable;
   padding: 22px;
   border: 1px solid var(--border);
   border-radius: 24px;
