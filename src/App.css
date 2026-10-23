@@ -614,7 +614,7 @@ button:focus-visible,
 
 .toolbar-fields {
   display: grid;
-  grid-template-columns: minmax(220px, 1fr) repeat(4, minmax(150px, 190px));
+  grid-template-columns: minmax(220px, 1fr) repeat(2, minmax(130px, 170px)) minmax(190px, 230px);
   gap: 14px;
   padding: 0 14px 14px;
 }
@@ -1548,18 +1548,23 @@ button:focus-visible,
   line-height: 1;
 }
 
-.pokemon-card-actions { position: absolute; top: 14px; right: 18px; z-index: 3; }
+.pokemon-card-actions { position: relative; align-self: flex-end; margin-bottom: -8px; z-index: 3; }
 .pokemon-card-actions .team-toggle {
   position: static;
-  display: grid;
-  place-items: center;
-  width: 42px;
-  height: 42px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  width: auto;
+  min-height: 34px;
+  padding: 7px 10px;
   border: 1px solid var(--border);
-  border-radius: 13px;
+  border-radius: 10px;
   background: rgba(255, 255, 255, 0.95);
-  font-size: 28px;
+  color: var(--text);
+  font-size: 11px;
+  font-weight: 800;
 }
+.action-menu-chevron { font-size: 14px; }
 .pokemon-card-actions .team-toggle[aria-expanded="true"] { background: #17233e; color: #fff; }
 .pokemon-card:has(.pokemon-action-menu) { z-index: 30; }
 .pokemon-action-menu {

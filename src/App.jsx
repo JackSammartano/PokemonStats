@@ -82,8 +82,7 @@ function App() {
   const [query, setQuery] = useState('')
   const [selectedType, setSelectedType] = useState('all')
   const [selectedCategory, setSelectedCategory] = useState('all')
-  const [sortBy, setSortBy] = useState('name')
-  const [sortDirection, setSortDirection] = useState('asc')
+  const [sortBy, setSortBy] = useState('name:asc')
   const [damageAttackerName, setDamageAttackerName] = useState('')
   const [damageDefenderName, setDamageDefenderName] = useState('')
   const deferredQuery = useDeferredValue(query)
@@ -146,7 +145,7 @@ function App() {
 
       return matchesText && matchesType && matchesCategory
     }),
-  ].sort((first, second) => comparePokemon(first, second, sortBy, sortDirection))
+  ].sort((first, second) => comparePokemon(first, second, ...sortBy.split(':')))
 
   function setSquadNames(side, update) {
     setWorkspace((current) => ({ ...current, teams: { ...current.teams, [side]: typeof update === 'function' ? update(current.teams[side]) : update } }))
@@ -311,24 +310,14 @@ function App() {
             <label className="select-field">
               <span>Ordina per</span>
               <select value={sortBy} onChange={(event) => setSortBy(event.target.value)}>
-                {SORT_OPTIONS.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
+                {SORT_OPTIONS.flatMap((option) => ['asc', 'desc'].map((direction) => (
+                  <option key={`${option.value}:${direction}`} value={`${option.value}:${direction}`}>
+                    {option.label} · {option.value === 'name' ? direction === 'asc' ? 'A–Z' : 'Z–A' : direction === 'asc' ? 'Crescente' : 'Decrescente'}
                   </option>
-                ))}
+                )))}
               </select>
             </label>
 
-            <label className="select-field">
-              <span>Direzione</span>
-              <select
-                value={sortDirection}
-                onChange={(event) => setSortDirection(event.target.value)}
-              >
-                <option value="asc">Crescente</option>
-                <option value="desc">Decrescente</option>
-              </select>
-            </label>
           </div>
         </details>
 
@@ -436,6 +425,7 @@ function PokemonCard({ pokemon, actions, onAction }) {
 
   return (
     <article className="pokemon-card">
+      <PokemonActionMenu name={pokemon.displayName} actions={actions} onAction={onAction} />
       <div className="pokemon-heading">
         <div>
           <h2>{pokemon.displayName}</h2>
@@ -449,8 +439,6 @@ function PokemonCard({ pokemon, actions, onAction }) {
         </div>
         {pokemon.image && <img src={pokemon.image} alt={pokemon.displayName} loading="lazy" />}
       </div>
-
-      <PokemonActionMenu name={pokemon.displayName} actions={actions} onAction={onAction} />
 
       <div className="stats-block">
         <div className="section-title">

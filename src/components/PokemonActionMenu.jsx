@@ -62,7 +62,7 @@ export default function PokemonActionMenu({ name, actions, onAction }) {
         title={`Scegli dove aggiungere ${name}`}
         onClick={() => { lastFirst.current = false; setAbove(false); setOpen((value) => !value) }}
         onKeyDown={(event) => { if (event.key === 'ArrowDown' || event.key === 'ArrowUp') { event.preventDefault(); lastFirst.current = event.key === 'ArrowUp'; setAbove(false); setOpen(true) } }}
-      >+</button>
+      ><span aria-hidden="true">+</span> Aggiungi <span className="action-menu-chevron" aria-hidden="true">⌄</span></button>
       {open && <div className={`pokemon-action-menu${above ? ' above' : ''}`} id={menuId} role="menu" aria-label={`Destinazione di ${name}`} onKeyDown={handleKeys}>
         <p>{name}</p>
         {actions.map((action) => <button
