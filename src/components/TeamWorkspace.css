@@ -76,6 +76,12 @@
 .team-type-summary section { margin-top: 22px; padding-top: 22px; border-top: 1px solid #e2e8f0; }
 .team-type-summary .eyebrow { padding: 6px 8px; font-size: 9px; }
 .type-composition { margin-top: 12px; }
+.type-composition-members { display: grid; gap: 8px; }
+.type-composition-member { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 5px 8px; font-size: 10px; }
+.type-composition-member > span:first-child { font-weight: 700; }
+.split-type-badge { display: inline-flex; overflow: hidden; flex-shrink: 0; border-radius: 999px; color: #fff; font-size: 9px; font-weight: 900; text-transform: uppercase; }
+.split-type-badge > span { flex: 1; padding: 5px 8px; text-align: center; }
+.split-type-badge:has(> span:nth-child(2)) > span { min-width: 48px; box-sizing: border-box; }
 .type-composition > strong { display: block; margin-bottom: 8px; font-size: 12px; }
 .type-composition .type-row { gap: 5px; }
 .type-composition .type-badge { font-size: 9px; }

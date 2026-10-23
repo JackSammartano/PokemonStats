@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import FourMoveSelector from './FourMoveSelector'
 import OptimizerResults from './OptimizerResults'
+import SpeedComparison from './SpeedComparison'
 import { CHAMPIONS_NATURES } from '../lib/damage/championsData.js'
 import { CHAMPIONS_ITEMS as IMPLEMENTED_ITEMS } from '../lib/damage/championsItems.js'
 import { CHAMPIONS_TEAM_ITEMS, getAbilityOptions } from '../lib/teamData.js'
@@ -116,6 +117,7 @@ export default function DamageCalculator({ pokemon, attackerName, defenderName, 
             <button disabled={!optimizerContext || activeOptimization?.isOptimizing} type="button" onClick={() => optimize('survival')}>Find Survival</button>
             <button disabled={!optimizerContext || activeOptimization?.isOptimizing} type="button" onClick={() => optimize('ko')}>Find KO</button>
           </div>
+          <SpeedComparison pokemon={pokemon} attacker={attacker} defender={defender} leftBuild={leftBuild} rightBuild={rightBuild} weather={weather.weather} />
         </section>
         <PokemonBuildControls side="defender" label="Pokémon 2" pokemon={defender} roster={pokemon} build={rightBuild} itemOptions={itemOptions} onPokemonChange={onDefenderChange} onChange={(changes) => onBuildChange('defender', defender, changes)} />
       </div>

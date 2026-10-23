@@ -1,0 +1,23 @@
+.speed-comparison { min-width: 0; margin-top: 24px; padding-top: 22px; border-top: 1px solid var(--border); }
+.speed-comparison > h3 { margin-bottom: 8px; }
+.speed-intro, .speed-note { color: var(--muted); font-size: 11px; line-height: 1.5; }
+.speed-current { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin: 14px 0 10px; }
+.speed-current > div { display: flex; flex-direction: column; padding: 10px; border: 1px solid #c9ddc5; border-radius: 12px; background: #edf5e9; }
+.speed-current > div:nth-child(2) { border-color: #e5d4ad; background: #fbf5e5; }
+.speed-current small { color: var(--muted); font-size: 10px; }
+.speed-current span { font-size: 11px; font-weight: 800; overflow-wrap: anywhere; }
+.speed-current strong { margin-top: auto; font-size: 26px; font-variant-numeric: tabular-nums; }
+.speed-order { font-size: 12px; font-weight: 800; }
+.speed-comparison .select-field { margin-top: 12px; }
+.speed-table-scroll { max-height: 420px; margin-top: 14px; overflow: auto; border: 1px solid var(--border); border-radius: 12px; background: #fffef9; }
+.speed-table { width: 100%; border-collapse: collapse; font-size: 10px; font-variant-numeric: tabular-nums; }
+.speed-table thead { position: sticky; top: 0; z-index: 1; background: #e9f0e2; }
+.speed-table th, .speed-table td { padding: 9px 6px; border-bottom: 1px solid var(--border); text-align: right; }
+.speed-table th:first-child { text-align: left; overflow-wrap: anywhere; }
+.speed-table tbody th { width: 45%; font-weight: 800; }
+.speed-table th small { display: block; color: var(--muted); font-size: 9px; font-weight: 400; }
+.speed-table .speed-selected-row { background: #eff6e9; }
+.speed-ahead { color: #21643e; font-weight: 800; }
+.speed-behind { color: #a33432; }
+.speed-tie { color: #87590b; font-weight: 800; }
+.speed-empty { padding: 12px; color: var(--muted); font-size: 12px; }

@@ -6,7 +6,6 @@ import SiteBackground from './components/SiteBackground'
 import { formatTypeMultiplier } from './lib/typeLabels'
 import PokemonActionMenu from './components/PokemonActionMenu'
 import { getPokemonCardActions } from './lib/pokemonCardActions'
-import TeamDamageLink from './components/TeamDamageLink'
 import SquadSection from './components/SquadSection'
 import TeamTypeSummary from './components/TeamTypeSummary'
 import { applyImportedTeam, updateWorkspaceBuild, useTeamWorkspace } from './lib/teamWorkspace'
@@ -59,6 +58,11 @@ const TYPE_OPTIONS = [
 ]
 
 const TEAM_SIZE = 6
+const VIEW_CONTENT = {
+  catalog: { title: 'Catalogo', description: 'Esplora i Pokémon della Regulation M-C e confronta statistiche e tipi.' },
+  team: { title: 'Il mio team', description: 'Importa o prepara le due squadre e confronta tipi, mosse e configurazioni.' },
+  damage: { title: 'Damage calculator', description: 'Configura i due Pokémon e analizza danni e Velocità.' },
+}
 function App() {
   const [pokemon, setPokemon] = useState([])
   const { workspace, setWorkspace, saveError } = useTeamWorkspace()
@@ -92,7 +96,7 @@ function App() {
   }, [compareRequest])
 
   useEffect(() => {
-    document.querySelector('.workspace-view:not([hidden]) h1')?.focus({ preventScroll: true })
+    document.querySelector('.workspace-nav h1')?.focus({ preventScroll: true })
   }, [view])
 
   useEffect(() => {
@@ -125,14 +129,10 @@ function App() {
   }, [])
 
   const supported = pokemon.filter((entry) => entry.status === 'ready')
-  const unsupported = pokemon.filter((entry) => entry.status === 'unsupported')
   const team = teamNames
     .map((name) => pokemon.find((entry) => entry.displayName === name))
     .filter(Boolean)
   const opponentTeam = opponentNames.map((name) => pokemon.find((entry) => entry.displayName === name)).filter(Boolean)
-  const baseCount = pokemon.filter((entry) => entry.category === 'base').length
-  const formCount = pokemon.filter((entry) => entry.category === 'form').length
-  const megaCount = pokemon.filter((entry) => entry.category === 'mega').length
   const filtered = [
     ...pokemon.filter((entry) => {
       const matchesText = entry.displayName
@@ -223,21 +223,28 @@ function App() {
     <main className="app-shell">
       <SiteBackground />
       <nav className="workspace-nav" aria-label="Navigazione principale">
-        <a className="workspace-brand" href="#/catalogo" onClick={(event) => { event.preventDefault(); navigate('catalog') }}>Pokémon stats <span>M-C</span></a>
-        <div className="workspace-nav-buttons">
-          <button type="button" aria-current={view === 'catalog' ? 'page' : undefined} onClick={() => navigate('catalog')}>Catalogo</button>
-          <button type="button" aria-current={view === 'team' ? 'page' : undefined} onClick={() => view === 'damage' && fromTeam ? returnToTeam() : navigate('team')}>Il mio team</button>
-          <button
-            type="button"
-            aria-current={view === 'damage' ? 'page' : undefined}
-            onClick={() => {
-              if (view === 'damage') return
-              if (view === 'team') openDamageFromTeam()
-              else navigate('damage')
-            }}
-          >
-            Damage calculator
-          </button>
+        <div className="workspace-nav-context">
+          <a className="workspace-brand" href="#/catalogo" onClick={(event) => { event.preventDefault(); navigate('catalog') }}>Pokémon stats <span>M-C</span></a>
+          <h1 tabIndex={-1}>{VIEW_CONTENT[view].title}</h1>
+          <p>{VIEW_CONTENT[view].description}</p>
+        </div>
+        <div className="workspace-nav-actions">
+          <div className="workspace-nav-buttons">
+            <button type="button" aria-current={view === 'catalog' ? 'page' : undefined} onClick={() => navigate('catalog')}>Catalogo</button>
+            <button type="button" aria-current={view === 'team' ? 'page' : undefined} onClick={() => view === 'damage' && fromTeam ? returnToTeam() : navigate('team')}>Il mio team</button>
+            <button
+              type="button"
+              aria-current={view === 'damage' ? 'page' : undefined}
+              onClick={() => {
+                if (view === 'damage') return
+                if (view === 'team') openDamageFromTeam()
+                else navigate('damage')
+              }}
+            >
+              Damage calculator
+            </button>
+          </div>
+          {view === 'damage' && fromTeam && <button type="button" className="secondary-button back-to-team" onClick={returnToTeam}>← Torna al mio team</button>}
         </div>
       </nav>
       {status === 'error' && (
@@ -261,25 +268,6 @@ function App() {
 
       {saveError && <p className="notice error" role="status">{saveError}</p>}
       <div className="workspace-view" hidden={view !== 'catalog'}>
-        <details className="debug-panel">
-          <summary>Debug</summary>
-          <div className="debug-grid">
-            <Metric label="Caricati" value={`${loadedCount}/${REGULATION_MC_POKEMON.length}`} />
-            <Metric label="Supportati" value={supported.length} />
-            <Metric label="Non risolti" value={unsupported.length} tone="warning" />
-            <Metric label="Base" value={baseCount} />
-            <Metric label="Forme alternative" value={formCount} />
-            <Metric label="Mega" value={megaCount} />
-          </div>
-        </details>
-
-        <section className="hero-section">
-          <div className="hero-copy">
-            <p className="eyebrow">Regulation M-C</p>
-            <h1 tabIndex={-1}>Pokemon stats expo</h1>
-          </div>
-        </section>
-
         <details className="toolbar" open aria-label="Filtri">
           <summary>Cerca e filtra</summary>
           <div className="toolbar-fields">
@@ -373,13 +361,6 @@ function App() {
 
       </div>
       <div className="workspace-view" hidden={view !== 'team'}>
-        <header className="workspace-heading">
-          <div>
-            <p className="eyebrow compact">La tua squadra · Regulation M-C</p>
-            <h1 tabIndex={-1}>Il mio team</h1>
-            <p>Importa o prepara le due squadre e confronta tipi, mosse e configurazioni.</p>
-          </div>
-        </header>
         <div className="team-workspace-layout">
           <div className="team-workspace-main">
             {['attacker', 'defender'].map((side) => <SquadSection
@@ -393,20 +374,12 @@ function App() {
               onClear={() => setSquadNames(side, [])} onImport={(imported) => handleTeamImport(side, imported)}
               onCatalog={() => navigate('catalog')}
             />)}
-            <TeamDamageLink team={team} pokemon={opponentTeam} draft={teamDamageDraft} onChange={setTeamDamageDraft} onCalculate={openDamageFromTeam} moveSets={moveSets} onMoveChange={changeMoveSlot} />
+            <button className="ghost-button team-open-calculator" type="button" onClick={openDamageFromTeam}>Apri nel damage calculator <span aria-hidden="true">→</span></button>
           </div>
           <TeamTypeSummary team={team} opponentTeam={opponentTeam} moveSets={moveSets} />
         </div>
       </div>
       <div className="workspace-view" hidden={view !== 'damage'}>
-        <header className="workspace-heading">
-          <div>
-            <p className="eyebrow compact">Pokémon Champions</p>
-            <h1 tabIndex={-1}>Damage calculator</h1>
-            <p>Configura i due Pokémon e analizza il danno della mossa selezionata.</p>
-          </div>
-          {fromTeam && <button type="button" className="ghost-button back-to-team" onClick={returnToTeam}><span aria-hidden="true">← </span>Torna al mio team</button>}
-        </header>
         <DamageCalculator
           pokemon={supported}
           attackerName={damageAttackerName}
@@ -456,15 +429,6 @@ function getStatValue(pokemon, statName) {
   if (pokemon.status !== 'ready') return null
 
   return pokemon.stats.find((stat) => stat.name === statName)?.value ?? null
-}
-
-function Metric({ label, value, tone }) {
-  return (
-    <div className={`metric ${tone ?? ''}`}>
-      <span>{label}</span>
-      <strong>{value}</strong>
-    </div>
-  )
 }
 
 function PokemonCard({ pokemon, actions, onAction }) {

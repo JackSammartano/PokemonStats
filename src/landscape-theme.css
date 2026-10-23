@@ -48,29 +48,21 @@
 .secondary-button { background: #f4f7ef; color: #365543; }
 input[type="checkbox"], input[type="radio"] { accent-color: #24543d; }
 
-.hero-section {
-  min-height: 200px;
-  border-color: rgba(255, 255, 255, 0.45);
-  background: linear-gradient(100deg, rgba(16, 52, 38, 0.96), rgba(25, 69, 45, 0.77) 62%, rgba(25, 69, 45, 0.2));
-  box-shadow: 0 18px 48px rgba(20, 55, 35, 0.15);
-}
-
-.hero-section::after { opacity: 0.16; }
-.hero-copy h1 { font-size: clamp(40px, 6.5vw, 88px); line-height: 0.98; white-space: normal; }
-
-.workspace-heading {
-  padding: 26px 28px;
-  border: 1px solid rgba(255, 255, 255, 0.7);
-  border-radius: 28px;
-  background: rgba(252, 253, 245, 0.95);
-  box-shadow: 0 12px 32px rgba(20, 55, 35, 0.1);
-}
+.workspace-nav { padding: 18px 22px; gap: 16px 24px; }
+.workspace-nav-context { min-width: 0; }
+.workspace-nav-context .workspace-brand { width: fit-content; padding: 0; font-size: 12px; }
+.workspace-nav-context .workspace-brand span { padding: 3px 6px; font-size: 9px; }
+.workspace-nav-context h1 { margin: 6px 0 4px; font-size: clamp(24px, 2.6vw, 34px); line-height: 1.1; letter-spacing: -0.04em; }
+.workspace-nav-context h1:focus { outline: none; }
+.workspace-nav-context p { max-width: 640px; margin: 0; color: var(--muted); font-size: 12px; line-height: 1.5; }
+.workspace-nav-actions { display: flex; flex-direction: column; align-items: flex-end; flex-shrink: 0; gap: 8px; }
+.workspace-nav-actions .back-to-team { min-height: 32px; padding: 6px 10px; font-size: 11px; }
+.team-open-calculator { justify-self: start; }
 
 .pokemon-card,
 .compare-panel,
 .damage-calculator,
 .team-builder,
-.team-damage-link,
 .squad-section,
 .team-type-summary {
   background: rgba(253, 254, 248, 0.97);
@@ -111,7 +103,12 @@ input[type="checkbox"], input[type="radio"] { accent-color: #24543d; }
 
 @media (max-width: 640px) {
   .app-shell { width: calc(100% - 24px); padding-top: 16px; }
-  .hero-section { min-height: 180px; padding: 24px; }
-  .workspace-heading { padding: 22px 20px; gap: 18px; }
   .site-footer { flex-direction: column; padding: 18px; }
+}
+
+@media (max-width: 900px) {
+  .workspace-nav { padding: 16px; gap: 14px; }
+  .workspace-nav-actions { width: 100%; align-items: flex-start; }
+  .workspace-nav-buttons { flex-wrap: nowrap; }
+  .workspace-nav-buttons button { padding-inline: 10px; }
 }
