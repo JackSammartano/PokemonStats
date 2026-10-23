@@ -26,11 +26,10 @@ function Coverage({ label, rows }) {
     <strong>{label}</strong><span>{rows.length ? `${covered.length}/${rows.length} bersagli` : '—'}</span>
     <div className="coverage-targets">
       {!rows.length && <p>Nessun bersaglio: aggiungi Pokémon alla squadra da confrontare.</p>}
-      {rows.map((row) => <article className="coverage-target" key={row.name}>
-        <header><strong>{row.name}</strong><small>{row.best === null ? 'Nessuna mossa offensiva selezionata' : describeTypeEffectiveness(row.best)}</small></header>
-        <ul>{row.options.slice(0, 2).map((option) => <CoverageMove key={`${option.attacker}:${option.slot}`} option={option} />)}</ul>
-        {row.options.length > 2 && <details><summary>Altre {row.options.length - 2} mosse</summary><ul>{row.options.slice(2).map((option) => <CoverageMove key={`${option.attacker}:${option.slot}`} option={option} />)}</ul></details>}
-      </article>)}
+      {rows.map((row) => <details className="coverage-target" key={row.name}>
+        <summary><strong>{row.name}</strong><span className="coverage-chevron" aria-hidden="true">⌄</span></summary>
+        {row.options.length ? <ul>{row.options.map((option) => <CoverageMove key={`${option.attacker}:${option.slot}`} option={option} />)}</ul> : <p>Nessuna mossa offensiva selezionata.</p>}
+      </details>)}
     </div>
   </div>
 }
