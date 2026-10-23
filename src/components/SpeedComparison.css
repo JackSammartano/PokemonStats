@@ -8,16 +8,6 @@
 .speed-current span { font-size: 11px; font-weight: 800; overflow-wrap: anywhere; }
 .speed-current strong { margin-top: auto; font-size: 26px; font-variant-numeric: tabular-nums; }
 .speed-order { font-size: 12px; font-weight: 800; }
-.speed-comparison .select-field { margin-top: 12px; }
-.speed-table-scroll { max-height: 420px; margin-top: 14px; overflow: auto; border: 1px solid var(--border); border-radius: 12px; background: #fffef9; }
-.speed-table { width: 100%; border-collapse: collapse; font-size: 10px; font-variant-numeric: tabular-nums; }
-.speed-table thead { position: sticky; top: 0; z-index: 1; background: #e9f0e2; }
-.speed-table th, .speed-table td { padding: 9px 6px; border-bottom: 1px solid var(--border); text-align: right; }
-.speed-table th:first-child { text-align: left; overflow-wrap: anywhere; }
-.speed-table tbody th { width: 45%; font-weight: 800; }
-.speed-table th small { display: block; color: var(--muted); font-size: 9px; font-weight: 400; }
-.speed-table .speed-selected-row { background: #eff6e9; }
-.speed-ahead { color: #21643e; font-weight: 800; }
-.speed-behind { color: #a33432; }
-.speed-tie { color: #87590b; font-weight: 800; }
-.speed-empty { padding: 12px; color: var(--muted); font-size: 12px; }
+.speed-bar { height: 5px; margin-top: 8px; overflow: hidden; border-radius: 999px; background: rgba(24, 60, 46, 0.12); }
+.speed-bar > span { display: block; height: 100%; border-radius: inherit; background: #397651; }
+.speed-current > div:nth-child(2) .speed-bar > span { background: #b7791f; }

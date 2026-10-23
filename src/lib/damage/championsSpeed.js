@@ -1,13 +1,5 @@
 import { calculateChampionsStat, getModifiedStat, toId } from './championsMath.js'
 
-export const SPEED_PROFILES = [
-  { id: 'max', label: '+Spe · 32 SP', nature: 'timid', sp: 32 },
-  { id: 'neutral-invested', label: 'Neutra · 32 SP', nature: 'serious', sp: 32 },
-  { id: 'neutral', label: 'Neutra · 0 SP', nature: 'serious', sp: 0 },
-  { id: 'minimum', label: '−Spe · 0 SP', nature: 'brave', sp: 0 },
-  { id: 'scarf', label: '+Spe · 32 SP · Choice Scarf', nature: 'timid', sp: 32, scarf: true },
-]
-
 export function getBattleSpeed(pokemon, build, weather = '') {
   if (!pokemon || (build.level ?? 50) !== 50) return null
   const base = pokemon.stats.find((stat) => stat.name === 'speed')?.value
@@ -22,15 +14,6 @@ export function getBattleSpeed(pokemon, build, weather = '') {
     || (ability === 'sand-rush' && weather === 'Sand')
     || (ability === 'slush-rush' && weather === 'Snow')) modifier *= 2
   return Math.max(1, Math.floor(boosted * modifier))
-}
-
-export function getSpeedBenchmarks(roster, profileId = 'max') {
-  const profile = SPEED_PROFILES.find((entry) => entry.id === profileId) ?? SPEED_PROFILES[0]
-  return roster.map((pokemon) => ({
-    name: pokemon.displayName,
-    base: pokemon.stats.find((stat) => stat.name === 'speed')?.value,
-    speed: getBattleSpeed(pokemon, { nature: profile.nature, sps: { spe: profile.sp }, item: profile.scarf ? 'choice-scarf' : '' }),
-  })).filter((row) => row.speed !== null).sort((a, b) => b.speed - a.speed || a.name.localeCompare(b.name))
 }
 
 export function describeSpeedOrder(leftSpeed, rightSpeed) {

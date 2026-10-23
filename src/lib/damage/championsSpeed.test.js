@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { describeSpeedOrder, getBattleSpeed, getSpeedBenchmarks } from './championsSpeed.js'
+import { describeSpeedOrder, getBattleSpeed } from './championsSpeed.js'
 
 const pokemon = (name, speed) => ({ displayName: name, stats: [{ name: 'speed', value: speed }] })
 const charizard = pokemon('Charizard', 100)
@@ -21,15 +21,6 @@ test('weather speed abilities respond to the effective shared weather', () => {
   assert.equal(getBattleSpeed(charizard, { ability: 'chlorophyll' }, 'Sun'), 240)
   assert.equal(getBattleSpeed(charizard, { ability: 'sand-rush' }, 'Sand'), 240)
   assert.equal(getBattleSpeed(charizard, { ability: 'slush-rush' }, 'Snow'), 240)
-})
-
-test('reference scenarios calculate from our roster and sort with deterministic ties', () => {
-  const roster = [charizard, pokemon('Slow', 20), pokemon('Fast', 151), pokemon('Another fast', 151)]
-  assert.deepEqual(getSpeedBenchmarks(roster).map(({ name, speed }) => [name, speed]), [['Another fast', 223], ['Fast', 223], ['Charizard', 167], ['Slow', 79]])
-  assert.equal(getSpeedBenchmarks([charizard], 'neutral-invested')[0].speed, 152)
-  assert.equal(getSpeedBenchmarks([charizard], 'scarf')[0].speed, 250)
-  assert.equal(getSpeedBenchmarks([charizard], 'neutral')[0].speed, 120)
-  assert.equal(getSpeedBenchmarks([charizard], 'minimum')[0].speed, 108)
 })
 
 test('ties, either faster side and unsupported levels are explicit', () => {
