@@ -1,12 +1,16 @@
 import { useDeferredValue, useEffect, useRef, useState } from 'react'
 import './App.css'
+import './components/TeamWorkspace.css'
 import TeamDamageLink from './components/TeamDamageLink'
+import SquadSection from './components/SquadSection'
+import TeamTypeSummary from './components/TeamTypeSummary'
+import { applyImportedTeam, updateWorkspaceBuild, useTeamWorkspace } from './lib/teamWorkspace'
 import { resolveTeamMatchup } from './lib/teamDamageLink'
 import { useWorkspaceNavigation } from './lib/workspaceNavigation'
 import { REGULATION_MC_POKEMON } from './data/regulationMc'
 import DamageCalculator from './components/DamageCalculator'
 import { updatePokemonMoveSlot } from './lib/damage/championsMoveSets'
-import { TYPE_NAMES, formatName, loadPokemonDataset } from './lib/pokeapi'
+import { formatName, loadPokemonDataset } from './lib/pokeapi'
 
 const STAT_LABELS = {
   hp: 'HP',
@@ -52,12 +56,15 @@ const TYPE_OPTIONS = [
 const TEAM_SIZE = 6
 function App() {
   const [pokemon, setPokemon] = useState([])
-  const [teamNames, setTeamNames] = useState([])
-  const [highlightedTeamMember, setHighlightedTeamMember] = useState(null)
+  const { workspace, setWorkspace, saveError } = useTeamWorkspace()
+  const { moveSets, builds } = workspace
+  const teamNames = workspace.teams.attacker
+  const opponentNames = workspace.teams.defender
+  const [catalogTeamSide, setCatalogTeamSide] = useState('attacker')
+  const catalogNames = workspace.teams[catalogTeamSide]
   const [activePanel, setActivePanel] = useState(null)
   const { view, fromTeam, navigate } = useWorkspaceNavigation()
   const [teamDamageDraft, setTeamDamageDraft] = useState({ attackerName: '', defenderName: '' })
-  const [moveSets, setMoveSets] = useState({})
   const [selectedDamageMove, setSelectedDamageMove] = useState({ side: 'attacker', slot: 0 })
   const [compareLeftName, setCompareLeftName] = useState('')
   const [compareRightName, setCompareRightName] = useState('')
@@ -111,7 +118,7 @@ function App() {
   const team = teamNames
     .map((name) => pokemon.find((entry) => entry.displayName === name))
     .filter(Boolean)
-  const teamAnalysis = getTeamDefenseAnalysis(team)
+  const opponentTeam = opponentNames.map((name) => pokemon.find((entry) => entry.displayName === name)).filter(Boolean)
   const baseCount = pokemon.filter((entry) => entry.category === 'base').length
   const formCount = pokemon.filter((entry) => entry.category === 'form').length
   const megaCount = pokemon.filter((entry) => entry.category === 'mega').length
@@ -130,20 +137,39 @@ function App() {
     }),
   ].sort((first, second) => comparePokemon(first, second, sortBy, sortDirection))
 
+  function setSquadNames(side, update) {
+    setWorkspace((current) => ({ ...current, teams: { ...current.teams, [side]: typeof update === 'function' ? update(current.teams[side]) : update } }))
+  }
+
+  function addMember(side, name) {
+    setSquadNames(side, (names) => names.length < TEAM_SIZE && !names.includes(name) ? [...names, name] : names)
+  }
+
   function toggleTeamMember(entry) {
     if (entry.status !== 'ready') return
+    setSquadNames(catalogTeamSide, (names) => names.includes(entry.displayName)
+      ? names.filter((name) => name !== entry.displayName)
+      : names.length < TEAM_SIZE ? [...names, entry.displayName] : names)
+  }
 
-    setTeamNames((currentTeam) => {
-      if (currentTeam.includes(entry.displayName)) {
-        return currentTeam.filter((name) => name !== entry.displayName)
-      }
+  function handleTeamImport(side, imported) {
+    setWorkspace((current) => applyImportedTeam(current, side, imported))
+    setTeamDamageDraft((current) => ({ ...current, [side === 'attacker' ? 'attackerName' : 'defenderName']: imported.members[0].name }))
+  }
 
-      if (currentTeam.length >= TEAM_SIZE) {
-        return currentTeam
-      }
+  function changeBuild(side, entry, changes) {
+    if (!entry) return
+    setWorkspace((current) => ({ ...current, builds: updateWorkspaceBuild(current.builds, side, entry.displayName, changes) }))
+  }
 
-      return [...currentTeam, entry.displayName]
-    })
+  function configureMember(side, name) {
+    const draft = { ...teamDamageDraft, [side === 'attacker' ? 'attackerName' : 'defenderName']: name }
+    setTeamDamageDraft(draft)
+    const match = resolveTeamMatchup(team, opponentTeam, draft, moveSets)
+    setDamageAttackerName(side === 'attacker' ? name : match.attacker?.displayName || supported.find((entry) => entry.displayName !== name)?.displayName || '')
+    setDamageDefenderName(side === 'defender' ? name : match.defender?.displayName || supported.find((entry) => entry.displayName !== name)?.displayName || '')
+    setSelectedDamageMove({ side, slot: 0 })
+    navigate('damage', { fromTeam: true })
   }
 
   function handlePanelToggle(panelName, isOpen) {
@@ -151,11 +177,11 @@ function App() {
   }
 
   function changeMoveSlot(side, entry, slot, moveId) {
-    setMoveSets((current) => updatePokemonMoveSlot(current, side, entry, slot, moveId))
+    setWorkspace((current) => ({ ...current, moveSets: updatePokemonMoveSlot(current.moveSets, side, entry, slot, moveId) }))
   }
 
   function openDamageFromTeam() {
-    const matchup = resolveTeamMatchup(team, supported, teamDamageDraft, moveSets)
+    const matchup = resolveTeamMatchup(team, opponentTeam, teamDamageDraft, moveSets)
     if (matchup.attacker && matchup.defender) {
       setDamageAttackerName(matchup.attacker.displayName)
       setDamageDefenderName(matchup.defender.displayName)
@@ -169,13 +195,9 @@ function App() {
   function returnToTeam() {
     setTeamDamageDraft((draft) => ({
       attackerName: teamNames.includes(damageAttackerName) ? damageAttackerName : draft.attackerName,
-      defenderName: damageDefenderName || draft.defenderName,
+      defenderName: opponentNames.includes(damageDefenderName) ? damageDefenderName : draft.defenderName,
     }))
     navigate('team')
-  }
-
-  function clearTeamHighlight() {
-    setHighlightedTeamMember(null)
   }
 
   return (
@@ -184,7 +206,7 @@ function App() {
         <a className="workspace-brand" href="#/catalogo" onClick={(event) => { event.preventDefault(); navigate('catalog') }}>Pokémon stats <span>M-C</span></a>
         <div className="workspace-nav-buttons">
           <button type="button" aria-current={view === 'catalog' ? 'page' : undefined} onClick={() => navigate('catalog')}>Catalogo</button>
-          <button type="button" aria-current={view === 'team' ? 'page' : undefined} onClick={() => view === 'damage' && fromTeam ? returnToTeam() : navigate('team')}>Il mio team <span className="nav-count">{team.length}/{TEAM_SIZE}</span></button>
+          <button type="button" aria-current={view === 'team' ? 'page' : undefined} onClick={() => view === 'damage' && fromTeam ? returnToTeam() : navigate('team')}>Il mio team</button>
           <button
             type="button"
             aria-current={view === 'damage' ? 'page' : undefined}
@@ -217,6 +239,7 @@ function App() {
         </section>
       )}
 
+      {saveError && <p className="notice error" role="status">{saveError}</p>}
       <div className="workspace-view" hidden={view !== 'catalog'}>
         <details className="debug-panel">
           <summary>Debug</summary>
@@ -236,6 +259,11 @@ function App() {
             <h1 tabIndex={-1}>Pokemon stats expo</h1>
           </div>
         </section>
+
+        <label className="catalog-team-target select-field">
+          <span>Destinazione dei pulsanti +</span>
+          <select value={catalogTeamSide} onChange={(event) => setCatalogTeamSide(event.target.value)}><option value="attacker">La mia squadra</option><option value="defender">La squadra avversaria</option></select>
+        </label>
 
         <details className="toolbar" open aria-label="Filtri">
           <summary>Cerca e filtra</summary>
@@ -303,8 +331,9 @@ function App() {
 
         <ComparePanel
           onToggleTeam={toggleTeamMember}
-          teamIsFull={teamNames.length >= TEAM_SIZE}
-          teamNames={teamNames}
+          teamIsFull={catalogNames.length >= TEAM_SIZE}
+          teamNames={catalogNames}
+          teamLabel={catalogTeamSide === 'attacker' ? 'al mio team' : 'alla squadra avversaria'}
           isOpen={activePanel === 'compare'}
           leftName={compareLeftName}
           onLeftChange={setCompareLeftName}
@@ -318,11 +347,12 @@ function App() {
           {filtered.map((entry) =>
             entry.status === 'ready' ? (
               <PokemonCard
-                isSelected={teamNames.includes(entry.displayName)}
+                isSelected={catalogNames.includes(entry.displayName)}
                 key={entry.displayName}
                 onToggleTeam={() => toggleTeamMember(entry)}
+                teamLabel={catalogTeamSide === 'attacker' ? 'al mio team' : 'alla squadra avversaria'}
                 pokemon={entry}
-                teamIsFull={teamNames.length >= TEAM_SIZE}
+                teamIsFull={catalogNames.length >= TEAM_SIZE}
               />
             ) : (
               <UnsupportedCard key={entry.displayName} pokemon={entry} />
@@ -336,25 +366,26 @@ function App() {
           <div>
             <p className="eyebrow compact">La tua squadra · Regulation M-C</p>
             <h1 tabIndex={-1}>Il mio team</h1>
-            <p>Gestisci i tuoi Pokémon e prepara il confronto da aprire nel calcolatore.</p>
+            <p>Importa o prepara le due squadre e confronta tipi, mosse e configurazioni.</p>
           </div>
-          <button type="button" className="ghost-button" onClick={() => navigate('catalog')}>Aggiungi Pokémon dal catalogo</button>
         </header>
-        <TeamBuilder
-          analysis={teamAnalysis}
-          highlightedTeamMember={highlightedTeamMember}
-          onClearHighlight={clearTeamHighlight}
-          onClear={() => setTeamNames([])}
-          onHighlight={setHighlightedTeamMember}
-          onRemove={(name) =>
-            setTeamNames((currentTeam) => currentTeam.filter((entry) => entry !== name))
-          }
-          onSelectForDamage={(name) => setTeamDamageDraft((draft) => ({ ...draft, attackerName: name }))}
-          selectedForDamage={resolveTeamMatchup(team, supported, teamDamageDraft, moveSets).attacker?.displayName}
-          team={team}
-        />
-
-        <TeamDamageLink team={team} pokemon={supported} draft={teamDamageDraft} onChange={setTeamDamageDraft} onCalculate={openDamageFromTeam} moveSets={moveSets} onMoveChange={changeMoveSlot} />
+        <div className="team-workspace-layout">
+          <div className="team-workspace-main">
+            {['attacker', 'defender'].map((side) => <SquadSection
+              key={side} side={side} title={side === 'attacker' ? 'La mia squadra' : 'La squadra avversaria'}
+              team={side === 'attacker' ? team : opponentTeam} roster={supported} builds={builds} moveSets={moveSets}
+              selected={resolveTeamMatchup(team, opponentTeam, teamDamageDraft, moveSets)[side === 'attacker' ? 'attacker' : 'defender']?.displayName}
+              onSelect={(name) => setTeamDamageDraft((draft) => ({ ...draft, [side === 'attacker' ? 'attackerName' : 'defenderName']: name }))}
+              onConfigure={(name) => configureMember(side, name)}
+              onAdd={(name) => addMember(side, name)}
+              onRemove={(name) => setSquadNames(side, (names) => names.filter((entry) => entry !== name))}
+              onClear={() => setSquadNames(side, [])} onImport={(imported) => handleTeamImport(side, imported)}
+              onCatalog={() => { setCatalogTeamSide(side); navigate('catalog') }}
+            />)}
+            <TeamDamageLink team={team} pokemon={opponentTeam} draft={teamDamageDraft} onChange={setTeamDamageDraft} onCalculate={openDamageFromTeam} moveSets={moveSets} onMoveChange={changeMoveSlot} />
+          </div>
+          <TeamTypeSummary team={team} opponentTeam={opponentTeam} moveSets={moveSets} />
+        </div>
       </div>
       <div className="workspace-view" hidden={view !== 'damage'}>
         <header className="workspace-heading">
@@ -373,6 +404,8 @@ function App() {
           onDefenderChange={setDamageDefenderName}
           moveSets={moveSets}
           onMoveChange={changeMoveSlot}
+          builds={builds}
+          onBuildChange={changeBuild}
           selectedMove={selectedDamageMove}
           onSelectMove={setSelectedDamageMove}
         />
@@ -410,38 +443,6 @@ function getStatValue(pokemon, statName) {
   return pokemon.stats.find((stat) => stat.name === statName)?.value ?? null
 }
 
-function getDefenseScore(multiplier) {
-  if (multiplier === 0) return -2
-  return Math.log2(multiplier)
-}
-
-function getTeamDefenseAnalysis(team) {
-  return TYPE_NAMES.map((type) => {
-    const entries = team.flatMap((pokemon) => {
-      const multiplier = pokemon.defenseProfile?.[type] ?? 1
-      const score = getDefenseScore(multiplier)
-
-      if (score === 0) return []
-
-      return Array.from({ length: Math.abs(score) }, (_, index) => ({
-        id: `${type}-${pokemon.displayName}-${index}`,
-        multiplier,
-        name: pokemon.displayName,
-        score: Math.sign(score),
-        tone: score > 0 ? 'weak' : 'resist',
-        type,
-      }))
-    })
-    const score = entries.reduce((sum, entry) => sum + entry.score, 0)
-
-    return {
-      contributions: entries,
-      score,
-      type,
-    }
-  }).sort((a, b) => b.score - a.score || a.type.localeCompare(b.type))
-}
-
 function Metric({ label, value, tone }) {
   return (
     <div className={`metric ${tone ?? ''}`}>
@@ -451,151 +452,13 @@ function Metric({ label, value, tone }) {
   )
 }
 
-function TeamBuilder({
-  analysis,
-  highlightedTeamMember,
-  onClear,
-  onClearHighlight,
-  onHighlight,
-  onSelectForDamage,
-  selectedForDamage,
-  onRemove,
-  team,
-}) {
-  return (
-    <section className="team-builder" aria-label="Membri e analisi difensiva del team">
-      <h2 className="team-section-title">La mia squadra <span>{team.length}/{TEAM_SIZE}</span></h2>
-      {team.length > 0 && (
-        <div className="team-header">
-          <button
-            className="ghost-button"
-            onClick={onClear}
-            type="button"
-          >
-            Svuota team
-          </button>
-        </div>
-      )}
-
-      <div className="team-slots">
-        {Array.from({ length: TEAM_SIZE }, (_, index) => {
-          const pokemon = team[index]
-
-          return pokemon ? (
-            <article className="team-slot filled" key={pokemon.displayName}>
-              <div
-                className={`team-slot-inner ${
-                  highlightedTeamMember?.name === pokemon.displayName
-                    ? `highlighted ${highlightedTeamMember.tone}`
-                    : ''
-                }`}
-              >
-                {pokemon.image && <img src={pokemon.image} alt="" />}
-                <div>
-                  <strong>{pokemon.displayName}</strong>
-                  <div className="type-row mini">
-                    {pokemon.types.map((type) => (
-                      <span className={`type-badge type-${type}`} key={type}>
-                        {formatName(type)}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-                <button
-                  type="button"
-                  className="team-analyze"
-                  aria-pressed={selectedForDamage === pokemon.displayName}
-                  onClick={() => onSelectForDamage(pokemon.displayName)}
-                >
-                  {selectedForDamage === pokemon.displayName ? 'Attaccante selezionato' : 'Usa come attaccante'}
-                </button>
-                <button
-                  aria-label={`Rimuovi ${pokemon.displayName} dal team`}
-                  onClick={() => onRemove(pokemon.displayName)}
-                  type="button"
-                >
-                  Rimuovi
-                </button>
-              </div>
-            </article>
-          ) : (
-            <article className="team-slot empty" key={`empty-${index}`}>
-              Slot {index + 1}
-            </article>
-          )
-        })}
-      </div>
-
-      {team.length > 0 ? (
-        <div className="team-analysis">
-          {analysis.map((entry) => (
-            <article
-              className={`team-type-row ${getTeamRowTone(entry.score)}`}
-              key={entry.type}
-            >
-              <span className={`type-badge type-${entry.type}`}>
-                {formatName(entry.type)}
-              </span>
-              <DefenseBars
-                contributions={entry.contributions}
-                onClearHighlight={onClearHighlight}
-                onHighlight={onHighlight}
-              />
-              <strong>{entry.score > 0 ? `+${entry.score}` : entry.score}</strong>
-            </article>
-          ))}
-        </div>
-      ) : (
-        <p className="team-empty-message">
-          Seleziona fino a 6 Pokémon per analizzare debolezze, resistenze e
-          copertura difensiva del team.
-        </p>
-      )}
-    </section>
-  )
-}
-
-function DefenseBars({ contributions, onClearHighlight, onHighlight }) {
-  if (contributions.length === 0) {
-    return <span className="defense-bars neutral">Bilanciato</span>
-  }
-
-  return (
-    <span className="defense-bars">
-      {contributions.map((contribution) => (
-        <button
-          aria-label={`${contribution.name}: ${
-            contribution.tone === 'weak' ? 'debolezza' : 'resistenza'
-          } ${contribution.multiplier}x a ${formatName(contribution.type)}`}
-          className={contribution.tone}
-          key={contribution.id}
-          onBlur={onClearHighlight}
-          onClick={() => onHighlight(contribution)}
-          onFocus={() => onHighlight(contribution)}
-          onMouseEnter={() => onHighlight(contribution)}
-          onMouseLeave={onClearHighlight}
-          title={`${contribution.name}: ${contribution.multiplier}x ${formatName(
-            contribution.type,
-          )}`}
-          type="button"
-        ></button>
-      ))}
-    </span>
-  )
-}
-
-function getTeamRowTone(score) {
-  if (score > 0) return 'vulnerable'
-  if (score < 0) return 'covered'
-  return 'balanced'
-}
-
 function PokemonCard({
   isSelected = false,
   onToggleTeam,
   pokemon,
   showTeamToggle = true,
   teamIsFull = false,
+  teamLabel = 'al mio team',
 }) {
   const total = pokemon.stats.reduce((sum, stat) => sum + stat.value, 0)
   const disabled = teamIsFull && !isSelected
@@ -620,8 +483,8 @@ function PokemonCard({
       <button
         className={`team-toggle ${isSelected ? 'selected' : ''}`}
         disabled={disabled}
-        aria-label={isSelected ? `Rimuovi ${pokemon.displayName} dal team` : `Aggiungi ${pokemon.displayName} al team`}
-        title={isSelected ? 'Rimuovi dal mio team' : disabled ? 'Il mio team ? completo (6/6)' : 'Aggiungi al mio team'}
+        aria-label={isSelected ? `Rimuovi ${pokemon.displayName} ${teamLabel.replace(/^al /, 'dal ').replace(/^alla /, 'dalla ')}` : `Aggiungi ${pokemon.displayName} ${teamLabel}`}
+        title={isSelected ? `Rimuovi ${teamLabel.replace(/^al /, 'dal ').replace(/^alla /, 'dalla ')}` : disabled ? 'Squadra completa (6/6)' : `Aggiungi ${teamLabel}`}
         onClick={onToggleTeam}
         type="button"
       >
@@ -794,6 +657,7 @@ function ComparePanel({
   pokemon: supported,
   teamIsFull,
   teamNames,
+  teamLabel,
 }) {
   const options = [...supported]
     .sort((a, b) => a.displayName.localeCompare(b.displayName))
@@ -824,12 +688,14 @@ function ComparePanel({
           <PokemonCard
             isSelected={teamNames.includes(leftPokemon.displayName)}
             onToggleTeam={() => onToggleTeam(leftPokemon)}
+            teamLabel={teamLabel}
             pokemon={leftPokemon}
             teamIsFull={teamIsFull}
           />
           <PokemonCard
             isSelected={teamNames.includes(rightPokemon.displayName)}
             onToggleTeam={() => onToggleTeam(rightPokemon)}
+            teamLabel={teamLabel}
             pokemon={rightPokemon}
             teamIsFull={teamIsFull}
           />

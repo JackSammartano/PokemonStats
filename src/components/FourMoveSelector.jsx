@@ -1,11 +1,14 @@
-import { getDamageMoveOptions } from '../lib/damage/championsOptions.js'
+import { getTeamMove, getTeamMoveOptions } from '../lib/teamData.js'
 
 export default function FourMoveSelector({ pokemon, moves, onChange, rows = [], selectedSlot = -1, onSelect, label }) {
-  const { options, source } = getDamageMoveOptions(pokemon)
+  const { options: available, source } = getTeamMoveOptions(pokemon)
+  const imported = moves.filter((id) => id && !available.some((option) => option.value === id))
+  const options = [...available, ...imported.map((value) => ({ value, label: `${getTeamMove(value)?.name ?? value} (importata, fuori learnset)` }))]
   return (
     <fieldset className="four-move-selector" disabled={!pokemon}>
       <legend>{label}</legend>
       {source === 'manual' && pokemon && <p className="move-support-hint">Scelta manuale: learnset supportato non disponibile. Verifica che {pokemon.displayName} possa imparare le mosse.</p>}
+      {imported.length > 0 && <p className="move-support-hint">Alcune mosse importate non risultano nel learnset M-C verificato. Le selezioni sono conservate.</p>}
       {moves.map((moveId, slot) => {
         const row = rows[slot]
         return (
@@ -19,7 +22,7 @@ export default function FourMoveSelector({ pokemon, moves, onChange, rows = [], 
                   {options.map((option) => <option key={option.value} value={option.value} disabled={moves.some((id, index) => index !== slot && id === option.value)}>{option.label}</option>)}
                 </select>
               </label>
-              {onSelect && <button className="move-detail-button" type="button" disabled={!row?.result} aria-pressed={selectedSlot === slot} onClick={() => onSelect(slot)} aria-label={`Dettagli ${row?.move?.name ?? `mossa ${slot + 1}`} di ${pokemon?.displayName}`}>Dettagli</button>}
+              {onSelect && <button className="move-detail-button" type="button" disabled={!row?.move} aria-pressed={selectedSlot === slot} onClick={() => onSelect(slot)} aria-label={`Dettagli ${row?.move?.name ?? `mossa ${slot + 1}`} di ${pokemon?.displayName}`}>Dettagli</button>}
             </div>
             {row?.result && (
               <div className="move-slot-result">
@@ -30,6 +33,7 @@ export default function FourMoveSelector({ pokemon, moves, onChange, rows = [], 
                 <div className="move-damage-track" aria-hidden="true"><span style={{ width: `${Math.min(100, row.maxPercent)}%` }} /></div>
               </div>
             )}
+            {row?.reason && <p className="move-support-hint move-row-note">{row.reason}</p>}
           </div>
         )
       })}

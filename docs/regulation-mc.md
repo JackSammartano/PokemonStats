@@ -22,7 +22,8 @@ npm run data:regulation-mc
 ```
 
 La cache dei sorgenti è separata per commit in `.cache/showdown/` e non entra in Git.
-Gli output generati sono `src/data/regulationMc.js` e `src/data/championsDamageLearnsets.js`.
+Gli output generati sono `src/data/regulationMc.js`, `src/data/championsDamageLearnsets.js`
+e `src/data/championsTeamData.js` (learnset completi, tipi/categorie delle mosse e oggetti per l'import Showdown).
 Il secondo contiene l'intersezione fra learnset Champions e mosse implementate dal motore danni,
 condividendo i pool identici tra forme per limitare le dimensioni.
 La licenza MIT upstream è conservata in

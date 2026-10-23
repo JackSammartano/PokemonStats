@@ -58,3 +58,26 @@ test('optimizer follows the selected direction and relevant stats', () => {
   assert.equal(context.attacker.offenseSp, 24)
   assert.equal(context.defender.defenseSp, 12)
 })
+
+test('imported status and unsupported formula moves stay visible without fabricated damage', () => {
+  const a = createDamageBuild(), b = createDamageBuild()
+  const rows = calculateMoveRows(left, right, a, b, ['protect', 'toxic', 'transform', 'foul-play'], field)
+  assert.equal(rows[0].move.name, 'Protect')
+  assert.ok(rows[0].reason.includes('Mossa di stato'))
+  assert.equal(rows[2].move.name, 'Transform')
+  assert.equal(rows[3].move.name, 'Foul Play')
+  assert.ok(rows.every((row) => row.result === null))
+  assert.equal(createOptimizerContext(left, right, a, b, rows[3].move, field), null)
+})
+
+test('non-Champions level and IV values are retained but do not produce incorrect results', () => {
+  const a = createDamageBuild(), b = createDamageBuild()
+  a.level = 100
+  const levelRow = calculateMoveRows(left, right, a, b, ['flamethrower'], field)[0]
+  assert.equal(levelRow.result, null)
+  assert.equal(createOptimizerContext(left, right, a, b, levelRow.move, field), null)
+  a.level = 50
+  a.ivs.atk = 0
+  assert.equal(calculateMoveRows(left, right, a, b, ['earthquake'], field)[0].result, null)
+  assert.equal(a.ivs.atk, 0)
+})

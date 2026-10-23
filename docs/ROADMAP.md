@@ -12,12 +12,10 @@ le specifiche dettagliate verranno definite prima dell'implementazione.
 ## 2. Il mio team: confronto tra due team
 
 - Implementate viste dedicate per team e calcolatore, con passaggio della coppia e di quattro mosse per ciascun Pokémon e ritorno contestuale. Dettagli in [team-workspace.md](team-workspace.md).
-- Ampliare la gestione de "Il mio team" per confrontare due team.
-- Mostrare i tipi dei Pokémon e delle loro mosse.
-- Consentire di affiancare i Pokémon dei due team a due a due.
-- Evidenziare debolezze e resistenze in base ai tipi dei Pokémon e alle mosse selezionate.
-- Prevedere selezione manuale e importazione da una stringa Pokémon Showdown.
-- Ambito: confronto tra team; funzionalità precise e interazioni da discutere.
+- Implementate La mia squadra e La squadra avversaria, con gestione manuale e import Showdown dagli appunti.
+- Implementati profili condivisi e persistenti per Pokémon: mosse, abilità, oggetto, natura, SP, livello e informazioni aggiuntive.
+- Implementato resoconto laterale con distribuzione dei tipi, debolezze condivise, resistenze, immunità e copertura delle mosse nelle due direzioni.
+- Il riepilogo dei tipi esclude gli effetti di abilità, oggetti e condizioni di campo; gli affinamenti saranno discussi dopo la prova della prima versione.
 
 ## 3. Damage calculator
 

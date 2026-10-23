@@ -2,39 +2,30 @@ import { useState } from 'react'
 import FourMoveSelector from './FourMoveSelector'
 import OptimizerResults from './OptimizerResults'
 import { CHAMPIONS_NATURES } from '../lib/damage/championsData.js'
-import { getAllDamageItemOptions, getChampionsDamageItemOptions } from '../lib/damage/championsItems.js'
-import { getSupportedAbilityOptions } from '../lib/damage/championsOptions.js'
+import { CHAMPIONS_ITEMS as IMPLEMENTED_ITEMS } from '../lib/damage/championsItems.js'
+import { CHAMPIONS_TEAM_ITEMS, getAbilityOptions } from '../lib/teamData.js'
+import { getWorkspaceBuild } from '../lib/teamWorkspace.js'
+import { CHAMPIONS_ABILITIES } from '../lib/damage/championsAbilities.js'
 import { resolveAbilityWeather } from '../lib/damage/championsAbilities.js'
-import { getPokemonMoveSlots, moveSetKey } from '../lib/damage/championsMoveSets.js'
-import { calculateMoveRows, createDamageBuild, createOptimizerContext, getBuildStats } from '../lib/damage/championsMatchup.js'
+import { getPokemonMoveSlots } from '../lib/damage/championsMoveSets.js'
+import { calculateMoveRows, createOptimizerContext, getBuildStats } from '../lib/damage/championsMatchup.js'
 import { findKoOptions, findSurvivalOptions } from '../lib/damage/championsOptimizer.js'
 
 const STAT_LABELS = { hp: 'HP', atk: 'Atk', def: 'Def', spa: 'SpA', spd: 'SpD', spe: 'Spe' }
 const SP_OPTIONS = Array.from({ length: 33 }, (_, index) => index)
 const BOOST_OPTIONS = Array.from({ length: 13 }, (_, index) => index - 6)
-const CHAMPIONS_ITEMS = getChampionsDamageItemOptions()
-const ALL_ITEMS = getAllDamageItemOptions()
+const ITEM_OPTIONS = [{ value: '', label: 'Nessuno' }, ...CHAMPIONS_TEAM_ITEMS.map((item) => ({ value: item.id, label: item.name }))]
 
-export default function DamageCalculator({ pokemon, attackerName, defenderName, onAttackerChange, onDefenderChange, moveSets, onMoveChange, selectedMove, onSelectMove }) {
-  const [builds, setBuilds] = useState({})
-  const [field, setField] = useState({ weather: '', gameType: 'Singles', critical: false, itemMode: 'champions' })
+export default function DamageCalculator({ pokemon, attackerName, defenderName, onAttackerChange, onDefenderChange, moveSets, onMoveChange, selectedMove, onSelectMove, builds, onBuildChange }) {
+  const [field, setField] = useState({ weather: '', gameType: 'Singles', critical: false })
   const [rankingMode, setRankingMode] = useState('minimum')
   const [optimization, setOptimization] = useState(null)
   const attacker = pokemon.find((entry) => entry.displayName === attackerName) ?? pokemon[0]
   const defender = pokemon.find((entry) => entry.displayName === defenderName)
     ?? pokemon.find((entry) => entry.displayName !== attacker?.displayName) ?? pokemon[0]
-  const itemOptions = field.itemMode === 'champions' ? CHAMPIONS_ITEMS : ALL_ITEMS
-
-  function getBuild(side, entry) {
-    const build = builds[moveSetKey(side, entry?.displayName)] ?? createDamageBuild()
-    return {
-      ...build,
-      ability: getSupportedAbilityOptions(entry).some((option) => option.value === build.ability && !option.disabled) ? build.ability : '',
-      item: itemOptions.some((option) => option.value === build.item || option.options?.some((item) => item.value === build.item)) ? build.item : '',
-    }
-  }
-  const leftBuild = getBuild('attacker', attacker)
-  const rightBuild = getBuild('defender', defender)
+  const itemOptions = ITEM_OPTIONS
+  const leftBuild = getWorkspaceBuild(builds, 'attacker', attacker?.displayName)
+  const rightBuild = getWorkspaceBuild(builds, 'defender', defender?.displayName)
   const leftMoves = getPokemonMoveSlots(moveSets, 'attacker', attacker)
   const rightMoves = getPokemonMoveSlots(moveSets, 'defender', defender)
   const leftRows = calculateMoveRows(attacker, defender, leftBuild, rightBuild, leftMoves, field)
@@ -49,12 +40,6 @@ export default function DamageCalculator({ pokemon, attackerName, defenderName, 
   const calculationKey = JSON.stringify({ attacker: attacker?.displayName, defender: defender?.displayName, leftBuild, rightBuild, leftMoves, rightMoves, field, selectedMove, rankingMode })
   const activeOptimization = optimization?.key === calculationKey ? optimization : null
   const weather = resolveAbilityWeather({ attackerAbility: leftBuild.ability, defenderAbility: rightBuild.ability, selectedWeather: field.weather })
-
-  function updateBuild(side, entry, changes) {
-    if (!entry) return
-    const key = moveSetKey(side, entry.displayName)
-    setBuilds((current) => ({ ...current, [key]: { ...(current[key] ?? createDamageBuild()), ...changes } }))
-  }
 
   function optimize(mode) {
     if (!optimizerContext || !selectedRow?.result) return
@@ -102,11 +87,14 @@ export default function DamageCalculator({ pokemon, attackerName, defenderName, 
             <strong>{selectedRow.result.min}–{selectedRow.result.max} HP</strong>
             <small>{selectedRow.minPercent.toFixed(1)}–{selectedRow.maxPercent.toFixed(1)}% di {target.displayName}</small>
           </div>
-        ) : <p>Compila lo slot oppure scegli “Dettagli” su un'altra mossa.</p>}
+        ) : <p>{selectedRow?.reason || <>Compila lo slot oppure scegli “Dettagli” su un'altra mossa.</>}</p>}
       </div>
+      {[...calculationNotes(leftBuild), ...calculationNotes(rightBuild)].length > 0 && (
+        <p className="calculation-note">Calcolo parziale: {[...new Set([...calculationNotes(leftBuild), ...calculationNotes(rightBuild)])].join(' ')}</p>
+      )}
 
       <div className="damage-controls">
-        <PokemonBuildControls side="attacker" label="Pokémon 1" pokemon={attacker} roster={pokemon} build={leftBuild} itemOptions={itemOptions} onPokemonChange={onAttackerChange} onChange={(changes) => updateBuild('attacker', attacker, changes)} />
+        <PokemonBuildControls side="attacker" label="Pokémon 1" pokemon={attacker} roster={pokemon} build={leftBuild} itemOptions={itemOptions} onPokemonChange={onAttackerChange} onChange={(changes) => onBuildChange('attacker', attacker, changes)} />
         <section className="damage-panel damage-battle-panel" aria-label="Battle controls">
           <h3>Campo e condizioni</h3>
           <label className="select-field"><span>Meteo</span>
@@ -118,9 +106,6 @@ export default function DamageCalculator({ pokemon, attackerName, defenderName, 
           <label className="select-field"><span>Formato</span>
             <select value={field.gameType} onChange={(event) => setField({ ...field, gameType: event.target.value })}><option value="Singles">Singles</option><option value="Doubles">Doubles</option></select>
           </label>
-          <label className="select-field"><span>Oggetti disponibili</span>
-            <select value={field.itemMode} onChange={(event) => setField({ ...field, itemMode: event.target.value })}><option value="champions">Champions set items</option><option value="all">Tutti gli oggetti implementati</option></select>
-          </label>
           <div className="damage-toggles"><label><input type="checkbox" checked={field.critical} onChange={(event) => setField({ ...field, critical: event.target.checked })} />Brutto colpo (tutte le mosse)</label></div>
           <div className="optimizer-actions">
             <p className="optimizer-direction">Ottimizza la mossa selezionata: {source?.displayName} → {target?.displayName}</p>
@@ -131,7 +116,7 @@ export default function DamageCalculator({ pokemon, attackerName, defenderName, 
             <button disabled={!optimizerContext || activeOptimization?.isOptimizing} type="button" onClick={() => optimize('ko')}>Find KO</button>
           </div>
         </section>
-        <PokemonBuildControls side="defender" label="Pokémon 2" pokemon={defender} roster={pokemon} build={rightBuild} itemOptions={itemOptions} onPokemonChange={onDefenderChange} onChange={(changes) => updateBuild('defender', defender, changes)} />
+        <PokemonBuildControls side="defender" label="Pokémon 2" pokemon={defender} roster={pokemon} build={rightBuild} itemOptions={itemOptions} onPokemonChange={onDefenderChange} onChange={(changes) => onBuildChange('defender', defender, changes)} />
       </div>
       {activeOptimization && <OptimizerResults result={activeOptimization.result} isOptimizing={activeOptimization.isOptimizing} moveCategory={selectedRow?.move?.category} />}
     </section>
@@ -150,11 +135,16 @@ function PokemonBuildControls({ side, label, pokemon, roster, build, itemOptions
           </select>
         </div>
       </label>
-      <label className="select-field"><span>Abilità</span><select value={build.ability} onChange={(event) => onChange({ ability: event.target.value })}>
-        {getSupportedAbilityOptions(pokemon).map((option) => <option key={option.value} value={option.value} disabled={option.disabled}>{option.label}</option>)}
+      <div className="build-identity-fields">
+        <label className="select-field"><span>Nickname</span><input aria-label={`${label} nickname`} value={build.nickname ?? ''} onChange={(event) => onChange({ nickname: event.target.value })} /></label>
+        <label className="select-field"><span>Genere</span><select aria-label={`${label} genere`} value={build.gender ?? ''} onChange={(event) => onChange({ gender: event.target.value })}><option value="">—</option><option value="M">M</option><option value="F">F</option></select></label>
+        <label className="select-field"><span>Livello</span><input aria-label={`${label} livello`} type="number" min="1" max="100" value={build.level ?? 50} onChange={(event) => onChange({ level: Number(event.target.value) })} /></label>
+      </div>
+      <label className="select-field"><span>Abilità</span><select value={build.ability} onChange={(event) => onChange({ ability: event.target.value, abilityName: event.target.selectedOptions[0].textContent })}>
+        {getAbilityOptions(pokemon, build.ability, build.abilityName).map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
       </select></label>
-      <label className="select-field"><span>Oggetto</span><select value={build.item} onChange={(event) => onChange({ item: event.target.value })}>
-        {itemOptions.map((option) => option.options ? <optgroup key={option.label} label={option.label}>{option.options.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}</optgroup> : <option key={option.value} value={option.value}>{option.label}</option>)}
+      <label className="select-field"><span>Oggetto</span><select value={build.item} onChange={(event) => onChange({ item: event.target.value, itemName: event.target.selectedOptions[0].textContent })}>
+        {(build.item && !itemOptions.some((item) => item.value === build.item) ? [...itemOptions, { value: build.item, label: build.itemName || build.item }] : itemOptions).map((option) => option.options ? <optgroup key={option.label} label={option.label}>{option.options.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}</optgroup> : <option key={option.value} value={option.value}>{option.label}</option>)}
       </select></label>
       <label className="select-field"><span>Natura</span><select value={build.nature} onChange={(event) => onChange({ nature: event.target.value })}>
         {Object.entries(CHAMPIONS_NATURES).map(([name, [plus, minus]]) => <option key={name} value={name}>{name[0].toUpperCase() + name.slice(1)} {plus === minus ? '(neutra)' : `(+${STAT_LABELS[plus]} / −${STAT_LABELS[minus]})`}</option>)}
@@ -170,10 +160,24 @@ function PokemonBuildControls({ side, label, pokemon, roster, build, itemOptions
           </div>
         ))}
         <small>I valori mostrati includono SP e natura; i boost si applicano al calcolo.</small>
+        <small className={Object.values(build.sps).reduce((sum, value) => sum + value, 0) > 66 ? 'invalid-sp-total' : ''}>SP totali: {Object.values(build.sps).reduce((sum, value) => sum + value, 0)}/66</small>
       </div>
+      <details className="build-extra-data"><summary>IV e dati aggiuntivi</summary>
+        <p>Gli IV vengono conservati; il calcolo Champions usa IV fissi a 31.</p>
+        <div className="build-iv-grid">{Object.entries(STAT_LABELS).map(([id, text]) => <label className="select-field" key={id}><span>{text} IV</span><input type="number" min="0" max="31" aria-label={`${label} ${text} IV`} value={build.ivs?.[id] ?? 31} onChange={(event) => onChange({ ivs: { ...build.ivs, [id]: Number(event.target.value) } })} /></label>)}</div>
+        {build.extraLines?.length > 0 && <pre>{build.extraLines.join('\n')}</pre>}
+        {build.sourceText && <details><summary>Export originale importato</summary><pre>{build.sourceText}</pre></details>}
+      </details>
       <div className="damage-toggles damage-panel-toggles">
         {[['burned', 'Scottato'], ['reflect', 'Reflect'], ['lightScreen', 'Light Screen']].map(([key, text]) => <label key={key}><input type="checkbox" checked={build[key]} onChange={(event) => onChange({ [key]: event.target.checked })} />{text}</label>)}
       </div>
     </section>
   )
+}
+
+function calculationNotes(build) {
+  const notes = []
+  if (build.ability && !CHAMPIONS_ABILITIES[build.ability]) notes.push(`Effetto di ${build.abilityName || build.ability} non implementato.`)
+  if (build.item && !IMPLEMENTED_ITEMS[build.item] && !CHAMPIONS_TEAM_ITEMS.find((item) => item.id === build.item)?.megaStone) notes.push(`Effetto di ${build.itemName || build.item} non implementato.`)
+  return notes
 }

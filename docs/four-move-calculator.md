@@ -24,20 +24,24 @@ di identità `(lato, nome Pokémon)`. Questo consente di cambiare Pokémon e rec
 e di confrontare due esemplari della stessa specie con set diversi.
 Il trasferimento non ricostruisce né tronca il set alla sola mossa attiva.
 Le modifiche fatte nel calcolatore si ritrovano nel team e viceversa.
-Lo stato rimane in memoria nella sessione della pagina, come il resto del team builder attuale.
+Set e configurazioni sono condivisi nello stato del team workspace e salvati in localStorage,
+quindi restano disponibili anche ricaricando la pagina.
 
 ## Dati e calcoli
 
-Per il roster M-C, le opzioni usano `championsDamageLearnsets.js`, generato dai learnset
-del commit Showdown fissato dall'importatore. Si includono tutte le mosse apprendibili
-che il motore locale sa calcolare, non soltanto quelle presenti nei vecchi set di esempio.
+Per il roster M-C, le opzioni usano `championsTeamData.js`, generato dai learnset
+del commit Showdown fissato dall'importatore. Si includono tutte le mosse apprendibili,
+comprese quelle di stato e con formule non ancora implementate. I risultati numerici
+restano limitati alle mosse implementate nel motore, con indicazione esplicita per le altre.
+`championsDamageLearnsets.js` rimane la mappa delle sole mosse implementate.
 I vecchi set e PokeAPI rimangono fallback per dati esterni al roster noto.
 Quando non si trovano mosse supportate, la modalità manuale è esplicitamente segnalata.
 Questa modifica non completa la copertura di mosse di stato, formule speciali o altre meccaniche mancanti.
 
 I due Pokémon hanno configurazioni indipendenti: natura, abilità, oggetto, SP e boost
 per statistica, scottatura e schermi sul proprio lato.
-Gli SP iniziali sono zero e vengono impostati esplicitamente per ciascuna statistica.
+Gli SP iniziali sono zero e vengono impostati esplicitamente per ciascuna statistica,
+oppure letti direttamente dalle righe EVs/SPs dell'export Champions.
 Ogni riga usa Atk/Def per le mosse fisiche e SpA/SpD per le speciali; percentuali riferite
 agli HP del bersaglio effettivo. Reflect e Light Screen proteggono il lato su cui sono attivati,
 anche quando si calcola nella direzione opposta. Il brutto colpo condiviso si applica alle otto mosse.

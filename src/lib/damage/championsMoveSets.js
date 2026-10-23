@@ -1,17 +1,17 @@
-import { getDamageMoveOptions } from './championsOptions.js'
+import { getTeamMove, getTeamMoveOptions } from '../teamData.js'
 
 export const MOVE_SLOT_COUNT = 4
 export const moveSetKey = (side, pokemonName) => `${side}:${pokemonName}`
 
 export function resolveMoveSlots(pokemon, selected) {
   if (!pokemon) return Array(MOVE_SLOT_COUNT).fill('')
-  const options = getDamageMoveOptions(pokemon).options
+  const options = getTeamMoveOptions(pokemon).options
   if (!Array.isArray(selected)) return Array.from({ length: MOVE_SLOT_COUNT }, (_, index) => options[index]?.value ?? '')
   const valid = new Set(options.map((entry) => entry.value))
   const seen = new Set()
   return Array.from({ length: MOVE_SLOT_COUNT }, (_, index) => {
     const id = selected[index]
-    if (!valid.has(id) || seen.has(id)) return ''
+    if ((!valid.has(id) && !(pokemon.showdownId && getTeamMove(id))) || seen.has(id)) return ''
     seen.add(id)
     return id
   })

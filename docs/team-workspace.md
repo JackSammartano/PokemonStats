@@ -9,12 +9,13 @@ La navigazione principale apre tre viste interne, compatibili con GitHub Pages:
 - `#/damage-calculator`: calcolatore a tutta larghezza, con selettori indipendenti.
 
 Team e calcolatore sono sezioni dedicate, non pannelli richiudibili del catalogo.
-I componenti restano montati durante la navigazione: team, filtri e configurazione
-del calcolatore si conservano nella sessione della pagina. Non è ancora un salvataggio persistente.
+I componenti restano montati durante la navigazione. Le due squadre, le configurazioni
+dei Pokémon e le mosse sono salvate anche in localStorage; filtri e condizioni di campo
+del calcolatore restano nella sessione della pagina.
 
 ## Passaggio dal team
 
-Nel team si sceglie un attaccante tra i membri, un avversario dal roster e fino a quattro mosse
+Nel team si sceglie un attaccante tra i membri della propria squadra, un avversario dalla squadra avversaria e fino a quattro mosse
 per ciascuno, tra quelle gestite dal calcolatore. Il pulsante "Usa come attaccante" su un membro
 aggiorna anche questa selezione.
 
@@ -34,20 +35,19 @@ Anche avanti/indietro del browser conserva il contesto della voce di cronologia.
 
 ## Azioni sulle schede
 
-I pulsanti `+` e `−` nelle schede del catalogo e del confronto hanno sempre la stessa azione:
-aggiungere o rimuovere dal team. Il limite di sei membri vale in entrambi i punti.
+I pulsanti `+` e `−` nelle schede del catalogo e del confronto aggiungono o rimuovono
+dalla squadra scelta nel controllo di destinazione, La mia squadra o La squadra avversaria.
+Il limite di sei membri vale per entrambe.
 Testo accessibile e tooltip indicano l'azione, il nome del Pokémon e l'eventuale team pieno.
 I pulsanti non selezionano più implicitamente attaccante o difensore in base al pannello aperto.
 Nel calcolatore non viene mostrato il catalogo: i Pokémon si cambiano attraverso i selettori.
 
 ## Ambito di questa modifica
 
-È il collegamento tra il team esistente e il calcolatore, con quattro slot mossa per Pokémon.
-La gestione del secondo team, il confronto completo dei tipi e l'import Showdown
-rimangono le prossime parti della task sui team.
-Le mosse del collegamento usano il learnset M-C verificato, filtrato per la copertura del motore;
-se manca un learnset
-supportato, il selettore lo segnala e richiede di verificarne manualmente l'apprendibilità.
+La pagina comprende due squadre, import dagli appunti, quattro slot per Pokémon e
+resoconto laterale dei tipi. Le mosse usano il learnset M-C completo, comprese quelle
+di stato e con formule non ancora implementate. Queste ultime restano visibili e salvate;
+il calcolatore segnala quando non può produrre un risultato o applicare un effetto.
 
 ## Verifiche
 

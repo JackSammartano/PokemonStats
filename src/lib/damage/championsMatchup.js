@@ -1,12 +1,15 @@
 import { CHAMPIONS_MOVES } from './championsData.js'
 import { calculateChampionsDamage } from './championsDamage.js'
-import { calculateChampionsStats } from './championsMath.js'
+import { calculateChampionsStats, toId } from './championsMath.js'
 import { resolveAbilityWeather } from './championsAbilities.js'
+import { getTeamMove } from '../teamData.js'
 
 const STAT_ALIASES = { hp: 'hp', attack: 'atk', defense: 'def', 'special-attack': 'spa', 'special-defense': 'spd', speed: 'spe' }
 
 export function createDamageBuild() {
   return {
+    level: 50, nickname: '', gender: '',
+    ivs: { hp: 31, atk: 31, def: 31, spa: 31, spd: 31, spe: 31 },
     ability: '', item: '', nature: 'serious', burned: false, reflect: false, lightScreen: false,
     sps: { hp: 0, atk: 0, def: 0, spa: 0, spd: 0, spe: 0 },
     boosts: { atk: 0, def: 0, spa: 0, spd: 0, spe: 0 },
@@ -32,7 +35,13 @@ function toDamagePokemon(pokemon, build) {
 export function calculateMoveRows(attacker, defender, attackingBuild, defendingBuild, moveIds, field) {
   return moveIds.map((moveId, slot) => {
     const move = CHAMPIONS_MOVES[moveId]
-    if (!attacker || !defender || !move) return { slot, moveId, move: null, result: null }
+    if (!move) {
+      const metadata = getTeamMove(moveId)
+      return { slot, moveId, move: metadata, result: null, reason: metadata ? metadata.category === 'status' ? 'Mossa di stato · nessun danno diretto' : 'Formula del danno non ancora implementata' : '' }
+    }
+    if (!attacker || !defender) return { slot, moveId, move, result: null }
+    if ((attackingBuild.level ?? 50) !== 50 || (defendingBuild.level ?? 50) !== 50) return { slot, moveId, move, result: null, reason: 'Il calcolo Champions supporta il livello 50; il livello importato è conservato.' }
+    if ([attackingBuild, defendingBuild].some((build) => Object.values(build.ivs ?? {}).some((value) => value !== 31))) return { slot, moveId, move, result: null, reason: 'IV personalizzati conservati. La formula Champions supporta gli IV fissi a 31.' }
     const result = calculateChampionsDamage({
       attacker: toDamagePokemon(attacker, attackingBuild),
       defender: toDamagePokemon(defender, defendingBuild),
@@ -48,7 +57,8 @@ export function calculateMoveRows(attacker, defender, attackingBuild, defendingB
 }
 
 export function createOptimizerContext(attacker, defender, attackingBuild, defendingBuild, move, field) {
-  if (!attacker || !defender || !move) return null
+  if (!attacker || !defender || !move || !CHAMPIONS_MOVES[toId(move.name)]) return null
+  if ([attackingBuild, defendingBuild].some((build) => (build.level ?? 50) !== 50 || Object.values(build.ivs ?? {}).some((value) => value !== 31))) return null
   const physical = move.category === 'physical'
   const weather = resolveAbilityWeather({ attackerAbility: attackingBuild.ability, defenderAbility: defendingBuild.ability, selectedWeather: field.weather }).weather
   return {
