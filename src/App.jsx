@@ -8,13 +8,14 @@ import PokemonActionMenu from './components/PokemonActionMenu'
 import { getPokemonCardActions } from './lib/pokemonCardActions'
 import SquadSection from './components/SquadSection'
 import TeamTypeSummary from './components/TeamTypeSummary'
-import { applyImportedTeam, updateWorkspaceBuild, useTeamWorkspace } from './lib/teamWorkspace'
+import { applyImportedTeam, getWorkspaceBuild, updateWorkspaceBuild, useTeamWorkspace } from './lib/teamWorkspace'
 import { resolveTeamMatchup } from './lib/teamDamageLink'
 import { useWorkspaceNavigation } from './lib/workspaceNavigation'
 import DamageCalculator from './components/DamageCalculator'
 import { updatePokemonMoveSlot } from './lib/damage/championsMoveSets'
 import { formatName, POKEMON_DATASET } from './lib/pokemonDataset'
 import PokemonImage from './components/PokemonImage'
+import { getMegaAction, toggleMegaEvolution } from './lib/megaEvolution'
 const PokemonCoverageDialog = lazy(() => import('./components/PokemonCoverageDialog'))
 
 const STAT_LABELS = {
@@ -149,6 +150,18 @@ function App() {
   function changeBuild(side, entry, changes) {
     if (!entry) return
     setWorkspace((current) => ({ ...current, builds: updateWorkspaceBuild(current.builds, side, entry.displayName, changes) }))
+  }
+
+  function changeMegaForm(side, name) {
+    const entry = pokemon.find((candidate) => candidate.displayName === name)
+    const action = getMegaAction(entry, getWorkspaceBuild(builds, side, name), workspace.teams[side])
+    if (!action || action.disabled) return
+    setWorkspace((current) => toggleMegaEvolution(current, side, name))
+    const draftKey = side === 'attacker' ? 'attackerName' : 'defenderName'
+    setTeamDamageDraft((draft) => draft[draftKey] === name ? { ...draft, [draftKey]: action.targetName } : draft)
+    if (side === 'attacker') setDamageAttackerName((current) => current === name ? action.targetName : current)
+    else setDamageDefenderName((current) => current === name ? action.targetName : current)
+    setCoverageTarget((current) => current?.side === side && current.name === name ? { ...current, name: action.targetName } : current)
   }
 
   function configureMember(side, name) {
@@ -305,6 +318,7 @@ function App() {
               onSelect={(name) => setTeamDamageDraft((draft) => ({ ...draft, [side === 'attacker' ? 'attackerName' : 'defenderName']: name }))}
               onConfigure={(name) => configureMember(side, name)}
               onInfo={(name) => setCoverageTarget({ side, name })}
+              onMegaToggle={(name) => changeMegaForm(side, name)}
               onAdd={(name) => addMember(side, name)}
               onRemove={(name) => setSquadNames(side, (names) => names.filter((entry) => entry !== name))}
               onClear={() => setSquadNames(side, [])} onImport={(imported) => handleTeamImport(side, imported)}

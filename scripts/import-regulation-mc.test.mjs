@@ -1,9 +1,18 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { buildRoster, getLearnedMoves, mergeLearnsets, SHOWDOWN_COMMIT } from './import-regulation-mc.mjs'
+import { buildMegaEvolutionLinks, buildRoster, getLearnedMoves, mergeLearnsets, SHOWDOWN_COMMIT } from './import-regulation-mc.mjs'
 import { REGULATION_MC_ROSTER, REGULATION_MC_SOURCE } from '../src/data/regulationMc.js'
 
 const byId = new Map(REGULATION_MC_ROSTER.map((entry) => [entry.showdownId, entry]))
+
+test('Mega mapping uses item form pairs rather than guessing from species or stone names', () => {
+  const roster = ['meowstic', 'meowsticf', 'meowsticmmega', 'meowsticfmega'].map((id) => byId.get(id))
+  const items = { meowsticite: { name: 'Meowsticite', megaStone: { Meowstic: 'Meowstic-M-Mega', 'Meowstic-F': 'Meowstic-F-Mega' } } }
+  const links = buildMegaEvolutionLinks(roster, items)
+  assert.equal(links.length, 2)
+  assert.equal(links.find((link) => link.megaId === 'meowsticfmega').baseId, 'meowsticf')
+  assert.throws(() => buildMegaEvolutionLinks(roster, {}), /Missing or ambiguous/)
+})
 
 test('M-C includes the new species, genders, regional forms and all six announced Megas', () => {
   for (const id of [

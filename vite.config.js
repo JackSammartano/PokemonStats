@@ -9,7 +9,10 @@ export default defineConfig({
     rolldownOptions: {
       output: {
         codeSplitting: {
-          groups: [{ name: 'champions-learnsets', test: /champions(DamageLearnsets|TeamData)\.js$/ }],
+          groups: [
+            { name: 'champions-learnsets', test: /champions(DamageLearnsets|TeamData)\.js$/ },
+            { name: 'mega-evolutions', test: /megaEvolutions\.js$/ },
+          ],
         },
       },
     },

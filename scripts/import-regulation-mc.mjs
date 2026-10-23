@@ -38,6 +38,24 @@ export function mergeLearnsets(base, champions) {
   return result
 }
 
+export function buildMegaEvolutionLinks(roster, items) {
+  const byId = new Map(roster.map((entry) => [entry.showdownId, entry]))
+  const links = Object.values(items).flatMap((item) => {
+    if (!item.megaStone || item.isNonstandard) return []
+    const pairs = typeof item.megaStone === 'string' ? [[item.megaEvolves, item.megaStone]] : Object.entries(item.megaStone)
+    return pairs.flatMap(([baseName, megaName]) => {
+      const base = byId.get(toId(baseName)), mega = byId.get(toId(megaName))
+      if (!base || !mega || mega.category !== 'mega') return []
+      return [{ baseId: base.showdownId, megaId: mega.showdownId,
+        itemId: item.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, ''), itemName: item.name }]
+    })
+  }).sort((a, b) => a.megaId.localeCompare(b.megaId))
+  for (const entry of roster.filter((pokemon) => pokemon.category === 'mega')) {
+    if (links.filter((link) => link.megaId === entry.showdownId).length !== 1) throw new Error(`Missing or ambiguous Mega mapping: ${entry.showdownId}`)
+  }
+  return links
+}
+
 export function getLearnedMoves(id, pokedex, learnsets, visited = new Set()) {
   if (visited.has(id)) throw new Error(`Circular learnset inheritance: ${id}`)
   visited.add(id)
@@ -162,6 +180,9 @@ async function main() {
     `const movePools = ${JSON.stringify(pools)}\n\nexport const CHAMPIONS_DAMAGE_LEARNSETS = {\n${references.join('\n')}\n}\n`)
   const allMoves = mergeLearnsets(baseMoves, championMoves)
   const allItems = mergeLearnsets(baseItems, championItems)
+  await writeFile(new URL('src/data/megaEvolutions.js', root),
+    `// Generated from Pokemon Showdown @ ${SHOWDOWN_COMMIT}; MIT, see docs/licenses/pokemon-showdown.txt.\n` +
+    `export const MEGA_EVOLUTIONS = ${JSON.stringify(buildMegaEvolutionLinks(roster, allItems), null, 2)}\n`)
   const moveId = (name) => name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
   const teamMoves = {}
   const teamLearnsets = {}

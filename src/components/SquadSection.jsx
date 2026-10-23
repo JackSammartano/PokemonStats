@@ -4,13 +4,22 @@ import { getWorkspaceBuild } from '../lib/teamWorkspace.js'
 import { getPokemonMoveSlots } from '../lib/damage/championsMoveSets.js'
 import { getTeamMove } from '../lib/teamData.js'
 import PokemonImage from './PokemonImage'
+import { getMegaAction } from '../lib/megaEvolution.js'
 
-export default function SquadSection({ side, title, team, roster, builds, moveSets, selected, onSelect, onConfigure, onInfo, onAdd, onRemove, onClear, onImport, onCatalog }) {
+export default function SquadSection({ side, title, team, roster, builds, moveSets, selected, onSelect, onConfigure, onInfo, onMegaToggle, onAdd, onRemove, onClear, onImport, onCatalog }) {
   const [message, setMessage] = useState('')
   const [editor, setEditor] = useState(null)
   const [busy, setBusy] = useState(false)
   const dialog = useRef(null)
+  const section = useRef(null)
+  const megaFocusTarget = useRef(null)
   useEffect(() => { if (editor && !dialog.current.open) dialog.current.showModal() }, [editor])
+  useEffect(() => {
+    if (!megaFocusTarget.current) return
+    const card = [...section.current.querySelectorAll('.squad-member')].find((entry) => entry.dataset.pokemonName === megaFocusTarget.current)
+    card?.querySelector('.pokemon-mega-toggle')?.focus({ preventScroll: true })
+    megaFocusTarget.current = null
+  }, [team])
 
   function importText(text) {
     const result = parseShowdownTeam(text)
@@ -31,7 +40,7 @@ export default function SquadSection({ side, title, team, roster, builds, moveSe
   }
 
   return (
-    <section className={`squad-section squad-${side}`} aria-labelledby={`squad-title-${side}`}>
+    <section ref={section} className={`squad-section squad-${side}`} aria-labelledby={`squad-title-${side}`}>
       <header className="squad-header">
         <div><p className="eyebrow compact">{side === 'attacker' ? 'La tua formazione' : 'Il tuo avversario'}</p><h2 id={`squad-title-${side}`}>{title} <span>{team.length}/6</span></h2></div>
         <div className="squad-actions">
@@ -56,9 +65,11 @@ export default function SquadSection({ side, title, team, roster, builds, moveSe
           if (!pokemon) return <div className="squad-empty-slot" key={`empty-${index}`}>Slot {index + 1}</div>
           const build = getWorkspaceBuild(builds, side, pokemon.displayName)
           const moves = getPokemonMoveSlots(moveSets, side, pokemon)
+          const mega = getMegaAction(pokemon, build, team.map((entry) => entry.displayName))
           return (
-            <article className={`squad-member ${selected === pokemon.displayName ? 'selected' : ''}`} key={pokemon.displayName}>
+            <article className={`squad-member ${selected === pokemon.displayName ? 'selected' : ''}`} key={pokemon.displayName} data-pokemon-name={pokemon.displayName}>
               <button type="button" className="pokemon-info-button" aria-label={`Copertura e matchup di ${pokemon.displayName} · ${title}`} aria-haspopup="dialog" onClick={() => onInfo(pokemon.displayName)}>i</button>
+              {mega && <button type="button" className={`pokemon-mega-toggle${mega.evolving ? '' : ' is-mega'}`} title={mega.label} aria-label={`${mega.label} · ${title}`} disabled={mega.disabled} onClick={() => { megaFocusTarget.current = mega.targetName; onMegaToggle(pokemon.displayName) }}>{mega.evolving ? 'M' : 'm'}</button>}
               <div className="squad-member-heading">
                 <PokemonImage pokemon={pokemon} size={52} />
                 <div><strong>{pokemon.displayName}</strong><div className="type-row mini">{pokemon.types.map((type) => <span className={`type-badge type-${type}`} key={type}>{type}</span>)}</div></div>
