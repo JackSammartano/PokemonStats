@@ -164,6 +164,13 @@ function App() {
     setCoverageTarget((current) => current?.side === side && current.name === name ? { ...current, name: action.targetName } : current)
   }
 
+  function closeCoverage() {
+    setCoverageTarget(null)
+    if (!coverageTarget) return
+    const card = [...document.querySelectorAll(`.squad-${coverageTarget.side} .squad-member`)].find((entry) => entry.dataset.pokemonName === coverageTarget.name)
+    card?.querySelector('.pokemon-info-button')?.focus({ preventScroll: true })
+  }
+
   function configureMember(side, name) {
     const draft = { ...teamDamageDraft, [side === 'attacker' ? 'attackerName' : 'defenderName']: name }
     setTeamDamageDraft(draft)
@@ -328,7 +335,7 @@ function App() {
           </div>
           <TeamTypeSummary team={team} opponentTeam={opponentTeam} moveSets={moveSets} />
         </div>
-        {view === 'team' && coveragePokemon && <Suspense fallback={<p role="status">Apertura dettagli…</p>}><PokemonCoverageDialog key={`${coverageTarget.side}:${coverageTarget.name}`} pokemon={coveragePokemon} side={coverageTarget.side} team={team} opponentTeam={opponentTeam} moveSets={moveSets} onClose={() => setCoverageTarget(null)} /></Suspense>}
+        {view === 'team' && coveragePokemon && <Suspense fallback={<p role="status">Apertura dettagli…</p>}><PokemonCoverageDialog key={coverageTarget.side} pokemon={coveragePokemon} side={coverageTarget.side} team={team} opponentTeam={opponentTeam} moveSets={moveSets} mega={getMegaAction(coveragePokemon, getWorkspaceBuild(builds, coverageTarget.side, coverageTarget.name), workspace.teams[coverageTarget.side])} onMegaToggle={() => changeMegaForm(coverageTarget.side, coverageTarget.name)} onClose={closeCoverage} /></Suspense>}
       </div>
       <div className="workspace-view" hidden={view !== 'damage'}>
         <DamageCalculator

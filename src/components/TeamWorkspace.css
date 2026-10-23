@@ -97,9 +97,11 @@
 .pokemon-coverage-dialog { width: min(1480px, calc(100% - 40px)); max-height: calc(100dvh - 32px); overflow: auto; box-sizing: border-box; padding: 24px; border: 1px solid var(--border); border-radius: 24px; background: #fcfdf7; color: var(--text); box-shadow: 0 24px 70px rgba(12, 40, 28, 0.3); }
 .pokemon-coverage-dialog::backdrop { background: rgba(15, 40, 30, 0.6); backdrop-filter: blur(3px); }
 .coverage-dialog-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
+.coverage-dialog-header > div:first-child { min-width: 0; }
 .coverage-dialog-header h2 { margin: 0; font-size: 28px; overflow-wrap: anywhere; }
 .coverage-dialog-header .eyebrow { margin-top: 0; font-size: 10px; }
-.coverage-dialog-header > button { flex-shrink: 0; }
+.coverage-dialog-actions { display: flex; flex-shrink: 0; align-items: center; gap: 8px; }
+.coverage-dialog-actions .pokemon-mega-toggle { position: static; width: 36px; height: 36px; }
 .pokemon-coverage-dialog p { color: var(--muted); font-size: 12px; line-height: 1.5; }
 .coverage-dialog-columns { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; margin-top: 18px; align-items: start; }
 .coverage-dialog-columns h3 { margin: 0 0 12px; font-size: 15px; }

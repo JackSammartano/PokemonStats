@@ -2,7 +2,7 @@ import { useEffect, useRef } from 'react'
 import { derivePokemonInsights, getPokemonCoverage } from '../lib/pokemonInsights.js'
 import { describeTypeEffectiveness, formatTypeMultiplier } from '../lib/typeLabels.js'
 
-export default function PokemonCoverageDialog({ pokemon, side, team, opponentTeam, moveSets, onClose }) {
+export default function PokemonCoverageDialog({ pokemon, side, team, opponentTeam, moveSets, mega, onMegaToggle, onClose }) {
   const dialog = useRef(null)
   useEffect(() => {
     const element = dialog.current
@@ -19,7 +19,10 @@ export default function PokemonCoverageDialog({ pokemon, side, team, opponentTea
     const rect = dialog.current.getBoundingClientRect()
     if (event.clientX < rect.left || event.clientX > rect.right || event.clientY < rect.top || event.clientY > rect.bottom) close()
   } }}>
-    <header className="coverage-dialog-header"><div><p className="eyebrow compact">{side === 'attacker' ? 'La mia squadra' : 'Squadra avversaria'}</p><h2 id="pokemon-coverage-title">{pokemon.displayName}</h2></div><button type="button" className="secondary-button" onClick={close} autoFocus aria-label="Chiudi dettagli copertura">Chiudi ×</button></header>
+    <header className="coverage-dialog-header"><div><p className="eyebrow compact">{side === 'attacker' ? 'La mia squadra' : 'Squadra avversaria'}</p><h2 id="pokemon-coverage-title">{pokemon.displayName}</h2></div><div className="coverage-dialog-actions">
+      {mega && <button type="button" className={`pokemon-mega-toggle${mega.evolving ? '' : ' is-mega'}`} title={mega.label} aria-label={mega.label} disabled={mega.disabled} onClick={onMegaToggle}>{mega.evolving ? 'M' : 'm'}</button>}
+      <button type="button" className="secondary-button" onClick={close} autoFocus aria-label="Chiudi dettagli copertura">Chiudi ×</button>
+    </div></header>
     <p>Efficacia dei tipi delle mosse selezionate. Abilità, oggetti e danno effettivo non sono inclusi.</p>
     <PokemonInsights insights={insights} total={outgoing.length} />
     <div className="coverage-dialog-columns"><CoverageGroup title={`${pokemon.displayName} → ${side === 'attacker' ? 'squadra avversaria' : 'la mia squadra'}`} rows={outgoing} /><CoverageGroup title={`${side === 'attacker' ? 'Squadra avversaria' : 'La mia squadra'} → ${pokemon.displayName}`} rows={incoming} /></div>
