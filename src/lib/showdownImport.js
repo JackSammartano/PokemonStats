@@ -38,7 +38,8 @@ export function parseShowdownTeam(text) {
     const entry = rosterIndex.get(normalizeShowdownId(speciesName))
     if (!entry) throw new Error(`Pokémon non riconosciuto nel roster M-C: ${speciesName}. Nessuna modifica applicata.`)
     if (members.some((member) => member.name === entry.displayName)) throw new Error(`Pokémon duplicato: ${entry.displayName}.`)
-    const build = { ...createDamageBuild(), nickname: nicknameMatch?.[1] ?? '', gender, item: toId(itemParts.join(' @ ')), itemName: itemParts.join(' @ '), sourceText: block, extraLines: [] }
+    const canonicalHeader = `${entry.showdownName}${gender ? ` (${gender})` : ''}${itemParts.length ? ` @ ${itemParts.join(' @ ')}` : ''}`
+    const build = { ...createDamageBuild(), gender, item: toId(itemParts.join(' @ ')), itemName: itemParts.join(' @ '), sourceText: [canonicalHeader, ...details].join('\n'), extraLines: [] }
     const moves = []
     for (const line of details) {
       if (/^Ability:/i.test(line)) {

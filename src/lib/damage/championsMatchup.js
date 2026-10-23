@@ -8,7 +8,7 @@ const STAT_ALIASES = { hp: 'hp', attack: 'atk', defense: 'def', 'special-attack'
 
 export function createDamageBuild() {
   return {
-    level: 50, nickname: '', gender: '',
+    level: 50, gender: '',
     ability: '', item: '', nature: 'serious', burned: false, reflect: false, lightScreen: false,
     sps: { hp: 0, atk: 0, def: 0, spa: 0, spd: 0, spe: 0 },
     boosts: { atk: 0, def: 0, spa: 0, spd: 0, spe: 0 },

@@ -61,7 +61,7 @@ export default function SquadSection({ side, title, team, roster, builds, moveSe
               <button type="button" className="pokemon-info-button" aria-label={`Copertura e matchup di ${pokemon.displayName} · ${title}`} aria-haspopup="dialog" onClick={() => onInfo(pokemon.displayName)}>i</button>
               <div className="squad-member-heading">
                 <PokemonImage pokemon={pokemon} size={52} />
-                <div><strong>{build.nickname || pokemon.displayName}</strong>{build.nickname && <small>{pokemon.displayName}</small>}<div className="type-row mini">{pokemon.types.map((type) => <span className={`type-badge type-${type}`} key={type}>{type}</span>)}</div></div>
+                <div><strong>{pokemon.displayName}</strong><div className="type-row mini">{pokemon.types.map((type) => <span className={`type-badge type-${type}`} key={type}>{type}</span>)}</div></div>
               </div>
               <p className="squad-member-build">{build.nature[0].toUpperCase() + build.nature.slice(1)} · L{build.level}{build.gender ? ` · ${build.gender}` : ''}</p>
               <p className="squad-member-build">{build.abilityName || build.ability || 'Abilità da impostare'}<br />{build.itemName || build.item || 'Nessun oggetto'}</p>

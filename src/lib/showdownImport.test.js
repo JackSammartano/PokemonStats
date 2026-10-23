@@ -45,12 +45,26 @@ test('both squads retain independent builds, full move sets and later manual edi
   assert.equal(getPokemonMoveSlots(restored.moveSets, 'attacker', pokemon)[3], 'protect')
 })
 
-test('nickname, gender, level and additional fields are preserved while irrelevant IVs are ignored', () => {
+test('nicknames are discarded while species, gender, level and additional fields are preserved', () => {
   const imported = parseShowdownTeam('Chomp (Garchomp-Mega-Z) (M) @ Garchompite Z\r\nAbility: Levitate\r\nLevel: 50\r\nIVs: 0 Atk\r\nModest Nature\r\nShiny: Yes\r\n- Protect')
-  assert.equal(imported.members[0].build.nickname, 'Chomp')
+  assert.equal(imported.members[0].name, 'Mega Garchomp Z')
+  assert.equal(imported.members[0].build.nickname, undefined)
+  assert.equal(imported.members[0].build.sourceText.includes('Chomp'), false)
   assert.equal(imported.members[0].build.gender, 'M')
   assert.equal(imported.members[0].build.ivs, undefined)
   assert.deepEqual(imported.members[0].build.extraLines, ['Shiny: Yes'])
+})
+
+test('legacy saved nicknames cannot replace species names or reappear after edits', () => {
+  const builds = { 'attacker:Charizard': { nickname: 'Flame', nature: 'timid', sps: { spe: 32 } } }
+  assert.equal(getWorkspaceBuild(builds, 'attacker', 'Charizard').nickname, undefined)
+  const updated = updateWorkspaceBuild(builds, 'attacker', 'Charizard', { nickname: 'Another name', sps: { spe: 31 } })
+  assert.equal(updated['attacker:Charizard'].nickname, undefined)
+  assert.equal(updated['attacker:Charizard'].nature, 'timid')
+  assert.equal(updated['attacker:Charizard'].sps.spe, 31)
+  const restored = readTeamWorkspace({ getItem: () => JSON.stringify({ version: 1, teams: { attacker: ['Charizard'], defender: [] }, builds, moveSets: {} }) })
+  assert.equal(restored.builds['attacker:Charizard'].nickname, undefined)
+  assert.deepEqual(restored.teams.attacker, ['Charizard'])
 })
 
 test('invalid exports fail before replacing any team data', () => {

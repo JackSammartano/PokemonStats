@@ -140,7 +140,6 @@ function PokemonBuildControls({ side, label, pokemon, roster, build, itemOptions
         </div>
       </label>
       <div className="build-identity-fields">
-        <label className="select-field"><span>Nickname</span><input aria-label={`${label} nickname`} value={build.nickname ?? ''} onChange={(event) => onChange({ nickname: event.target.value })} /></label>
         <label className="select-field"><span>Genere</span><select aria-label={`${label} genere`} value={build.gender ?? ''} onChange={(event) => onChange({ gender: event.target.value })}><option value="">—</option><option value="M">M</option><option value="F">F</option></select></label>
         <label className="select-field"><span>Livello</span><input aria-label={`${label} livello`} type="number" min="1" max="100" value={build.level ?? 50} onChange={(event) => onChange({ level: Number(event.target.value) })} /></label>
       </div>

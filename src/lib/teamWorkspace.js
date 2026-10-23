@@ -12,6 +12,7 @@ export function getWorkspaceBuild(builds, side, name) {
   const saved = builds[moveSetKey(side, name)] ?? {}
   const build = { ...defaults, ...saved, sps: { ...defaults.sps, ...saved.sps }, boosts: { ...defaults.boosts, ...saved.boosts } }
   delete build.ivs
+  delete build.nickname
   return build
 }
 
@@ -23,6 +24,7 @@ export function updateWorkspaceBuild(builds, side, name, changes) {
     sps: { ...current.sps, ...changes.sps }, boosts: { ...current.boosts, ...changes.boosts },
   }
   delete build.ivs
+  delete build.nickname
   return { ...builds, [moveSetKey(side, name)]: build }
 }
 
