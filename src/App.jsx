@@ -1,6 +1,6 @@
 import { useDeferredValue, useEffect, useMemo, useRef, useState } from 'react'
 import './App.css'
-import { REGULATION_MB_POKEMON } from './data/regulationMb'
+import { REGULATION_MC_POKEMON } from './data/regulationMc'
 import { calculateChampionsDamage } from './lib/damage/championsDamage'
 import { CHAMPIONS_MOVES, CHAMPIONS_NATURES } from './lib/damage/championsData'
 import { calculateChampionsStats } from './lib/damage/championsMath'
@@ -90,17 +90,6 @@ const GAME_TYPE_OPTIONS = [
   { label: 'Doubles', value: 'Doubles' },
 ]
 
-function getEntryCategory(displayName) {
-  if (displayName.startsWith('Mega ')) return 'mega'
-  if (
-    /\b(Alola|Galar|Hisui|Paldea|Male|Female)\b/.test(displayName) ||
-    displayName.includes('Family Of')
-  ) {
-    return 'form'
-  }
-  return 'base'
-}
-
 function App() {
   const [pokemon, setPokemon] = useState([])
   const [teamNames, setTeamNames] = useState([])
@@ -146,7 +135,7 @@ function App() {
     async function load() {
       try {
         setStatus('loading')
-        const dataset = await loadPokemonDataset(REGULATION_MB_POKEMON, (count) => {
+        const dataset = await loadPokemonDataset(REGULATION_MC_POKEMON, (count) => {
           if (!ignore) setLoadedCount(count)
         })
 
@@ -175,9 +164,9 @@ function App() {
     .map((name) => pokemon.find((entry) => entry.displayName === name))
     .filter(Boolean)
   const teamAnalysis = getTeamDefenseAnalysis(team)
-  const baseCount = pokemon.filter((entry) => getEntryCategory(entry.displayName) === 'base').length
-  const formCount = pokemon.filter((entry) => getEntryCategory(entry.displayName) === 'form').length
-  const megaCount = pokemon.filter((entry) => getEntryCategory(entry.displayName) === 'mega').length
+  const baseCount = pokemon.filter((entry) => entry.category === 'base').length
+  const formCount = pokemon.filter((entry) => entry.category === 'form').length
+  const megaCount = pokemon.filter((entry) => entry.category === 'mega').length
   const filtered = [
     ...pokemon.filter((entry) => {
       const matchesText = entry.displayName
@@ -187,7 +176,7 @@ function App() {
         selectedType === 'all' ||
         (entry.status === 'ready' && entry.types.includes(selectedType))
       const matchesCategory =
-        selectedCategory === 'all' || getEntryCategory(entry.displayName) === selectedCategory
+        selectedCategory === 'all' || entry.category === selectedCategory
 
       return matchesText && matchesType && matchesCategory
     }),
@@ -271,7 +260,7 @@ function App() {
       <details className="debug-panel">
         <summary>Debug</summary>
         <div className="debug-grid">
-          <Metric label="Caricati" value={`${loadedCount}/${REGULATION_MB_POKEMON.length}`} />
+          <Metric label="Caricati" value={`${loadedCount}/${REGULATION_MC_POKEMON.length}`} />
           <Metric label="Supportati" value={supported.length} />
           <Metric label="Non risolti" value={unsupported.length} tone="warning" />
           <Metric label="Base" value={baseCount} />
@@ -282,7 +271,7 @@ function App() {
 
       <section className="hero-section">
         <div className="hero-copy">
-          <p className="eyebrow">Regulation MB Worlds roster</p>
+          <p className="eyebrow">Regulation M-C</p>
           <h1>Pokemon stats expo</h1>
         </div>
       </section>
@@ -364,7 +353,7 @@ function App() {
           <div>
             <strong>Caricamento da PokéAPI in corso.</strong>
             <span>
-              {loadedCount}/{REGULATION_MB_POKEMON.length} Pokémon caricati
+              {loadedCount}/{REGULATION_MC_POKEMON.length} Pokémon caricati
             </span>
           </div>
         </section>

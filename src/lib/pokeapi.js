@@ -1,7 +1,5 @@
-import {
-  NEW_OR_UNVERIFIED_MEGA_FORMS,
-  POKEAPI_NAME_OVERRIDES,
-} from '../data/regulationMb'
+import { REGULATION_MC_ROSTER } from '../data/regulationMc.js'
+import { CHAMPIONS_TYPE_CHART } from './damage/championsData.js'
 
 const API_BASE = 'https://pokeapi.co/api/v2'
 export const TYPE_NAMES = [
@@ -26,6 +24,7 @@ export const TYPE_NAMES = [
 ]
 
 const memoryCache = new Map()
+const rosterByName = new Map(REGULATION_MC_ROSTER.map((entry) => [entry.displayName, entry]))
 
 function slugify(name) {
   return name
@@ -34,63 +33,12 @@ function slugify(name) {
     .replace(/^-|-$/g, '')
 }
 
-function unique(values) {
-  return [...new Set(values.filter(Boolean))]
-}
-
-function buildCandidates(displayName) {
-  const explicit = POKEAPI_NAME_OVERRIDES[displayName] ?? []
-  const baseSlug = slugify(displayName)
-
-  if (!displayName.startsWith('Mega ')) {
-    return unique([...explicit, baseSlug])
-  }
-
-  const speciesSlug = slugify(displayName.replace(/^Mega\s+/, ''))
-  return unique([
-    ...explicit,
-    `${speciesSlug}-mega`,
-    `${speciesSlug}-mega-x`,
-    `${speciesSlug}-mega-y`,
-    baseSlug,
-  ])
-}
-
-function buildSpeciesCandidates(displayName) {
-  const cleanName = displayName.replace(/^Mega\s+/, '').replace(/\s+[XY]$/, '')
-  return unique([slugify(cleanName)])
-}
-
-function varietyScore(displayName, varietyName) {
-  const normalizedDisplay = slugify(displayName)
-  const normalizedVariety = slugify(varietyName)
-
-  if (!displayName.startsWith('Mega ')) {
-    if (normalizedDisplay === normalizedVariety) return 100
-    if (normalizedVariety.startsWith(`${normalizedDisplay}-`)) return 50
-    return 0
-  }
-
-  const wantsX = /\sX$/.test(displayName)
-  const wantsY = /\sY$/.test(displayName)
-  const isMega = normalizedVariety.includes('mega')
-
-  if (!isMega) return 0
-  if (wantsX && normalizedVariety.endsWith('-x')) return 100
-  if (wantsY && normalizedVariety.endsWith('-y')) return 100
-  if (!wantsX && !wantsY && !normalizedVariety.endsWith('-x') && !normalizedVariety.endsWith('-y')) {
-    return 90
-  }
-
-  return 10
-}
-
 async function fetchJson(url) {
   if (memoryCache.has(url)) {
     return memoryCache.get(url)
   }
 
-  const response = await fetch(url)
+  const response = await fetch(url, { signal: AbortSignal.timeout(10000) })
   if (!response.ok) {
     throw new Error(`${response.status} ${response.statusText}`)
   }
@@ -101,44 +49,10 @@ async function fetchJson(url) {
 }
 
 async function fetchPokemonResource(displayName) {
-  const candidates = buildCandidates(displayName)
-  let lastError = null
-
-  for (const candidate of candidates) {
-    try {
-      return {
-        pokemon: await fetchJson(`${API_BASE}/pokemon/${candidate}`),
-        candidates,
-      }
-    } catch (error) {
-      lastError = error
-    }
-  }
-
-  for (const speciesCandidate of buildSpeciesCandidates(displayName)) {
-    try {
-      const species = await fetchJson(`${API_BASE}/pokemon-species/${speciesCandidate}`)
-      const bestVariety = species.varieties
-        .map((entry) => ({
-          score:
-            varietyScore(displayName, entry.pokemon.name) +
-            (entry.is_default ? 25 : 0),
-          url: entry.pokemon.url,
-        }))
-        .sort((a, b) => b.score - a.score)[0]
-
-      if (bestVariety?.score > 0) {
-        return {
-          pokemon: await fetchJson(bestVariety.url),
-          candidates: unique([...candidates, `${speciesCandidate} species varieties`]),
-        }
-      }
-    } catch (error) {
-      lastError = error
-    }
-  }
-
-  throw Object.assign(new Error(lastError?.message ?? 'Not found'), { candidates })
+  const entry = rosterByName.get(displayName)
+  const apiName = entry ? entry.apiName : slugify(displayName)
+  if (!apiName) throw new Error('No separate PokeAPI resource for this form')
+  return { pokemon: await fetchJson(`${API_BASE}/pokemon/${apiName}`) }
 }
 
 async function fetchAbility(abilityRef) {
@@ -164,11 +78,21 @@ async function fetchAbility(abilityRef) {
 }
 
 async function loadTypeChart() {
-  const entries = await Promise.all(
-    TYPE_NAMES.map(async (type) => [type, await fetchJson(`${API_BASE}/type/${type}`)]),
-  )
-
-  return Object.fromEntries(entries)
+  try {
+    const entries = await Promise.all(
+      TYPE_NAMES.map(async (type) => [type, await fetchJson(`${API_BASE}/type/${type}`)]),
+    )
+    return Object.fromEntries(entries)
+  } catch {
+    // The modern type chart also used by our calculator is available offline.
+    return Object.fromEntries(TYPE_NAMES.map((defendingType) => [defendingType, {
+      damage_relations: Object.fromEntries([
+        ['double_damage_from', 2], ['half_damage_from', 0.5], ['no_damage_from', 0],
+      ].map(([relation, multiplier]) => [relation, TYPE_NAMES
+        .filter((attackingType) => (CHAMPIONS_TYPE_CHART[attackingType]?.[defendingType] ?? 1) === multiplier)
+        .map((name) => ({ name }))])),
+    }]))
+  }
 }
 
 function relationNames(relations, key) {
@@ -217,7 +141,42 @@ export function formatName(value) {
     .join(' ')
 }
 
+const STAT_NAMES = {
+  hp: 'hp', atk: 'attack', def: 'defense',
+  spa: 'special-attack', spd: 'special-defense', spe: 'speed',
+}
+
+function applyShowdownData(result, entry, typeChart) {
+  const { types } = entry
+  return {
+    ...result,
+    displayName: entry.displayName,
+    showdownId: entry.showdownId,
+    showdownName: entry.showdownName,
+    category: entry.category,
+    id: entry.dexNumber,
+    types,
+    stats: Object.entries(entry.baseStats).map(([name, value]) => ({ name: STAT_NAMES[name], value })),
+    abilities: entry.abilities.map((ability) => {
+      const description = result.abilities?.find((candidate) =>
+        candidate.id.replaceAll('-', '') === ability.id,
+      )?.description
+      return {
+        ...ability,
+        description: description && !description.startsWith('Descrizione non disponibile')
+          ? description
+          : ability.description,
+      }
+    }),
+    defenseProfile: getDefenseProfile(types, typeChart),
+    weaknesses: getWeaknesses(types, typeChart),
+    resistances: getResistances(types, typeChart),
+    status: 'ready',
+  }
+}
+
 export async function fetchPokemon(displayName, typeChart) {
+  const rosterEntry = rosterByName.get(displayName)
   try {
     const { pokemon } = await fetchPokemonResource(displayName)
     const types = pokemon.types
@@ -227,7 +186,10 @@ export async function fetchPokemon(displayName, typeChart) {
       pokemon.abilities
         .sort((a, b) => a.slot - b.slot)
         .map((entry) =>
-          fetchAbility(entry.ability).then((ability) => ({
+          fetchAbility(entry.ability).catch(() => ({
+            id: entry.ability.name, name: formatName(entry.ability.name),
+            description: 'Descrizione non disponibile in PokeAPI.',
+          })).then((ability) => ({
             ...ability,
             isHidden: entry.is_hidden,
           })),
@@ -240,7 +202,7 @@ export async function fetchPokemon(displayName, typeChart) {
       }))
       .sort((first, second) => first.name.localeCompare(second.name))
 
-    return {
+    const result = {
       displayName,
       apiName: pokemon.name,
       abilities,
@@ -261,15 +223,19 @@ export async function fetchPokemon(displayName, typeChart) {
       resistances: getResistances(types, typeChart),
       status: 'ready',
     }
+    return rosterEntry ? applyShowdownData(result, rosterEntry, typeChart) : result
   } catch (error) {
-    const candidates = error.candidates ?? buildCandidates(displayName)
+    if (rosterEntry) {
+      return applyShowdownData({ image: null, moves: [], apiName: rosterEntry.apiName ?? rosterEntry.showdownId }, rosterEntry, typeChart)
+    }
+    const candidates = [slugify(displayName)]
 
     return {
       displayName,
       apiName: null,
       candidates,
       error: error?.message ?? 'Not found',
-      isNewOrUnverifiedMega: NEW_OR_UNVERIFIED_MEGA_FORMS.has(displayName),
+      isNewOrUnverifiedMega: false,
       status: 'unsupported',
     }
   }
