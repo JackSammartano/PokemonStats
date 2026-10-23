@@ -1,6 +1,8 @@
 import { useDeferredValue, useEffect, useRef, useState } from 'react'
 import './App.css'
 import './components/TeamWorkspace.css'
+import './landscape-theme.css'
+import SiteBackground from './components/SiteBackground'
 import { formatTypeMultiplier } from './lib/typeLabels'
 import PokemonActionMenu from './components/PokemonActionMenu'
 import { getPokemonCardActions } from './lib/pokemonCardActions'
@@ -219,6 +221,7 @@ function App() {
 
   return (
     <main className="app-shell">
+      <SiteBackground />
       <nav className="workspace-nav" aria-label="Navigazione principale">
         <a className="workspace-brand" href="#/catalogo" onClick={(event) => { event.preventDefault(); navigate('catalog') }}>Pokémon stats <span>M-C</span></a>
         <div className="workspace-nav-buttons">
@@ -419,6 +422,10 @@ function App() {
         />
 
       </div>
+      <footer className="site-footer">
+        <span>Pokémon Stats · Regulation M-C</span>
+        <a href="https://www.vecteezy.com/free-photos/pokemon-background" target="_blank" rel="noopener noreferrer">Pokemon Background Stock photos by Vecteezy</a>
+      </footer>
     </main>
   )
 }

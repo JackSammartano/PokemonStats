@@ -9,7 +9,8 @@
     "lint": "oxlint",
     "test": "node --test src/lib/damage/*.test.js src/lib/*.test.js scripts/*.test.mjs",
     "data:regulation-mc": "node scripts/import-regulation-mc.mjs",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "assets:background": "node scripts/optimize-background.mjs"
   },
   "dependencies": {
     "react": "^19.2.7",
@@ -20,6 +21,7 @@
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^6.0.2",
     "oxlint": "^1.69.0",
+    "sharp": "^0.35.5",
     "vite": "^8.1.0"
   }
 }

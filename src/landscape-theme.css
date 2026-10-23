@@ -1,0 +1,117 @@
+/* Landscape artwork stays decorative; reading surfaces remain almost opaque. */
+.app-shell {
+  position: relative;
+  isolation: isolate;
+  width: min(1440px, calc(100% - 80px));
+}
+
+.site-background {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background: var(--bg);
+}
+
+.site-background img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center bottom;
+}
+
+.site-background::after {
+  position: absolute;
+  inset: 0;
+  content: '';
+  background: linear-gradient(180deg, rgba(15, 48, 35, 0.04), rgba(15, 48, 35, 0.14));
+}
+
+.workspace-nav,
+.toolbar {
+  background: rgba(252, 253, 245, 0.94);
+  border-color: rgba(255, 255, 255, 0.7);
+  box-shadow: 0 10px 32px rgba(20, 55, 35, 0.12);
+  backdrop-filter: blur(14px);
+}
+
+.workspace-nav-buttons button:hover { background: #e5efdf; }
+.workspace-nav-buttons button[aria-current="page"] { background: #24543d; }
+.ghost-button,
+.optimizer-actions button,
+.segmented-field label:has(input:checked),
+.pokemon-card-actions .team-toggle[aria-expanded="true"] {
+  background: #24543d;
+  color: #fff;
+}
+.segmented-field label:has(input:checked) { border-color: #24543d; }
+.secondary-button { background: #f4f7ef; color: #365543; }
+input[type="checkbox"], input[type="radio"] { accent-color: #24543d; }
+
+.hero-section {
+  min-height: 200px;
+  border-color: rgba(255, 255, 255, 0.45);
+  background: linear-gradient(100deg, rgba(16, 52, 38, 0.96), rgba(25, 69, 45, 0.77) 62%, rgba(25, 69, 45, 0.2));
+  box-shadow: 0 18px 48px rgba(20, 55, 35, 0.15);
+}
+
+.hero-section::after { opacity: 0.16; }
+.hero-copy h1 { font-size: clamp(40px, 6.5vw, 88px); line-height: 0.98; white-space: normal; }
+
+.workspace-heading {
+  padding: 26px 28px;
+  border: 1px solid rgba(255, 255, 255, 0.7);
+  border-radius: 28px;
+  background: rgba(252, 253, 245, 0.95);
+  box-shadow: 0 12px 32px rgba(20, 55, 35, 0.1);
+}
+
+.pokemon-card,
+.compare-panel,
+.damage-calculator,
+.team-builder,
+.team-damage-link,
+.squad-section,
+.team-type-summary {
+  background: rgba(253, 254, 248, 0.97);
+  box-shadow: 0 12px 32px rgba(20, 55, 35, 0.1);
+}
+
+.squad-section { border-top-color: #397651; }
+.squad-defender { border-top-color: #ca8a27; }
+.squad-member.selected { border-color: #397651; box-shadow: 0 0 0 2px rgba(57, 118, 81, 0.13); }
+.squad-defender .squad-member.selected { border-color: #ca8a27; box-shadow: 0 0 0 2px rgba(202, 138, 39, 0.13); }
+.squad-member-actions button[aria-pressed="true"] { background: #24543d; }
+.squad-defender .squad-member-actions button[aria-pressed="true"] { background: #b45309; }
+.move-slot.active { border-color: #397651; background: #f0f6eb; box-shadow: 0 0 0 2px rgba(57, 118, 81, 0.13); }
+.move-detail-button[aria-pressed="true"] { background: #24543d; }
+.move-damage-track > span { background: #438562; }
+.selected-move-detail { background: #edf3e7; }
+.damage-result { background: #183c2e; }
+.pokemon-action-menu { background: #fdfff9; }
+.pokemon-action-menu button:hover { background: #eaf3e3; }
+
+.site-footer {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 12px 24px;
+  margin-top: 32px;
+  padding: 18px 24px;
+  border: 1px solid rgba(255, 255, 255, 0.7);
+  border-radius: 20px;
+  background: rgba(252, 253, 245, 0.96);
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.site-footer a { color: #24543d; text-underline-offset: 3px; }
+.site-footer a:hover { color: #122f22; }
+:where(button, a, input, select):focus-visible { outline: 3px solid #b97612; outline-offset: 3px; }
+
+@media (max-width: 640px) {
+  .app-shell { width: calc(100% - 24px); padding-top: 16px; }
+  .hero-section { min-height: 180px; padding: 24px; }
+  .workspace-heading { padding: 22px 20px; gap: 18px; }
+  .site-footer { flex-direction: column; padding: 18px; }
+}
