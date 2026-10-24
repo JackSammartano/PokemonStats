@@ -1,6 +1,5 @@
-import { memo, useEffect, useRef, useState } from 'react'
+import { memo, useState } from 'react'
 import FourMoveSelector from './FourMoveSelector'
-import OptimizerResults from './OptimizerResults'
 import SpeedComparison from './SpeedComparison'
 import PokemonImage from './PokemonImage'
 import { CHAMPIONS_NATURES } from '../lib/damage/championsData.js'
@@ -10,7 +9,7 @@ import { getWorkspaceBuild } from '../lib/teamWorkspace.js'
 import { getAbilityCoverageNote } from '../lib/damage/championsCoverage.js'
 import { resolveAbilityWeather } from '../lib/damage/championsAbilities.js'
 import { getPokemonMoveSlots } from '../lib/damage/championsMoveSets.js'
-import { calculateMoveRows, createOptimizerContext, getBuildStats } from '../lib/damage/championsMatchup.js'
+import { calculateMoveRows, getBuildStats } from '../lib/damage/championsMatchup.js'
 import { describeTypeEffectiveness } from '../lib/typeLabels.js'
 import { getMoveConditionFields } from '../lib/damage/championsMoveConditions.js'
 import { BATTLE_CONDITION_FIELDS } from '../lib/damage/championsBattleConditions.js'
@@ -23,9 +22,6 @@ const ITEM_OPTIONS = [{ value: '', label: 'Nessuno' }, ...CHAMPIONS_TEAM_ITEMS.m
 
 export default memo(function DamageCalculator({ pokemon, teams, attackerName, defenderName, onAttackerChange, onDefenderChange, moveSets, onMoveChange, selectedMove, onSelectMove, builds, onBuildChange }) {
   const [field, setField] = useState({ weather: '', gameType: 'Doubles', critical: false })
-  const [rankingMode, setRankingMode] = useState('minimum')
-  const [optimization, setOptimization] = useState(null)
-  const optimizerWorker = useRef(null)
   const attacker = pokemon.find((entry) => entry.displayName === attackerName) ?? pokemon[0]
   const defender = pokemon.find((entry) => entry.displayName === defenderName)
     ?? pokemon.find((entry) => entry.displayName !== attacker?.displayName) ?? pokemon[0]
@@ -49,47 +45,10 @@ export default memo(function DamageCalculator({ pokemon, teams, attackerName, de
   const source = reversed ? defender : attacker
   const target = reversed ? attacker : defender
   const sourceBuild = reversed ? rightBuild : leftBuild
-  const targetBuild = reversed ? leftBuild : rightBuild
-  const optimizerContext = createOptimizerContext(source, target, sourceBuild, targetBuild, selectedRow?.move, reversed ? rightField : leftField)
-  const calculationKey = JSON.stringify({ attacker: attacker?.displayName, defender: defender?.displayName, leftBuild, rightBuild, leftMoves, rightMoves, leftParty, rightParty, field, selectedMove, rankingMode })
-  const activeOptimization = optimization?.key === calculationKey ? optimization : null
-  useEffect(() => () => {
-    optimizerWorker.current?.terminate()
-    optimizerWorker.current = null
-  }, [calculationKey])
   const leftAbility = getEffectiveAbility(leftBuild, rightBuild, field)
   const rightAbility = getEffectiveAbility(rightBuild, leftBuild, field)
   const weather = resolveAbilityWeather({ attackerAbility: leftAbility, defenderAbility: rightAbility, selectedWeather: field.weather,
     attackerEntryActive: leftBuild.entryAbilityActive !== false, defenderEntryActive: rightBuild.entryAbilityActive !== false, weatherSuppressed: field.isCloudNine && field.gameType === 'Doubles' })
-
-  function optimize(mode) {
-    if (!optimizerContext || !selectedRow?.result) return
-    optimizerWorker.current?.terminate()
-    setOptimization({ key: calculationKey, isOptimizing: true, result: { mode, displayed: [], total: 0 } })
-    const failed = (message) => setOptimization({ key: calculationKey, result: { mode, error: message, displayed: [], total: 0 } })
-    try {
-      const worker = new Worker(new URL('../lib/damage/championsOptimizer.worker.js', import.meta.url), { type: 'module' })
-      optimizerWorker.current = worker
-      worker.onmessage = ({ data }) => {
-        if (optimizerWorker.current !== worker) return
-        worker.terminate()
-        optimizerWorker.current = null
-        if (data.error) failed(data.error)
-        else setOptimization({ key: calculationKey, result: data.result })
-      }
-      worker.onerror = () => {
-        if (optimizerWorker.current !== worker) return
-        worker.terminate()
-        optimizerWorker.current = null
-        failed('Impossibile avviare il calcolo. Riprova con le condizioni selezionate.')
-      }
-      worker.postMessage({ mode, context: optimizerContext, rankingMode })
-    } catch {
-      optimizerWorker.current?.terminate()
-      optimizerWorker.current = null
-      failed('Impossibile avviare il calcolo. Riprova con le condizioni selezionate.')
-    }
-  }
 
   return (
     <section className="damage-calculator" aria-label="Configurazione del calcolo danni">
@@ -107,7 +66,7 @@ export default memo(function DamageCalculator({ pokemon, teams, attackerName, de
                 <strong>{selectedRow.minPercent.toFixed(1)}–{selectedRow.maxPercent.toFixed(1)}%</strong>
                 <small>di {target.displayName}</small>
                 {selectedRow.result.failureReason && <small>{selectedRow.result.failureReason}</small>}
-                {selectedRow.result.accuracyDependentKO && <small>KO solo se la mossa colpisce; l’optimizer non garantisce queste mosse.</small>}
+                {selectedRow.result.accuracyDependentKO && <small>KO solo se la mossa colpisce.</small>}
                 {selectedRow.result.hits > 1 && <small>{selectedRow.result.hits} colpi selezionati; la sequenza si interrompe se un Pokémon va KO.</small>}
                 {selectedRow.result.effectiveAttacker?.transformed && <small>Statistiche e abilità copiate dal bersaglio; HP propri conservati.</small>}
               </div>
@@ -133,44 +92,35 @@ export default memo(function DamageCalculator({ pokemon, teams, attackerName, de
           {[...calculationNotes(leftBuild), ...calculationNotes(rightBuild)].length > 0 && (
             <p className="calculation-note">Calcolo parziale: {[...new Set([...calculationNotes(leftBuild), ...calculationNotes(rightBuild)])].join(' ')}</p>
           )}
+          <section className="damage-panel damage-battle-panel" aria-label="Battle controls">
+            <h3>Campo e condizioni</h3>
+            <label className="select-field"><span>Meteo</span>
+              <select value={field.weather} onChange={(event) => setField({ ...field, weather: event.target.value })}>
+                <option value="">Nessuno</option><option value="Sun">Sole</option><option value="Rain">Pioggia</option><option value="Sand">Sabbia</option><option value="Snow">Neve</option>
+              </select>
+              {weather.sourceAbility && <small className="weather-override-hint">{weather.requiresChoice ? 'Le due abilità impostano meteo diversi: seleziona il meteo effettivo dopo l’ultimo ingresso.' : `Meteo effettivo: ${weather.weather}, da ${weather.sourceAbility}.`}</small>}
+            </label>
+            <label className="select-field"><span>Formato</span>
+              <select value={field.gameType} onChange={(event) => setField({ ...field, gameType: event.target.value })}><option value="Singles">Singles</option><option value="Doubles">Doubles</option></select>
+            </label>
+            <label className="select-field"><span>Terreno</span><select value={field.terrain ?? ''} onChange={(event) => setField({ ...field, terrain: event.target.value })}><option value="">Nessuno</option><option value="Electric">Elettrico</option><option value="Grassy">Erboso</option><option value="Misty">Nebbioso</option><option value="Psychic">Psichico</option></select></label>
+            <label><input type="checkbox" checked={Boolean(field.isGravity)} onChange={(event) => setField({ ...field, isGravity: event.target.checked })} />Gravity</label>
+            <label><input type="checkbox" checked={Boolean(field.isWonderRoom)} onChange={(event) => setField({ ...field, isWonderRoom: event.target.checked })} />Wonder Room</label>
+            <label><input type="checkbox" checked={Boolean(field.isMagicRoom)} onChange={(event) => setField({ ...field, isMagicRoom: event.target.checked })} />Magic Room</label>
+            <label><input type="checkbox" checked={Boolean(field.isFairyAura)} onChange={(event) => setField({ ...field, isFairyAura: event.target.checked })} />Fairy Aura da un altro Pokémon</label>
+            <label><input type="checkbox" checked={Boolean(field.isCloudNine)} onChange={(event) => setField({ ...field, isCloudNine: event.target.checked })} />Cloud Nine da un altro Pokémon (Doubles)</label>
+            <label><input type="checkbox" checked={Boolean(field.isDamp)} onChange={(event) => setField({ ...field, isDamp: event.target.checked })} />Damp da un altro Pokémon (Doubles)</label>
+            <div className="damage-toggles"><label><input type="checkbox" checked={field.critical} onChange={(event) => setField({ ...field, critical: event.target.checked })} />Brutto colpo (tutte le mosse)</label></div>
+          </section>
         </div>
-        <div className="damage-configuration-panel">
+        <div className="damage-configuration-panel" role="region" aria-label="Configurazione dei Pokémon" tabIndex={0}>
           <div className="damage-controls">
             <PokemonBuildControls side="attacker" label="Pokémon 1" pokemon={attacker} roster={pokemon} build={leftBuild} effectiveAbility={leftAbility} itemOptions={itemOptions} onPokemonChange={onAttackerChange} onChange={(changes) => onBuildChange('attacker', attacker, changes)} />
             <PokemonBuildControls side="defender" label="Pokémon 2" pokemon={defender} roster={pokemon} build={rightBuild} effectiveAbility={rightAbility} itemOptions={itemOptions} onPokemonChange={onDefenderChange} onChange={(changes) => onBuildChange('defender', defender, changes)} />
-            <section className="damage-panel damage-battle-panel" aria-label="Battle controls">
-              <h3>Campo e condizioni</h3>
-              <label className="select-field"><span>Meteo</span>
-                <select value={field.weather} onChange={(event) => setField({ ...field, weather: event.target.value })}>
-                  <option value="">Nessuno</option><option value="Sun">Sole</option><option value="Rain">Pioggia</option><option value="Sand">Sabbia</option><option value="Snow">Neve</option>
-                </select>
-                {weather.sourceAbility && <small className="weather-override-hint">{weather.requiresChoice ? 'Le due abilità impostano meteo diversi: seleziona il meteo effettivo dopo l’ultimo ingresso.' : `Meteo effettivo: ${weather.weather}, da ${weather.sourceAbility}.`}</small>}
-              </label>
-              <label className="select-field"><span>Formato</span>
-                <select value={field.gameType} onChange={(event) => setField({ ...field, gameType: event.target.value })}><option value="Singles">Singles</option><option value="Doubles">Doubles</option></select>
-              </label>
-              <label className="select-field"><span>Terreno</span><select value={field.terrain ?? ''} onChange={(event) => setField({ ...field, terrain: event.target.value })}><option value="">Nessuno</option><option value="Electric">Elettrico</option><option value="Grassy">Erboso</option><option value="Misty">Nebbioso</option><option value="Psychic">Psichico</option></select></label>
-              <label><input type="checkbox" checked={Boolean(field.isGravity)} onChange={(event) => setField({ ...field, isGravity: event.target.checked })} />Gravity</label>
-              <label><input type="checkbox" checked={Boolean(field.isWonderRoom)} onChange={(event) => setField({ ...field, isWonderRoom: event.target.checked })} />Wonder Room</label>
-              <label><input type="checkbox" checked={Boolean(field.isMagicRoom)} onChange={(event) => setField({ ...field, isMagicRoom: event.target.checked })} />Magic Room</label>
-              <label><input type="checkbox" checked={Boolean(field.isFairyAura)} onChange={(event) => setField({ ...field, isFairyAura: event.target.checked })} />Fairy Aura da un altro Pokémon</label>
-              <label><input type="checkbox" checked={Boolean(field.isCloudNine)} onChange={(event) => setField({ ...field, isCloudNine: event.target.checked })} />Cloud Nine da un altro Pokémon (Doubles)</label>
-              <label><input type="checkbox" checked={Boolean(field.isDamp)} onChange={(event) => setField({ ...field, isDamp: event.target.checked })} />Damp da un altro Pokémon (Doubles)</label>
-              <div className="damage-toggles"><label><input type="checkbox" checked={field.critical} onChange={(event) => setField({ ...field, critical: event.target.checked })} />Brutto colpo (tutte le mosse)</label></div>
-              <div className="optimizer-actions">
-                <p className="optimizer-direction">Ottimizza la mossa selezionata: {source?.displayName} → {target?.displayName}</p>
-                <label className="select-field optimizer-ranking-field"><span>Ordina le build</span>
-                  <select value={rankingMode} onChange={(event) => setRankingMode(event.target.value)}><option value="minimum">Minimum investment</option><option value="practical">Practical build</option></select>
-                </label>
-                <button disabled={!optimizerContext || !selectedRow?.result || activeOptimization?.isOptimizing} type="button" onClick={() => optimize('survival')}>Find Survival</button>
-                <button disabled={!optimizerContext || !selectedRow?.result || activeOptimization?.isOptimizing} type="button" onClick={() => optimize('ko')}>Find KO</button>
-              </div>
-            </section>
           </div>
-          {!weather.requiresChoice && <SpeedComparison attacker={attacker} defender={defender} leftBuild={leftBuild} rightBuild={rightBuild} weather={weather.weather} battle={selectedRow?.result} reversed={reversed} />}
         </div>
       </div>
-      {activeOptimization && <OptimizerResults result={activeOptimization.result} isOptimizing={activeOptimization.isOptimizing} moveCategory={selectedRow?.move?.category} />}
+      {!weather.requiresChoice && <SpeedComparison attacker={attacker} defender={defender} leftBuild={leftBuild} rightBuild={rightBuild} weather={weather.weather} battle={selectedRow?.result} reversed={reversed} />}
     </section>
   )
 })
@@ -222,11 +172,11 @@ function PokemonBuildControls({ side, label, pokemon, roster, build, effectiveAb
       <label className="select-field"><span>Oggetto</span><select value={build.item} onChange={(event) => onChange({ item: event.target.value, itemName: event.target.selectedOptions[0].textContent })}>
         {(build.item && !itemOptions.some((item) => item.value === build.item) ? [...itemOptions, { value: build.item, label: build.itemName || build.item }] : itemOptions).map((option) => option.options ? <optgroup key={option.label} label={option.label}>{option.options.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}</optgroup> : <option key={option.value} value={option.value}>{option.label}</option>)}
       </select></label>
-      <label className="select-field"><span>HP attuali</span><input aria-label={`${label} HP attuali`} type="number" min="1" max={stats?.hp ?? 1} value={build.currentHp == null ? stats?.hp ?? '' : Math.min(build.currentHp, stats?.hp ?? 1)} onChange={(event) => { const hp = Number(event.target.value); onChange({ currentHp: hp >= (stats?.hp ?? 1) ? null : Math.max(1, hp) }) }} /></label>
       <label className="select-field"><span>Stato</span><select value={build.status || (build.burned ? 'brn' : '')} onChange={(event) => onChange({ status: event.target.value, burned: event.target.value === 'brn' })}>
         <option value="">Nessuno</option><option value="brn">Scottato</option><option value="par">Paralizzato</option><option value="psn">Avvelenato</option><option value="tox">Iperavvelenato</option><option value="slp">Addormentato</option><option value="frz">Congelato</option>
       </select></label>
       <details><summary>Situazione del Pokémon e supporti</summary>
+        <label className="select-field"><span>HP attuali</span><input aria-label={`${label} HP attuali`} type="number" min="1" max={stats?.hp ?? 1} value={build.currentHp == null ? stats?.hp ?? '' : Math.min(build.currentHp, stats?.hp ?? 1)} onChange={(event) => { const hp = Number(event.target.value); onChange({ currentHp: hp >= (stats?.hp ?? 1) ? null : Math.max(1, hp) }) }} /></label>
         {BATTLE_CONDITION_FIELDS.filter((condition) => (!condition.abilities || condition.abilities.includes(build.ability) || condition.abilities.includes(effectiveAbility)) && (!condition.items || condition.items.includes(build.item))).map((condition) => {
           const value = build[condition.key] ?? condition.default
           const label = condition.key === 'abilityOn' ? ({ 'flash-fire': 'Flash Fire attivata da un attacco Fuoco', analytic: 'Agisce dopo tutti gli altri Pokémon', plus: 'Alleato con Plus o Minus attivo', minus: 'Alleato con Plus o Minus attivo', unburden: 'Unburden attivata dalla perdita dell’oggetto', 'zero-to-hero': 'È già uscito dal campo (Hero)' })[effectiveAbility] : condition.label

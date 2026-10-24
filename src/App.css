@@ -105,14 +105,36 @@
   border: 0;
 }
 
-.four-move-selector legend {
+.four-move-selector .move-set-heading h3 {
   max-width: 100%;
-  margin-bottom: 14px;
+  margin: 0 0 4px;
   color: var(--text);
   font-size: 18px;
   font-weight: 900;
   letter-spacing: -0.025em;
   overflow-wrap: anywhere;
+}
+
+.damage-moves-overview {
+  grid-template-rows: auto repeat(4, minmax(min-content, 1fr));
+  row-gap: 10px;
+}
+
+.damage-moves-overview > .four-move-selector {
+  display: grid;
+  grid-row: span 5;
+  grid-template-rows: auto repeat(4, minmax(min-content, 1fr));
+  row-gap: 10px;
+}
+
+.damage-moves-overview .move-slot {
+  margin-bottom: 0;
+}
+
+@supports (grid-template-rows: subgrid) {
+  .damage-moves-overview > .four-move-selector {
+    grid-template-rows: subgrid;
+  }
 }
 
 .move-support-hint {
@@ -312,6 +334,10 @@
   .team-move-sets,
   .damage-moves-overview {
     grid-template-columns: 1fr;
+  }
+
+  .damage-moves-overview {
+    grid-template-rows: auto repeat(4, minmax(min-content, 1fr)) auto repeat(4, minmax(min-content, 1fr));
   }
 
   .selected-move-detail {
@@ -629,11 +655,14 @@ button:focus-visible,
 .damage-results-panel,
 .damage-configuration-panel {
   min-width: 0;
+  box-sizing: border-box;
+  padding: 6px;
 }
 
 .damage-results-panel {
   display: grid;
   gap: 20px;
+  align-content: start;
 }
 
 .damage-results-panel > .selected-move-detail,
@@ -650,7 +679,8 @@ button:focus-visible,
   overflow-wrap: anywhere;
 }
 
-.damage-results-panel:focus-visible {
+.damage-results-panel:focus-visible,
+.damage-configuration-panel:focus-visible {
   outline: 3px solid #2563eb;
   outline-offset: 4px;
 }
@@ -659,12 +689,13 @@ button:focus-visible,
   .damage-workspace {
     grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
     gap: 24px;
+    height: calc(100dvh - 32px);
+    align-items: stretch;
   }
 
-  .damage-results-panel {
-    position: sticky;
-    top: 16px;
-    max-height: calc(100dvh - 32px);
+  .damage-results-panel,
+  .damage-configuration-panel {
+    min-height: 0;
     overflow-y: auto;
     scrollbar-gutter: stable;
   }
@@ -675,7 +706,7 @@ button:focus-visible,
   }
 
   .damage-results-panel .damage-moves-overview {
-    gap: 12px;
+    column-gap: 12px;
   }
 }
 

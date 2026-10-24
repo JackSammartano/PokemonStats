@@ -1,5 +1,18 @@
 # Champions Damage Calculator Worklog
 
+## Optimizer da riprendere — 2026-10-24
+
+Su richiesta dell'utente, rimossi dalla pagina Damage calculator «Ordina le build»,
+«Find Survival», «Find KO» e i relativi risultati. Il collegamento al Worker è stato
+rimosso dalla pagina; motore, Worker, componente risultati e test sono conservati
+per riprendere e migliorare la funzione in seguito. Non reintrodurla senza una
+nuova analisi e un piano approvato.
+
+HP attuali rimane disponibile nei dettagli «Situazione del Pokémon e supporti»,
+conservando valori salvati ed effetti sul calcolo. Campo e condizioni si trova
+sotto le mosse a sinistra; su desktop le due colonne hanno uguale altezza e
+scorrimento interno. Scala Velocità segue entrambe le colonne a tutta larghezza.
+
 ## Appunto da riprendere nella prossima sessione — 2026-10-24
 
 Richiesta dell'utente: annotare soltanto, senza implementare ora.

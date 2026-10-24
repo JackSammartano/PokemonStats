@@ -6,11 +6,13 @@ export default function FourMoveSelector({ pokemon, moves, onChange, rows = [], 
   const imported = moves.filter((id) => id && !available.some((option) => option.value === id))
   const options = [...available, ...imported.map((value) => ({ value, label: `${getTeamMove(value)?.name ?? value} (importata, fuori learnset)` }))]
   return (
-    <fieldset className="four-move-selector" disabled={!pokemon}>
-      <legend>{label}</legend>
-      {readOnly && <p className="move-support-hint">Mosse copiate da Imposter: modifica gli slot nel pannello del bersaglio.</p>}
-      {source === 'manual' && pokemon && <p className="move-support-hint">Scelta manuale: learnset supportato non disponibile. Verifica che {pokemon.displayName} possa imparare le mosse.</p>}
-      {imported.length > 0 && <p className="move-support-hint">Alcune mosse importate non risultano nel learnset {REGULATION.label} verificato. Le selezioni sono conservate.</p>}
+    <div className="four-move-selector" role="group" aria-label={label} aria-disabled={!pokemon || undefined}>
+      <div className="move-set-heading">
+        <h3>{label}</h3>
+        {readOnly && <p className="move-support-hint">Mosse copiate da Imposter: modifica gli slot nel pannello del bersaglio.</p>}
+        {source === 'manual' && pokemon && <p className="move-support-hint">Scelta manuale: learnset supportato non disponibile. Verifica che {pokemon.displayName} possa imparare le mosse.</p>}
+        {imported.length > 0 && <p className="move-support-hint">Alcune mosse importate non risultano nel learnset {REGULATION.label} verificato. Le selezioni sono conservate.</p>}
+      </div>
       {moves.map((moveId, slot) => {
         const row = rows[slot]
         return (
@@ -19,12 +21,12 @@ export default function FourMoveSelector({ pokemon, moves, onChange, rows = [], 
               <label>
                 <span className="move-slot-number">{slot + 1}</span>
                 <span className="sr-only">{label}, mossa {slot + 1}</span>
-                <select disabled={readOnly} value={moveId} onChange={(event) => onChange(slot, event.target.value)}>
+                <select disabled={!pokemon || readOnly} value={moveId} onChange={(event) => onChange(slot, event.target.value)}>
                   <option value="">Slot vuoto</option>
                   {options.map((option) => <option key={option.value} value={option.value} disabled={moves.some((id, index) => index !== slot && id === option.value)}>{option.label}</option>)}
                 </select>
               </label>
-              {onSelect && <button className="move-detail-button" type="button" disabled={!row?.move} aria-pressed={selectedSlot === slot} onClick={() => onSelect(slot)} aria-label={`Dettagli ${row?.move?.name ?? `mossa ${slot + 1}`} di ${pokemon?.displayName}`}>Dettagli</button>}
+              {onSelect && <button className="move-detail-button" type="button" disabled={!pokemon || !row?.move} aria-pressed={selectedSlot === slot} onClick={() => onSelect(slot)} aria-label={`Dettagli ${row?.move?.name ?? `mossa ${slot + 1}`} di ${pokemon?.displayName}`}>Dettagli</button>}
             </div>
             {row?.result && (
               <div className="move-slot-result">
@@ -38,6 +40,6 @@ export default function FourMoveSelector({ pokemon, moves, onChange, rows = [], 
           </div>
         )
       })}
-    </fieldset>
+    </div>
   )
 }
