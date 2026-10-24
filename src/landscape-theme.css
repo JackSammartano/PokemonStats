@@ -106,7 +106,8 @@ input[type="checkbox"], input[type="radio"] { accent-color: #24543d; }
 
 .site-footer a { color: #24543d; text-underline-offset: 3px; }
 .site-footer a:hover { color: #122f22; }
-:where(button, a, input, select):focus-visible { outline: 3px solid #b97612; outline-offset: 3px; }
+:where(button, a, input):focus-visible { outline: 3px solid #b97612; outline-offset: 3px; }
+select:focus-visible { outline: 2px solid #397651; outline-offset: 2px; }
 
 @media (max-width: 640px) {
   .app-shell { width: calc(100% - 24px); padding-top: 16px; }
