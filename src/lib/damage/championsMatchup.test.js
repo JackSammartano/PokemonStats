@@ -1,12 +1,30 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import { calculateMoveRows, createDamageBuild, createOptimizerContext } from './championsMatchup.js'
+import { getOptimizerBaseline } from './championsOptimizer.js'
 
 const makePokemon = (name, types, values) => ({ displayName: name, types, stats: ['hp', 'attack', 'defense', 'special-attack', 'special-defense', 'speed'].map((name, index) => ({ name, value: values[index] })) })
 const left = makePokemon('Left', ['fire', 'flying'], [78, 84, 78, 109, 85, 100])
 const right = makePokemon('Right', ['grass', 'poison'], [80, 82, 83, 100, 100, 80])
 const field = { weather: '', gameType: 'Singles', critical: false }
 const ids = ['earthquake', 'flamethrower', 'air-slash', 'dragon-claw']
+
+test('optimizer preserves the weather hidden by Cloud Nine for later hits', () => {
+  const a = { ...createDamageBuild(), ability: 'cloud-nine' }
+  const b = { ...createDamageBuild(), ability: 'mummy' }
+  const selectedField = { ...field, weather: 'Sun' }
+  const [row] = calculateMoveRows(left, right, a, b, ['double-hit'], selectedField)
+  const context = createOptimizerContext(left, right, a, b, row.move, selectedField)
+  assert.ok(row.result && context)
+  assert.equal(context.field.weather, 'Sun')
+  assert.deepEqual(getOptimizerBaseline(context).damage, row.result.damage)
+})
+
+test('Stored Power includes configured accuracy and evasion stages from the page', () => {
+  const a = { ...createDamageBuild(), accuracyBoost: 2, evasionBoost: 1 }
+  const [row] = calculateMoveRows(left, right, a, createDamageBuild(), ['stored-power'], field)
+  assert.equal(row.result.basePower, 80)
+})
 
 test('empty and status-only sets do not need to calculate battle stats', () => {
   const partial = { displayName: 'Ditto' }
@@ -77,15 +95,17 @@ test('optimizer follows the selected direction and relevant stats', () => {
   assert.equal(context.defender.defenseSp, 12)
 })
 
-test('imported status and unsupported formula moves stay visible without fabricated damage', () => {
+test('imported status moves stay visible while multihit moves produce damage', () => {
   const a = createDamageBuild(), b = createDamageBuild()
-  const rows = calculateMoveRows(left, right, a, b, ['protect', 'toxic', 'transform', 'foul-play'], field)
+  const rows = calculateMoveRows(left, right, a, b, ['protect', 'toxic', 'transform', 'rock-blast'], field)
   assert.equal(rows[0].move.name, 'Protect')
   assert.ok(rows[0].reason.includes('Mossa di stato'))
   assert.equal(rows[2].move.name, 'Transform')
-  assert.equal(rows[3].move.name, 'Foul Play')
-  assert.ok(rows.every((row) => row.result === null))
-  assert.equal(createOptimizerContext(left, right, a, b, rows[3].move, field), null)
+  assert.equal(rows[3].move.name, 'Rock Blast')
+  assert.ok(rows.slice(0, 3).every((row) => row.result === null))
+  assert.equal(rows[3].result.hits, 3)
+  assert.ok(rows[3].result.max > 0)
+  assert.ok(createOptimizerContext(left, right, a, b, rows[3].move, field))
 })
 
 test('non-Champions levels are blocked while legacy IV values do not affect Champions calculations', () => {

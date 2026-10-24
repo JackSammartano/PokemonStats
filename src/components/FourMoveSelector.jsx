@@ -1,14 +1,16 @@
 import { getTeamMove, getTeamMoveOptions } from '../lib/teamData.js'
+import { REGULATION } from '../lib/regulation.js'
 
-export default function FourMoveSelector({ pokemon, moves, onChange, rows = [], selectedSlot = -1, onSelect, label }) {
+export default function FourMoveSelector({ pokemon, moves, onChange, rows = [], selectedSlot = -1, onSelect, label, readOnly = false }) {
   const { options: available, source } = getTeamMoveOptions(pokemon)
   const imported = moves.filter((id) => id && !available.some((option) => option.value === id))
   const options = [...available, ...imported.map((value) => ({ value, label: `${getTeamMove(value)?.name ?? value} (importata, fuori learnset)` }))]
   return (
     <fieldset className="four-move-selector" disabled={!pokemon}>
       <legend>{label}</legend>
+      {readOnly && <p className="move-support-hint">Mosse copiate da Imposter: modifica gli slot nel pannello del bersaglio.</p>}
       {source === 'manual' && pokemon && <p className="move-support-hint">Scelta manuale: learnset supportato non disponibile. Verifica che {pokemon.displayName} possa imparare le mosse.</p>}
-      {imported.length > 0 && <p className="move-support-hint">Alcune mosse importate non risultano nel learnset M-C verificato. Le selezioni sono conservate.</p>}
+      {imported.length > 0 && <p className="move-support-hint">Alcune mosse importate non risultano nel learnset {REGULATION.label} verificato. Le selezioni sono conservate.</p>}
       {moves.map((moveId, slot) => {
         const row = rows[slot]
         return (
@@ -17,7 +19,7 @@ export default function FourMoveSelector({ pokemon, moves, onChange, rows = [], 
               <label>
                 <span className="move-slot-number">{slot + 1}</span>
                 <span className="sr-only">{label}, mossa {slot + 1}</span>
-                <select value={moveId} onChange={(event) => onChange(slot, event.target.value)}>
+                <select disabled={readOnly} value={moveId} onChange={(event) => onChange(slot, event.target.value)}>
                   <option value="">Slot vuoto</option>
                   {options.map((option) => <option key={option.value} value={option.value} disabled={moves.some((id, index) => index !== slot && id === option.value)}>{option.label}</option>)}
                 </select>
@@ -26,8 +28,8 @@ export default function FourMoveSelector({ pokemon, moves, onChange, rows = [], 
             </div>
             {row?.result && (
               <div className="move-slot-result">
-                <span className={`type-badge type-${row.move.type}`}>{row.move.type}</span>
-                <span className="move-category">{row.move.category === 'physical' ? 'Fisica' : 'Speciale'}</span>
+                <span className={`type-badge type-${row.result.move.type}`}>{row.result.move.type}</span>
+                <span className="move-category">{row.result.move.category === 'physical' ? 'Fisica' : 'Speciale'}</span>
                 <strong>{row.minPercent.toFixed(1)}–{row.maxPercent.toFixed(1)}%</strong>
                 <div className="move-damage-track" aria-hidden="true"><span style={{ width: `${Math.min(100, row.maxPercent)}%` }} /></div>
               </div>

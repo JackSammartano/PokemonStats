@@ -1,3 +1,5 @@
+import { CHAMPIONS_ADDITIONAL_MOVES } from '../../data/championsAdditionalMoves.js'
+
 export const CHAMPIONS_TYPES = [
   'normal',
   'fire',
@@ -942,6 +944,8 @@ export const CHAMPIONS_MOVES = {
     type: "psychic",
   },
 }
+
+Object.assign(CHAMPIONS_MOVES, CHAMPIONS_ADDITIONAL_MOVES)
 
 export const CHAMPIONS_TYPE_CHART = {
   normal: {

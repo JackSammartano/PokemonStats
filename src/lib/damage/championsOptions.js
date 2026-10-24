@@ -1,8 +1,9 @@
 import { CHAMPIONS_SET_MOVE_IDS } from '../../data/championsSetMoves.js'
-import { CHAMPIONS_DAMAGE_LEARNSETS } from '../../data/championsDamageLearnsets.js'
+import { REGULATION_LEARNSETS } from '../regulation.js'
 import { CHAMPIONS_ABILITIES } from './championsAbilities.js'
 import { CHAMPIONS_MOVES } from './championsData.js'
 import { toId } from './championsMath.js'
+import { getAbilityCoverage } from './championsCoverage.js'
 
 export const NO_SUPPORTED_MOVES_OPTION = {
   disabled: true,
@@ -21,7 +22,7 @@ export function getAllDamageMoveOptions() {
 }
 
 export function getSupportedMoveOptions(pokemon) {
-  const championsSetMoves = CHAMPIONS_DAMAGE_LEARNSETS[pokemon?.showdownId]
+  const championsSetMoves = REGULATION_LEARNSETS[pokemon?.showdownId]
     ?? CHAMPIONS_SET_MOVE_IDS[toId(pokemon?.apiName)]
   const learnset = new Set(
     championsSetMoves ??
@@ -60,16 +61,17 @@ export function getSupportedAbilityOptions(pokemon) {
 
     seen.add(abilityId)
     const championsAbility = CHAMPIONS_ABILITIES[abilityId]
+    const supported = ['implemented', 'no-direct-effect'].includes(getAbilityCoverage(abilityId))
     const option = {
       label: [
         championsAbility?.name ?? ability.name ?? formatOptionName(abilityId),
         ability.isHidden ? '(Hidden)' : '',
-        championsAbility ? '' : '(not calculated yet)',
+        supported ? '' : '(not calculated yet)',
       ].filter(Boolean).join(' '),
       value: abilityId,
     }
 
-    if (!championsAbility) {
+    if (!supported) {
       option.disabled = true
     }
 

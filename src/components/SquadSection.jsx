@@ -3,6 +3,7 @@ import { parseShowdownTeam } from '../lib/showdownImport.js'
 import { getWorkspaceBuild } from '../lib/teamWorkspace.js'
 import { getPokemonMoveSlots } from '../lib/damage/championsMoveSets.js'
 import { getTeamMove } from '../lib/teamData.js'
+import { REGULATION } from '../lib/regulation.js'
 import PokemonImage from './PokemonImage'
 import { getMegaAction } from '../lib/megaEvolution.js'
 import MegaToggleButton from './MegaToggleButton'
@@ -54,7 +55,7 @@ export default function SquadSection({ side, title, team, roster, builds, moveSe
       <div className="squad-add-controls">
         <label className="select-field"><span>Aggiungi Pokémon</span>
           <select value="" disabled={team.length >= 6 || !roster.length} aria-label={`Aggiungi Pokémon a ${title.toLowerCase()}`} onChange={(event) => onAdd(event.target.value)}>
-            <option value="">{team.length >= 6 ? 'Squadra completa' : 'Scegli dal roster M-C…'}</option>
+            <option value="">{team.length >= 6 ? 'Squadra completa' : `Scegli dal roster ${REGULATION.label}…`}</option>
             {roster.filter((entry) => !team.some((member) => member.displayName === entry.displayName)).map((entry) => <option key={entry.displayName} value={entry.displayName}>{entry.displayName}</option>)}
           </select>
         </label>

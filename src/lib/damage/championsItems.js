@@ -1,4 +1,7 @@
 import { toId } from './championsMath.js'
+import { CHAMPIONS_ADDITIONAL_ITEMS } from '../../data/championsAdditionalItems.js'
+import { REGULATION_ITEMS } from '../regulation.js'
+import { CHAMPIONS_ITEM_COVERAGE } from '../../data/championsItemCoverage.js'
 
 export const CHAMPIONS_ITEMS = {
   '': {
@@ -113,6 +116,8 @@ export const CHAMPIONS_ITEMS = {
   },
 }
 
+Object.assign(CHAMPIONS_ITEMS, CHAMPIONS_ADDITIONAL_ITEMS)
+
 export const CHAMPIONS_SET_ITEM_IDS = new Set([
   'abomasite',
   'aerodactylite',
@@ -193,30 +198,51 @@ function groupDamageItemOptions(entries) {
 export function getChampionsDamageItemOptions() {
   return groupDamageItemOptions(
     Object.entries(CHAMPIONS_ITEMS)
-      .filter(([value]) => value === '' || CHAMPIONS_SET_ITEM_IDS.has(value)),
+      .filter(([value]) => ['implemented', 'no-direct-effect'].includes(getItemCoverage(value)) && (value === '' || CHAMPIONS_SET_ITEM_IDS.has(value))),
   )
 }
 
 export function getAllDamageItemOptions() {
-  return groupDamageItemOptions(Object.entries(CHAMPIONS_ITEMS))
+  return groupDamageItemOptions(Object.entries(CHAMPIONS_ITEMS).filter(([value]) => ['implemented', 'no-direct-effect'].includes(getItemCoverage(value))))
 }
 
 export function getItem(item) {
   return CHAMPIONS_ITEMS[toId(item)] ?? CHAMPIONS_ITEMS['']
 }
 
+export function getItemCoverage(item, items = REGULATION_ITEMS) {
+  const id = toId(item)
+  if (!id) return 'no-direct-effect'
+  const reviewed = CHAMPIONS_ITEM_COVERAGE[id]
+  if (!reviewed) return 'unknown'
+  const fingerprint = items.find((entry) => entry.id === id)?.fingerprint
+  return fingerprint && reviewed.fingerprints.includes(fingerprint) ? reviewed.status : 'changed'
+}
+
+export function getItemCoverageNote(item, name, items = REGULATION_ITEMS) {
+  const id = toId(item)
+  const coverage = getItemCoverage(id, items)
+  if (['implemented', 'no-direct-effect'].includes(coverage)) return ''
+  const metadata = CHAMPIONS_ITEMS[id]
+  const label = name || metadata?.name || item
+  return coverage === 'changed' ? `Il comportamento di ${label} richiede una nuova verifica per questa regulation.` : `Effetto di ${label} non ancora verificato.`
+}
+
 export function getItemBasePowerMods({ attacker, move }) {
   const item = getItem(attacker.item)
-
+  const mods = []
   if (item.boostType === toId(move.type)) {
-    return [4915]
+    mods.push(4915)
   }
-
-  return []
+  if ((toId(attacker.item) === 'muscle-band' && move.category === 'physical') || (toId(attacker.item) === 'wise-glasses' && move.category === 'special')) mods.push(4505)
+  if (attacker.gemActive && move.type === 'normal') mods.push(5325)
+  return mods
 }
 
 export function getItemAttackMods({ attacker, move }) {
   const itemId = toId(attacker.item)
+
+  if (itemId === 'light-ball' && toId(attacker.originalSpeciesId ?? attacker.showdownId ?? attacker.name) === 'pikachu') return [8192]
 
   if (itemId === 'choice-band' && move.category === 'physical') {
     return [6144]
@@ -230,7 +256,7 @@ export function getItemAttackMods({ attacker, move }) {
 }
 
 export function getItemDefenseMods({ defender, move }) {
-  if (toId(defender.item) === 'assault-vest' && move.category === 'special') {
+  if (toId(defender.item) === 'assault-vest' && move.category === 'special' && move.overrideDefensiveStat !== 'def') {
     return [6144]
   }
 
@@ -245,13 +271,16 @@ export function getItemFinalMods({ attacker, defender, effectiveness, move }) {
     mods.push(4915)
   } else if (itemId === 'life-orb') {
     mods.push(5324)
+  } else if (itemId === 'metronome') {
+    const uses = Math.max(0, Math.min(5, attacker.consecutiveUses ?? 0))
+    mods.push([4096, 4915, 5734, 6553, 7372, 8192][uses])
   }
 
   const defenderItem = getItem(defender.item)
 
   if (
     defenderItem.resistType === toId(move.type) &&
-    effectiveness > 1 &&
+    (effectiveness > 1 || toId(move.type) === 'normal') &&
     toId(attacker.ability) !== 'unnerve'
   ) {
     mods.push(toId(defender.ability) === 'ripen' ? 1024 : 2048)

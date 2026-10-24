@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react'
 import { createDamageBuild } from './damage/championsMatchup.js'
 import { moveSetKey } from './damage/championsMoveSets.js'
-import { REGULATION_MC_POKEMON } from '../data/regulationMc.js'
+import { REGULATION, REGULATION_POKEMON } from './regulation.js'
 
-export const TEAM_STORAGE_KEY = 'pokemonstats.team-workspace.v1'
-const knownNames = new Set(REGULATION_MC_POKEMON)
-export const createTeamWorkspace = () => ({ version: 1, teams: { attacker: [], defender: [] }, builds: {}, moveSets: {} })
+export const LEGACY_TEAM_STORAGE_KEY = 'pokemonstats.team-workspace.v1'
+export const TEAM_STORAGE_KEY = `pokemonstats.team-workspace.v1.${REGULATION.id}`
+const knownNames = new Set(REGULATION_POKEMON)
+export const createTeamWorkspace = () => ({ version: 1, regulation: REGULATION.id, teams: { attacker: [], defender: [] }, builds: {}, moveSets: {} })
 
 export function getWorkspaceBuild(builds, side, name) {
   const defaults = createDamageBuild()
@@ -40,8 +41,10 @@ export function applyImportedTeam(workspace, side, imported) {
 
 export function readTeamWorkspace(storage) {
   try {
-    const saved = JSON.parse(storage.getItem(TEAM_STORAGE_KEY))
+    const raw = storage.getItem(TEAM_STORAGE_KEY)
+    const saved = JSON.parse(raw ?? (REGULATION.id === 'mc' ? storage.getItem(LEGACY_TEAM_STORAGE_KEY) : null))
     if (saved?.version !== 1) return createTeamWorkspace()
+    if (saved.regulation && saved.regulation !== REGULATION.id) return createTeamWorkspace()
     const result = createTeamWorkspace()
     for (const side of ['attacker', 'defender']) {
       result.teams[side] = [...new Set((saved.teams?.[side] ?? []).filter((name) => knownNames.has(name)))].slice(0, 6)

@@ -33,6 +33,9 @@ jobs:
       - name: Lint
         run: npm run lint
 
+      - name: Validate active regulation and assets
+        run: npm run data:check -- --complete
+
       - name: Test
         run: npm test
 

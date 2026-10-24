@@ -1,0 +1,38 @@
+name: Validate regulation transitions
+
+on:
+  pull_request:
+    paths:
+      - 'config/**'
+      - 'scripts/**'
+      - 'src/**'
+      - 'package*.json'
+      - 'vite.config.js'
+      - '.github/workflows/regulations.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  transition:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - name: Restore pinned Showdown sources
+        uses: actions/cache@v4
+        with:
+          path: .cache/showdown
+          key: showdown-regulations-${{ hashFiles('config/regulations.json') }}
+      - name: Install dependencies
+        run: npm ci
+      - name: Validate M-B to M-C transition, tests and builds
+        run: npm run data:simulate -- mb mc
+      - name: Lint
+        run: npm run lint

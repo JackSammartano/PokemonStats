@@ -1,4 +1,4 @@
-import { getSpeedTableRow } from '../lib/damage/championsSpeed.js'
+import { getEffectiveSpeed, getSpeedTableRow } from '../lib/damage/championsSpeed.js'
 import './SpeedComparison.css'
 
 const COLUMNS = [
@@ -12,7 +12,7 @@ const COLUMNS = [
   { key: 'neutralScarf', label: 'Neutra · Scarf', detail: '32 SP' },
 ]
 
-export default function SpeedComparison({ attacker, defender, leftBuild, rightBuild, weather }) {
+export default function SpeedComparison({ attacker, defender, leftBuild, rightBuild, weather, battle, reversed }) {
   return (
     <section className="speed-comparison" aria-labelledby="speed-comparison-title">
       <h3 id="speed-comparison-title">Scala Velocità</h3>
@@ -22,6 +22,8 @@ export default function SpeedComparison({ attacker, defender, leftBuild, rightBu
           <thead><tr><th scope="col">Pokémon</th>{COLUMNS.map(({ key, label, detail }) => <th className={key === 'current' ? 'speed-current-column' : undefined} key={key} scope="col">{label}{detail && <small>{detail}</small>}</th>)}</tr></thead>
           <tbody>{[[attacker, leftBuild], [defender, rightBuild]].map(([pokemon, build], index) => {
             const row = getSpeedTableRow(pokemon, build, weather)
+            const effective = (index === 0) !== reversed ? battle?.effectiveAttacker : battle?.effectiveDefender
+            row.current = effective ? getEffectiveSpeed(effective.stats.spe, { ...effective, terrain: battle.field.terrain }, battle.field.weather) : null
             return <tr key={index} data-speed-side={index === 0 ? 'attacker' : 'defender'}>
               <th scope="row">{pokemon?.displayName ?? 'Da scegliere'}<small>Pokémon {index + 1}</small></th>
               {COLUMNS.map(({ key }) => <td data-speed-column={key} className={key === 'current' ? 'speed-current-column' : undefined} key={key}>{row[key] ?? '—'}</td>)}

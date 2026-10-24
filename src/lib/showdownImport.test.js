@@ -4,17 +4,24 @@ import { test } from 'node:test'
 import { parseShowdownTeam } from './showdownImport.js'
 import { applyImportedTeam, createTeamWorkspace, getWorkspaceBuild, readTeamWorkspace, TEAM_STORAGE_KEY, updateWorkspaceBuild } from './teamWorkspace.js'
 import { getPokemonMoveSlots, moveSetKey } from './damage/championsMoveSets.js'
-import { REGULATION_MC_ROSTER } from '../data/regulationMc.js'
+import { REGULATION_ROSTER } from './regulation.js'
 
-const example = readFileSync(new URL('./fixtures/showdown-team.txt', import.meta.url), 'utf8')
+const hasMegaZ = REGULATION_ROSTER.some((entry) => entry.showdownId === 'garchompmegaz')
+const hasPersian = REGULATION_ROSTER.some((entry) => entry.showdownId === 'persianalola')
+const originalExample = readFileSync(new URL('./fixtures/showdown-team.txt', import.meta.url), 'utf8')
+const example = (hasMegaZ ? originalExample : originalExample.replace('Garchomp-Mega-Z @ Garchompite Z', 'Garchomp-Mega @ Garchompite').replace('Ability: Levitate', 'Ability: Sand Force'))
+  .replace('Persian-Alola', hasPersian ? 'Persian-Alola' : 'Incineroar')
+  .replace('Ability: Fur Coat', hasPersian ? 'Ability: Fur Coat' : 'Ability: Intimidate')
+const megaName = hasMegaZ ? 'Mega Garchomp Z' : 'Mega Garchomp'
+const megaItem = hasMegaZ ? 'garchompite-z' : 'garchompite'
 
 test('imports the exact six-Pokemon example without losing status moves or SP values', () => {
   const imported = parseShowdownTeam(example)
   assert.equal(imported.members.length, 6)
   const garchomp = imported.members[0]
-  assert.equal(garchomp.name, 'Mega Garchomp Z')
-  assert.equal(garchomp.build.item, 'garchompite-z')
-  assert.equal(garchomp.build.ability, 'levitate')
+  assert.equal(garchomp.name, megaName)
+  assert.equal(garchomp.build.item, megaItem)
+  assert.equal(garchomp.build.ability, hasMegaZ ? 'levitate' : 'sand-force')
   assert.equal(garchomp.build.level, 50)
   assert.deepEqual(garchomp.build.sps, { hp: 32, atk: 0, def: 1, spa: 32, spd: 1, spe: 0 })
   assert.equal(garchomp.build.nature, 'modest')
@@ -22,8 +29,8 @@ test('imports the exact six-Pokemon example without losing status moves or SP va
   assert.equal(imported.members[3].build.gender, 'M')
   assert.equal(imported.members[4].build.gender, 'F')
   assert.deepEqual(imported.members[2].moves, ['transform', '', '', ''])
-  assert.equal(imported.members[5].name, 'Persian Alola')
-  assert.equal(imported.members[5].build.ability, 'fur-coat')
+  assert.equal(imported.members[5].name, hasPersian ? 'Persian Alola' : 'Incineroar')
+  assert.equal(imported.members[5].build.ability, hasPersian ? 'fur-coat' : 'intimidate')
   assert.equal(imported.members[5].moves[3], 'foul-play')
 })
 
@@ -36,18 +43,19 @@ test('both squads retain independent builds, full move sets and later manual edi
   assert.equal(getWorkspaceBuild(edited.builds, 'attacker', name).nature, 'modest')
   assert.equal(getWorkspaceBuild(edited.builds, 'defender', name).nature, 'timid')
   assert.equal(getWorkspaceBuild(edited.builds, 'defender', name).sps.hp, 32)
-  assert.equal(getWorkspaceBuild(edited.builds, 'defender', name).item, 'garchompite-z')
+  assert.equal(getWorkspaceBuild(edited.builds, 'defender', name).item, megaItem)
   const restored = readTeamWorkspace({ getItem: (key) => key === TEAM_STORAGE_KEY ? JSON.stringify(edited) : null })
   assert.deepEqual(restored.teams, both.teams)
   assert.equal(restored.builds[moveSetKey('defender', name)].nature, 'timid')
-  const pokemon = REGULATION_MC_ROSTER.find((entry) => entry.displayName === name)
+  const pokemon = REGULATION_ROSTER.find((entry) => entry.displayName === name)
   assert.deepEqual(getPokemonMoveSlots(restored.moveSets, 'attacker', pokemon), imported.members[0].moves)
   assert.equal(getPokemonMoveSlots(restored.moveSets, 'attacker', pokemon)[3], 'protect')
 })
 
 test('nicknames are discarded while species, gender, level and additional fields are preserved', () => {
-  const imported = parseShowdownTeam('Chomp (Garchomp-Mega-Z) (M) @ Garchompite Z\r\nAbility: Levitate\r\nLevel: 50\r\nIVs: 0 Atk\r\nModest Nature\r\nShiny: Yes\r\n- Protect')
-  assert.equal(imported.members[0].name, 'Mega Garchomp Z')
+  const species = hasMegaZ ? 'Garchomp-Mega-Z' : 'Garchomp-Mega'
+  const imported = parseShowdownTeam(`Chomp (${species}) (M) @ Garchompite\r\nLevel: 50\r\nIVs: 0 Atk\r\nModest Nature\r\nShiny: Yes\r\n- Protect`)
+  assert.equal(imported.members[0].name, megaName)
   assert.equal(imported.members[0].build.nickname, undefined)
   assert.equal(imported.members[0].build.sourceText.includes('Chomp'), false)
   assert.equal(imported.members[0].build.gender, 'M')

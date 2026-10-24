@@ -24,7 +24,7 @@ export default function OptimizerResults({ isOptimizing, moveCategory, result })
         <span>{headerText}</span>
       </div>
 
-      {isOptimizing ? (
+      {result.error ? <p role="alert">{result.error}</p> : isOptimizing ? (
         <div className="optimizer-loading">
           <div className="pokeball-spinner" aria-hidden="true"></div>
           <span>Calculating options</span>
@@ -46,12 +46,14 @@ export default function OptimizerResults({ isOptimizing, moveCategory, result })
       ) : (
         <p>{emptyText}</p>
       )}
+      {result.excludedCandidates > 0 && <p>{result.excludedCandidates} configurazioni escluse: per Payback seleziona esplicitamente l’ordine del colpo per includere anche le parità di Velocità.</p>}
     </div>
   )
 }
 
 function OptimizerSurvivalTable({ moveCategory, options }) {
-  const defenseLabel = moveCategory === 'physical' ? 'Def' : 'SpD'
+  const defenseLabel = DAMAGE_STAT_LABELS[options[0]?.sort?.defenseStat] ?? (moveCategory === 'physical' ? 'Def' : 'SpD')
+  const stats = options[0]?.defender.investmentStats ?? ['hp', options[0]?.sort?.defenseStat ?? (moveCategory === 'physical' ? 'def' : 'spd')]
 
   return (
     <table className="optimizer-table">
@@ -61,8 +63,9 @@ function OptimizerSurvivalTable({ moveCategory, options }) {
           <th>Nature</th>
           <th>Ability</th>
           <th>Item</th>
-          <th>HP SP</th>
-          <th>{defenseLabel} SP</th>
+          {stats.map((stat) => <th key={stat}>{DAMAGE_STAT_LABELS[stat] ?? defenseLabel} SP</th>)}
+          <th>SP totali</th>
+          <th>Categoria</th>
           <th>Screen</th>
           <th>Weather</th>
           <th>Condition</th>
@@ -77,8 +80,9 @@ function OptimizerSurvivalTable({ moveCategory, options }) {
             <td>{formatOptimizerNature(option.defender)}</td>
             <td>{formatTableValue(formatSelectedEffect(option.defender.ability))}</td>
             <td>{formatTableValue(formatSelectedEffect(option.defender.item))}</td>
-            <td>{option.defender.hpSp}</td>
-            <td>{option.defender.defenseSp}</td>
+            {stats.map((stat) => <td key={stat}>{option.defender.sps?.[stat] ?? (stat === 'hp' ? option.defender.hpSp : option.defender.defenseSp)}</td>)}
+            <td>{totalSps(option.defender)}</td>
+            <td>{option.damage.category === 'physical' ? 'Fisica' : 'Speciale'}</td>
             <td>{formatTableValue(option.field.screen)}</td>
             <td>{formatTableValue(option.field.weather)}</td>
             <td>{option.attacker.burned ? 'Burn attacker' : '-'}</td>
@@ -92,7 +96,8 @@ function OptimizerSurvivalTable({ moveCategory, options }) {
 }
 
 function OptimizerKoTable({ moveCategory, options }) {
-  const offenseLabel = moveCategory === 'physical' ? 'Atk' : 'SpA'
+  const offenseLabel = DAMAGE_STAT_LABELS[options[0]?.sort?.offenseStat] ?? (moveCategory === 'physical' ? 'Atk' : 'SpA')
+  const stats = options[0]?.attacker.investmentStats ?? [options[0]?.sort?.offenseStat ?? (moveCategory === 'physical' ? 'atk' : 'spa')]
 
   return (
     <table className="optimizer-table">
@@ -102,7 +107,9 @@ function OptimizerKoTable({ moveCategory, options }) {
           <th>Nature</th>
           <th>Ability</th>
           <th>Item</th>
-          <th>{offenseLabel} SP</th>
+          {stats.map((stat) => <th key={stat}>{DAMAGE_STAT_LABELS[stat] ?? offenseLabel} SP</th>)}
+          <th>SP totali</th>
+          <th>Categoria</th>
           <th>Weather</th>
           <th>Damage</th>
           <th>% HP</th>
@@ -115,7 +122,9 @@ function OptimizerKoTable({ moveCategory, options }) {
             <td>{formatOptimizerNature(option.attacker)}</td>
             <td>{formatTableValue(formatSelectedEffect(option.attacker.ability))}</td>
             <td>{formatTableValue(formatSelectedEffect(option.attacker.item))}</td>
-            <td>{option.attacker.offenseSp}</td>
+            {stats.map((stat) => <td key={stat}>{option.attacker.sps?.[stat] ?? option.attacker.offenseSp}</td>)}
+            <td>{totalSps(option.attacker)}</td>
+            <td>{option.damage.category === 'physical' ? 'Fisica' : 'Speciale'}</td>
             <td>{formatTableValue(option.field.weather)}</td>
             <td>{formatDamageRange(option.damage)}</td>
             <td>{formatDamagePercent(option.damage, option.defender.hp)}</td>
@@ -124,6 +133,10 @@ function OptimizerKoTable({ moveCategory, options }) {
       </tbody>
     </table>
   )
+}
+
+function totalSps(pokemon) {
+  return pokemon.sps ? Object.values(pokemon.sps).reduce((sum, sp) => sum + sp, 0) : '—'
 }
 
 function formatDamageRange(damage) {

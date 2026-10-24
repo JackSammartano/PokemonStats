@@ -36,10 +36,15 @@ npm run build
 
 ## Dati
 
-Il roster M-C è generato in `src/data/regulationMc.js` da un commit fissato del repository `smogon/pokemon-showdown`.
+La regulation attiva è configurata in `config/regulations.json`. Per aggiornare
+fonti, snapshot, immagini e verificare il sito: `npm run data:update -- mc`.
+Procedura per la prossima regulation, confronto M-B → M-C e limiti della copertura
+in [docs/regulations.md](docs/regulations.md).
+
+Il roster attivo è generato in `src/data/regulations/<id>.js` da un commit fissato del repository `smogon/pokemon-showdown`.
 Contiene 351 voci, comprese 82 forme Mega; le forme equivalenti per tipi, statistiche, abilità e mosse apprendibili non vengono duplicate.
 
-Per rigenerarlo (Node.js 24):
+Per rigenerare M-C (Node.js 24; alias compatibile):
 
 ```bash
 npm run data:regulation-mc

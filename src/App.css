@@ -620,6 +620,65 @@ button:focus-visible,
     radial-gradient(circle at 100% 0%, rgba(37, 99, 235, 0.12), transparent 34%);
 }
 
+.damage-workspace {
+  display: grid;
+  gap: 28px;
+  align-items: start;
+}
+
+.damage-results-panel,
+.damage-configuration-panel {
+  min-width: 0;
+}
+
+.damage-results-panel {
+  display: grid;
+  gap: 20px;
+}
+
+.damage-results-panel > .selected-move-detail,
+.damage-results-panel > .damage-moves-overview,
+.damage-results-panel > .calculation-note {
+  margin: 0;
+}
+
+.damage-results-panel .selected-move-detail > div {
+  min-width: 0;
+}
+
+.damage-results-panel .selected-move-detail h2 {
+  overflow-wrap: anywhere;
+}
+
+.damage-results-panel:focus-visible {
+  outline: 3px solid #2563eb;
+  outline-offset: 4px;
+}
+
+@media (min-width: 1280px) {
+  .damage-workspace {
+    grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+    gap: 24px;
+  }
+
+  .damage-results-panel {
+    position: sticky;
+    top: 16px;
+    max-height: calc(100dvh - 32px);
+    overflow-y: auto;
+    scrollbar-gutter: stable;
+  }
+
+  .damage-results-panel .selected-move-detail {
+    gap: 12px;
+    padding: 16px;
+  }
+
+  .damage-results-panel .damage-moves-overview {
+    gap: 12px;
+  }
+}
+
 .damage-result {
   min-width: 170px;
   padding: 14px 16px;
@@ -648,7 +707,7 @@ button:focus-visible,
 
 .damage-controls {
   display: grid;
-  grid-template-columns: minmax(220px, 1fr) minmax(250px, 0.9fr) minmax(220px, 1fr);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 18px;
   align-items: start;
 }
@@ -783,9 +842,17 @@ button:focus-visible,
 }
 
 .damage-battle-panel {
-  padding: 0 18px;
-  border-right: 1px solid var(--border);
-  border-left: 1px solid var(--border);
+  grid-column: 1 / -1;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  padding: 18px 0;
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+}
+
+.damage-battle-panel > h3,
+.damage-battle-panel > .damage-toggles,
+.damage-battle-panel > .optimizer-actions {
+  grid-column: 1 / -1;
 }
 
 .segmented-field {
@@ -1332,7 +1399,8 @@ meter::-webkit-meter-optimum-value {
 
   .compare-selects,
   .compare-grid,
-  .damage-controls {
+  .damage-controls,
+  .damage-battle-panel {
     grid-template-columns: 1fr;
   }
 

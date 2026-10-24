@@ -1,0 +1,33 @@
+{
+  "active": "mc",
+  "regulations": {
+    "mc": {
+      "label": "M-C",
+      "formatName": "[Gen 9 Champions] VGC 2026 Reg M-C",
+      "format": "gen9championsvgc2026regmc",
+      "mod": "champions",
+      "parents": [],
+      "commit": "1636bf6d0848fb3c9330576963a647d4e179d278",
+      "mechanics": "champions",
+      "excludedTags": [
+        "Mythical",
+        "Restricted Legendary"
+      ]
+    },
+    "mb": {
+      "label": "M-B",
+      "formatName": "[Gen 9 Champions] VGC 2026 Reg M-B",
+      "format": "gen9championsvgc2026regmb",
+      "mod": "championsregmb",
+      "parents": [
+        "champions"
+      ],
+      "commit": "1636bf6d0848fb3c9330576963a647d4e179d278",
+      "mechanics": "champions",
+      "excludedTags": [
+        "Mythical",
+        "Restricted Legendary"
+      ]
+    }
+  }
+}

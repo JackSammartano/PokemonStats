@@ -1,12 +1,11 @@
-import { MEGA_EVOLUTIONS } from '../data/megaEvolutions.js'
-import { REGULATION_MC_ROSTER } from '../data/regulationMc.js'
+import { REGULATION_MEGA_EVOLUTIONS as MEGA_EVOLUTIONS, REGULATION_ROSTER } from './regulation.js'
 import { toId } from './damage/championsMath.js'
 import { getPokemonMoveSlots, moveSetKey } from './damage/championsMoveSets.js'
 import { getWorkspaceBuild } from './teamWorkspace.js'
 import { normalizeShowdownId } from './teamData.js'
 
-const byId = new Map(REGULATION_MC_ROSTER.map((entry) => [entry.showdownId, entry]))
-const byName = new Map(REGULATION_MC_ROSTER.map((entry) => [entry.displayName, entry]))
+const byId = new Map(REGULATION_ROSTER.map((entry) => [entry.showdownId, entry]))
+const byName = new Map(REGULATION_ROSTER.map((entry) => [entry.displayName, entry]))
 const byMegaId = new Map(MEGA_EVOLUTIONS.map((link) => [link.megaId, link]))
 const byBaseAndStone = new Map(MEGA_EVOLUTIONS.map((link) => [`${link.baseId}:${normalizeShowdownId(link.itemId)}`, link]))
 

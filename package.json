@@ -9,6 +9,12 @@
     "lint": "oxlint",
     "test": "node --test src/lib/damage/*.test.js src/lib/*.test.js scripts/*.test.mjs",
     "data:regulation-mc": "node scripts/import-regulation-mc.mjs",
+    "data:regulation": "node scripts/import-regulation.mjs",
+    "data:check": "node scripts/check-regulation.mjs",
+    "data:diff": "node scripts/compare-regulations.mjs",
+    "data:simulate": "node scripts/simulate-regulations.mjs",
+    "data:update": "node scripts/update-regulation.mjs",
+    "verify": "npm run data:check -- --complete && npm test && npm run lint && npm run build",
     "preview": "vite preview",
     "assets:background": "node scripts/optimize-background.mjs",
     "assets:pokemon": "node scripts/import-pokemon-images.mjs"

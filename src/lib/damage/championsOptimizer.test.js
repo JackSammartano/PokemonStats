@@ -6,6 +6,7 @@ import {
   findSurvivalOptions,
   OPTIMIZER_RANKING_MODES,
   scoreOption,
+  getOptimizerBaseline,
 } from './championsOptimizer.js'
 
 const physicalContext = {
@@ -41,6 +42,34 @@ const physicalContext = {
   },
   move: CHAMPIONS_MOVES.earthquake,
 }
+
+it('the optimizer baseline preserves status and screens while removing temporary boosts and critical hits', () => {
+  const context = { ...physicalContext,
+    attacker: { ...physicalContext.attacker, status: 'brn', boost: 6 },
+    field: { weather: '', gameType: 'Singles', screen: 'Reflect', critical: true },
+  }
+  const result = getOptimizerBaseline(context)
+  const neutral = getOptimizerBaseline({ ...context, attacker: { ...context.attacker, status: '' }, field: { ...context.field, screen: '' } })
+  assert.ok(result.max < neutral.max / 2)
+  assert.deepEqual(result.damage, getOptimizerBaseline({ ...context, attacker: { ...context.attacker, boost: 0 }, field: { ...context.field, critical: false } }).damage)
+})
+
+it('KO candidates preserve SP in other stats and stay within the total investment budget', () => {
+  const context = { ...physicalContext,
+    attacker: { ...physicalContext.attacker, offenseSp: 0, sps: { hp: 32, spe: 32, atk: 0 } },
+    defender: { ...physicalContext.defender, hp: 1, currentHp: 1 },
+  }
+  const result = findKoOptions(context, { attackerNatures: ['adamant'], attackerSp: [0, 1, 2, 32], weather: [''] })
+  assert.ok(result.displayed.length > 0)
+  assert.ok(result.displayed.every((option) => option.attacker.offenseSp <= 2))
+  assert.ok(getOptimizerBaseline(context).max > 0)
+})
+
+it('a partially damaged defender cannot gain current HP through a survival spread', () => {
+  const context = { ...physicalContext, defender: { ...physicalContext.defender, currentHp: 20, hp: 20 } }
+  const result = findSurvivalOptions(context, { defenderNatures: ['bold'], defenderHpSp: [0, 32], defenderDefenseSp: [0, 32], weather: [''], screens: [''], attackerBurned: [false] })
+  assert.equal(result.displayed.length, 0)
+})
 
 const specialContext = {
   attacker: {
