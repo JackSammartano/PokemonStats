@@ -12,6 +12,7 @@ import { applyImportedTeam, getWorkspaceBuild, updateWorkspaceBuild, useTeamWork
 import { resolveTeamMatchup } from './lib/teamDamageLink'
 import { useWorkspaceNavigation } from './lib/workspaceNavigation'
 import DamageCalculator from './components/DamageCalculator'
+import { REGULATION } from './lib/regulation.js'
 import { updatePokemonMoveSlot } from './lib/damage/championsMoveSets'
 import { formatName, POKEMON_BY_NAME, POKEMON_DATASET } from './lib/pokemonDataset'
 import PokemonImage from './components/PokemonImage'
@@ -61,7 +62,7 @@ const TYPE_OPTIONS = [
 
 const TEAM_SIZE = 6
 const VIEW_CONTENT = {
-  catalog: { title: 'Catalogo', description: 'Esplora i Pokémon della Regulation M-C e confronta statistiche e tipi.' },
+  catalog: { title: 'Catalogo', description: `Esplora i Pokémon della Regulation ${REGULATION.label} e confronta statistiche e tipi.` },
   team: { title: 'Il mio team', description: 'Importa o prepara le due squadre e confronta tipi, mosse e configurazioni.' },
   damage: { title: 'Damage calculator', description: 'Configura i due Pokémon e analizza danni e Velocità.' },
 }
@@ -214,7 +215,7 @@ function App() {
       <SiteBackground />
       <nav className="workspace-nav" aria-label="Navigazione principale">
         <div className="workspace-nav-context">
-          <a className="workspace-brand" href="#/catalogo" onClick={(event) => { event.preventDefault(); navigate('catalog') }}>Pokémon stats <span>M-C</span></a>
+          <a className="workspace-brand" href="#/catalogo" onClick={(event) => { event.preventDefault(); navigate('catalog') }}>Pokémon stats <span>{REGULATION.label}</span></a>
           <h1 tabIndex={-1}>{VIEW_CONTENT[view].title}</h1>
           <p>{VIEW_CONTENT[view].description}</p>
         </div>
@@ -346,6 +347,7 @@ function App() {
           onDefenderChange={setDamageDefenderName}
           moveSets={moveSets}
           onMoveChange={changeMoveSlot}
+          teams={workspace.teams}
           builds={builds}
           onBuildChange={changeBuild}
           selectedMove={selectedDamageMove}
@@ -354,7 +356,7 @@ function App() {
 
       </div>
       <footer className="site-footer">
-        <span>Pokémon Stats · Regulation M-C</span>
+        <span>Pokémon Stats · Regulation {REGULATION.label}</span>
         <a href="https://www.vecteezy.com/free-photos/pokemon-background" target="_blank" rel="noopener noreferrer">Pokemon Background Stock photos by Vecteezy</a>
       </footer>
     </main>

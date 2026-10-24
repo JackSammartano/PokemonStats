@@ -1,11 +1,11 @@
-import { REGULATION_MC_ROSTER } from '../data/regulationMc.js'
+import { REGULATION, REGULATION_ROSTER } from './regulation.js'
 import { CHAMPIONS_NATURES } from './damage/championsData.js'
 import { createDamageBuild } from './damage/championsMatchup.js'
 import { toId } from './damage/championsMath.js'
 import { getTeamMove, getTeamMoveOptions, normalizeShowdownId } from './teamData.js'
 
 const STAT_IDS = { hp: 'hp', atk: 'atk', def: 'def', spa: 'spa', spatk: 'spa', spd: 'spd', spdef: 'spd', spe: 'spe' }
-const rosterIndex = new Map(REGULATION_MC_ROSTER.flatMap((entry) => [entry.showdownId, entry.showdownName, entry.displayName, entry.apiName].filter(Boolean).map((name) => [normalizeShowdownId(name), entry])))
+const rosterIndex = new Map(REGULATION_ROSTER.flatMap((entry) => [entry.showdownId, entry.showdownName, entry.displayName, entry.apiName].filter(Boolean).map((name) => [normalizeShowdownId(name), entry])))
 
 function parseSpread(text, max, label) {
   const result = {}
@@ -36,7 +36,7 @@ export function parseShowdownTeam(text) {
     const nicknameMatch = name.match(/^(.*?)\s+\(([^()]+)\)$/)
     const speciesName = nicknameMatch?.[2] ?? name
     const entry = rosterIndex.get(normalizeShowdownId(speciesName))
-    if (!entry) throw new Error(`Pokémon non riconosciuto nel roster M-C: ${speciesName}. Nessuna modifica applicata.`)
+    if (!entry) throw new Error(`Pokémon non riconosciuto nel roster ${REGULATION.label}: ${speciesName}. Nessuna modifica applicata.`)
     if (members.some((member) => member.name === entry.displayName)) throw new Error(`Pokémon duplicato: ${entry.displayName}.`)
     const canonicalHeader = `${entry.showdownName}${gender ? ` (${gender})` : ''}${itemParts.length ? ` @ ${itemParts.join(' @ ')}` : ''}`
     const build = { ...createDamageBuild(), gender, item: toId(itemParts.join(' @ ')), itemName: itemParts.join(' @ '), sourceText: [canonicalHeader, ...details].join('\n'), extraLines: [] }
@@ -68,7 +68,7 @@ export function parseShowdownTeam(text) {
     if (moves.length > 4) throw new Error(`${entry.displayName} ha più di quattro mosse.`)
     if (Object.values(build.sps).reduce((sum, value) => sum + value, 0) > 66) throw new Error(`SP di ${entry.displayName}: il totale supera 66.`)
     const legal = new Set(getTeamMoveOptions(entry).options.map((option) => option.value))
-    for (const id of moves) if (!legal.has(id)) warnings.push(`${entry.displayName}: ${getTeamMove(id).name} non risulta nel learnset M-C verificato.`)
+    for (const id of moves) if (!legal.has(id)) warnings.push(`${entry.displayName}: ${getTeamMove(id).name} non risulta nel learnset ${REGULATION.label} verificato.`)
     members.push({ name: entry.displayName, build, moves: Array.from({ length: 4 }, (_, index) => moves[index] ?? '') })
   }
   if (!members.length) throw new Error('Nessun Pokémon trovato nel testo.')

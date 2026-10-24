@@ -1,5 +1,11 @@
 # Regulation M-C
 
+La pipeline corrente è descritta in [regulations.md](regulations.md).
+Lo snapshot operativo completo è `src/data/regulations/mc.js`, selezionato tramite
+`src/data/activeRegulation.js`; i vecchi file M-C separati restano riferimenti
+storici per i test. `npm run data:regulation-mc` aggiorna lo snapshot completo.
+Le sezioni seguenti documentano anche la struttura dell'importazione precedente.
+
 ## Fonte e importazione
 
 Il roster è generato dal repository [smogon/pokemon-showdown](https://github.com/smogon/pokemon-showdown),

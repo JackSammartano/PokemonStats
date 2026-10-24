@@ -115,11 +115,10 @@ describe('champions option filters', () => {
 
     assert.deepEqual(options, [
       { label: 'None', value: '' },
-      { disabled: true, label: 'Blaze (not calculated yet)', value: 'blaze' },
+      { label: 'Blaze', value: 'blaze' },
       { label: 'Drought', value: 'drought' },
       {
-        disabled: true,
-        label: 'Solar Power (Hidden) (not calculated yet)',
+        label: 'Solar Power (Hidden)',
         value: 'solar-power',
       },
       { label: 'Flash Fire', value: 'flash-fire' },

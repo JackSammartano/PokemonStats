@@ -1,11 +1,13 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { REGULATION_MC_ROSTER } from '../data/regulationMc.js'
-import { MEGA_EVOLUTIONS } from '../data/megaEvolutions.js'
+import { REGULATION_ROSTER, REGULATION_MEGA_EVOLUTIONS as MEGA_EVOLUTIONS } from './regulation.js'
 import { getMegaAction, toggleMegaEvolution } from './megaEvolution.js'
 import { createTeamWorkspace, getWorkspaceBuild, readTeamWorkspace, updateWorkspaceBuild } from './teamWorkspace.js'
 
-const byId = new Map(REGULATION_MC_ROSTER.map((entry) => [entry.showdownId, entry]))
+const byId = new Map(REGULATION_ROSTER.map((entry) => [entry.showdownId, entry]))
+const megaId = byId.has('garchompmegaz') ? 'garchompmegaz' : 'garchompmega'
+const megaName = byId.get(megaId).displayName
+const megaItem = MEGA_EVOLUTIONS.find((entry) => entry.megaId === megaId).itemId
 const nameOf = (id) => byId.get(id).displayName
 const workspaceFor = (id, item, side = 'attacker') => {
   const name = nameOf(id)
@@ -16,8 +18,8 @@ const workspaceFor = (id, item, side = 'attacker') => {
   return workspace
 }
 
-test('all 82 verified Megas have a correct stone action and a return to their exact base', () => {
-  assert.equal(MEGA_EVOLUTIONS.length, REGULATION_MC_ROSTER.filter((entry) => entry.category === 'mega').length)
+test('every verified Mega has a correct stone action and a return to its exact base', () => {
+  assert.equal(MEGA_EVOLUTIONS.length, REGULATION_ROSTER.filter((entry) => entry.category === 'mega').length)
   for (const link of MEGA_EVOLUTIONS) {
     assert.equal(getMegaAction(byId.get(link.baseId), { item: link.itemId }).targetId, link.megaId)
     assert.equal(getMegaAction(byId.get(link.megaId), { item: '' }).targetId, link.baseId)
@@ -32,7 +34,7 @@ test('stone selects the exact X/Y/Z form and does not work on unrelated Pokemon'
   assert.equal(getMegaAction(byId.get('charizard'), { item: 'charizardite-x' }).targetId, 'charizardmegax')
   assert.equal(getMegaAction(byId.get('charizard'), { item: 'charizardite-y' }).targetId, 'charizardmegay')
   assert.equal(getMegaAction(byId.get('garchomp'), { item: 'garchompite' }).targetId, 'garchompmega')
-  assert.equal(getMegaAction(byId.get('garchomp'), { item: 'garchompite-z' }).targetId, 'garchompmegaz')
+  assert.equal(getMegaAction(byId.get('garchomp'), { item: 'garchompite-z' })?.targetId ?? null, byId.has('garchompmegaz') ? 'garchompmegaz' : null)
   assert.equal(getMegaAction(byId.get('garchomp'), { item: 'charizardite-x' }), null)
   assert.equal(getMegaAction(byId.get('garchomp'), { item: 'leftovers' }), null)
   assert.equal(getMegaAction(byId.get('ditto'), { item: 'garchompite-z' }), null)
@@ -45,48 +47,48 @@ test('shared Meowstic stone preserves gender-specific form and Floette preserves
   assert.equal(getMegaAction(byId.get('floettemega'), {}).targetId, 'floetteeternal')
 })
 
-test('Mega Z round trip preserves slot, current build edits and all four moves while restoring base ability', () => {
-  const initial = workspaceFor('garchomp', 'garchompite-z')
+test('Mega round trip preserves slot, current build edits and all four moves while restoring base ability', () => {
+  const initial = workspaceFor('garchomp', megaItem)
   const snapshot = structuredClone(initial)
   const mega = toggleMegaEvolution(initial, 'attacker', 'Garchomp')
   assert.deepEqual(initial, snapshot)
-  assert.deepEqual(mega.teams.attacker, ['Mega Garchomp Z', 'Ditto'])
-  const build = getWorkspaceBuild(mega.builds, 'attacker', 'Mega Garchomp Z')
-  assert.equal(build.ability, 'levitate')
-  assert.equal(build.item, 'garchompite-z')
+  assert.deepEqual(mega.teams.attacker, [megaName, 'Ditto'])
+  const build = getWorkspaceBuild(mega.builds, 'attacker', megaName)
+  assert.equal(build.ability, megaId === 'garchompmegaz' ? 'levitate' : 'sand-force')
+  assert.equal(build.item, megaItem)
   assert.equal(build.sps.spe, 32)
   assert.equal(build.boosts.spe, 1)
   assert.equal(build.burned, true)
   assert.equal(build.gender, 'F')
-  assert.deepEqual(mega.moveSets['attacker:Mega Garchomp Z'], ['earthquake', 'dragon-claw', '', 'protect'])
-  const edited = { ...mega, builds: updateWorkspaceBuild(mega.builds, 'attacker', 'Mega Garchomp Z', { nature: 'timid', sps: { spe: 31 } }), moveSets: { ...mega.moveSets, 'attacker:Mega Garchomp Z': ['draco-meteor', 'dragon-pulse', '', 'protect'] } }
+  assert.deepEqual(mega.moveSets[`attacker:${megaName}`], ['earthquake', 'dragon-claw', '', 'protect'])
+  const edited = { ...mega, builds: updateWorkspaceBuild(mega.builds, 'attacker', megaName, { nature: 'timid', sps: { spe: 31 } }), moveSets: { ...mega.moveSets, [`attacker:${megaName}`]: ['draco-meteor', 'dragon-pulse', '', 'protect'] } }
   const restored = readTeamWorkspace({ getItem: () => JSON.stringify(edited) })
-  const base = toggleMegaEvolution(restored, 'attacker', 'Mega Garchomp Z')
+  const base = toggleMegaEvolution(restored, 'attacker', megaName)
   assert.deepEqual(base.teams.attacker, ['Garchomp', 'Ditto'])
   const baseBuild = getWorkspaceBuild(base.builds, 'attacker', 'Garchomp')
   assert.equal(baseBuild.ability, 'rough-skin')
   assert.equal(baseBuild.nature, 'timid')
   assert.equal(baseBuild.sps.spe, 31)
-  assert.deepEqual(base.moveSets['attacker:Garchomp'], edited.moveSets['attacker:Mega Garchomp Z'])
+  assert.deepEqual(base.moveSets['attacker:Garchomp'], edited.moveSets[`attacker:${megaName}`])
 })
 
 test('opponent changes are isolated and duplicate destinations cannot merge two members', () => {
-  const initial = workspaceFor('garchomp', 'garchompite-z', 'defender')
+  const initial = workspaceFor('garchomp', megaItem, 'defender')
   initial.teams.attacker = ['Garchomp']
   const next = toggleMegaEvolution(initial, 'defender', 'Garchomp')
   assert.deepEqual(next.teams.attacker, ['Garchomp'])
-  assert.deepEqual(next.teams.defender, ['Mega Garchomp Z', 'Ditto'])
-  const duplicate = workspaceFor('garchomp', 'garchompite-z')
-  duplicate.teams.attacker.push('Mega Garchomp Z')
-  assert.equal(getMegaAction(byId.get('garchomp'), { item: 'garchompite-z' }, duplicate.teams.attacker).disabled, true)
+  assert.deepEqual(next.teams.defender, [megaName, 'Ditto'])
+  const duplicate = workspaceFor('garchomp', megaItem)
+  duplicate.teams.attacker.push(megaName)
+  assert.equal(getMegaAction(byId.get('garchomp'), { item: megaItem }, duplicate.teams.attacker).disabled, true)
   assert.equal(toggleMegaEvolution(duplicate, 'attacker', 'Garchomp'), duplicate)
-  assert.equal(toggleMegaEvolution(duplicate, 'attacker', 'Mega Garchomp Z'), duplicate)
+  assert.equal(toggleMegaEvolution(duplicate, 'attacker', megaName), duplicate)
   assert.equal(toggleMegaEvolution(initial, 'attacker', 'Ditto'), initial)
 })
 
 test('an imported Mega can revert without a previously saved base build', () => {
-  const initial = workspaceFor('garchompmegaz', 'garchompite-z')
-  const reverted = toggleMegaEvolution(initial, 'attacker', 'Mega Garchomp Z')
+  const initial = workspaceFor(megaId, megaItem)
+  const reverted = toggleMegaEvolution(initial, 'attacker', megaName)
   assert.equal(getWorkspaceBuild(reverted.builds, 'attacker', 'Garchomp').ability, 'sand-veil')
   assert.equal(reverted.teams.attacker[0], 'Garchomp')
 })

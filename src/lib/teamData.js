@@ -1,4 +1,4 @@
-import { CHAMPIONS_TEAM_ITEMS, CHAMPIONS_TEAM_LEARNSETS, CHAMPIONS_TEAM_MOVES } from '../data/championsTeamData.js'
+import { REGULATION_ITEMS as CHAMPIONS_TEAM_ITEMS, REGULATION_LEARNSETS as CHAMPIONS_TEAM_LEARNSETS, REGULATION_MOVES as CHAMPIONS_TEAM_MOVES } from './regulation.js'
 import { getDamageMoveOptions } from './damage/championsOptions.js'
 import { toId } from './damage/championsMath.js'
 

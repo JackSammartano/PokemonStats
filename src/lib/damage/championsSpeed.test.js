@@ -39,3 +39,10 @@ test('ties, either faster side and unsupported levels are explicit', () => {
   assert.equal(getBattleSpeed(null, {}), null)
   assert.match(describeSpeedOrder(null, 150), /livello 50/)
 })
+
+test('paralysis halves the final Speed while Quick Feet uses the status boost instead', () => {
+  assert.equal(getBattleSpeed(charizard, { status: 'par', item: 'choice-scarf' }), 90)
+  assert.equal(getBattleSpeed(charizard, { status: 'par', ability: 'quick-feet' }), 180)
+  assert.equal(getBattleSpeed(charizard, { status: 'psn', ability: 'quick-feet' }), 180)
+  assert.equal(getBattleSpeed(charizard, { ability: 'quick-feet' }), 120)
+})

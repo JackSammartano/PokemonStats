@@ -1,23 +1,28 @@
 import assert from 'node:assert/strict'
 import { describe, it } from 'node:test'
 import { CHAMPIONS_MOVES } from './championsData.js'
+import { REGULATION_MOVES } from '../regulation.js'
+
+const core = ({ basePower, category, name, type }) => ({ basePower, category, name, type })
 
 describe('Champions move data', () => {
   it('includes direct-damage Champions moves from the reference data', () => {
-    assert.equal(Object.keys(CHAMPIONS_MOVES).length, 146)
-    assert.deepEqual(CHAMPIONS_MOVES['fire-blast'], {
+    for (const [id, move] of Object.entries(REGULATION_MOVES)) {
+      if (move.category !== 'status') assert.ok(CHAMPIONS_MOVES[id], id)
+    }
+    assert.deepEqual(core(CHAMPIONS_MOVES['fire-blast']), {
       basePower: 110,
       category: 'special',
       name: 'Fire Blast',
       type: 'fire',
     })
-    assert.deepEqual(CHAMPIONS_MOVES['close-combat'], {
+    assert.deepEqual(core(CHAMPIONS_MOVES['close-combat']), {
       basePower: 120,
       category: 'physical',
       name: 'Close Combat',
       type: 'fighting',
     })
-    assert.deepEqual(CHAMPIONS_MOVES['solar-beam'], {
+    assert.deepEqual(core(CHAMPIONS_MOVES['solar-beam']), {
       basePower: 120,
       category: 'special',
       name: 'Solar Beam',
@@ -25,17 +30,9 @@ describe('Champions move data', () => {
     })
   })
 
-  it('does not include moves that need special damage formulas', () => {
-    for (const move of [
-      'body-press',
-      'freeze-dry',
-      'grass-knot',
-      'psyshock',
-      'rock-blast',
-      'stored-power',
-      'water-spout',
-    ]) {
-      assert.equal(CHAMPIONS_MOVES[move], undefined)
-    }
+  it('preserves multihit metadata used by the sequence engine', () => {
+    assert.deepEqual(CHAMPIONS_MOVES['rock-blast'].multihit, [2, 5])
+    assert.deepEqual(CHAMPIONS_MOVES['bullet-seed'].multihit, [2, 5])
+    assert.equal(CHAMPIONS_MOVES['beat-up'].name, 'Beat Up')
   })
 })

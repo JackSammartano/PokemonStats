@@ -1,5 +1,27 @@
 # Champions Damage Calculator Worklog
 
+## Appunto da riprendere nella prossima sessione — 2026-10-24
+
+Richiesta dell'utente: annotare soltanto, senza implementare ora.
+
+Il calcolatore valuta il danno della mossa nell'istante configurato. Non mostrare
+controlli per effetti secondari che avvengono dopo il danno e non possono cambiare
+il risultato dell'attacco corrente. Esempio: la riduzione dell'Attacco Speciale
+causata da Moonblast non richiede il campo «Effetto secondario casuale: dopo quale
+colpo». Per valutare un attacco successivo con quel malus esistono già le select
+dei boost delle statistiche, dove si può impostare `-1`.
+
+Distinguere gli effetti che possono modificare i colpi successivi della stessa
+mossa multicolpo: questi possono essere rilevanti per il danno dell'attacco corrente.
+Prima di intervenire, analizzare i controlli esistenti e proporre il piano mirato
+per approvazione. Nessuna modifica funzionale è stata richiesta in questa sessione
+per questo appunto.
+
+Nota sullo stato corrente: la pipeline regulation e la copertura aggiornata sono
+documentate in [regulations.md](regulations.md) e [damage-coverage.md](damage-coverage.md).
+Questo worklog conserva la cronologia iniziale; conteggi e limitazioni sotto
+riportati possono riferirsi alla prima implementazione.
+
 Data: 2026-06-26
 Branch: `feature/champions-damage-calculator`
 App repo: `C:\Progetti\PokemonStats`
@@ -385,12 +407,19 @@ Nota: i boost temporanei Atk/SpA e Def/SpD non sono piu' dimensioni di ricerca d
 
 Item e abilita' sono usati come condizioni fisse selezionate dall'utente, non ancora come dimensioni di ricerca.
 
+Gli SP sono enumerati nelle statistiche correlate alla mossa: anche Velocita'
+per Electro Ball/Gyro Ball e entrambe le statistiche offensive/difensive per
+Shell Side Arm. Le altre statistiche mantengono gli SP selezionati, nel limite
+totale di 66. Le tabelle mostrano gli investimenti coinvolti, il totale e la
+categoria effettiva. Dettagli aggiornati e limiti di copertura in
+[damage-coverage.md](damage-coverage.md).
+
 Ottimizzazioni gia' fatte:
 
 - non mostra milioni di risultati;
 - limita candidate utili;
 - scarta opzioni dominate;
-- raggruppa le nature equivalenti per la stat cercata:
+- raggruppa le nature equivalenti per tutte le statistiche coinvolte:
   - esempio `Find Survival` speciale mostra `Any +SpD nature` invece di righe duplicate `Calm`, `Careful`, `Gentle`, `Sassy`;
   - esempio `Find KO` speciale mostra `Any +SpA nature` invece di righe duplicate `Modest`, `Mild`, `Quiet`, `Rash`;
 - mostra risultati in tabella, con colonne allineate per KO e Survival;
