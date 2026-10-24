@@ -1,4 +1,4 @@
-# Due squadre e importazione Showdown
+# Due squadre e import/export Showdown
 
 La pagina Il mio team contiene La mia squadra e La squadra avversaria. Entrambe hanno
 sei slot, import dagli appunti, aggiunta manuale dal roster o dal catalogo, selezione
@@ -30,6 +30,30 @@ Il dataset completo di mosse e oggetti deriva dal medesimo commit Showdown del r
 tramite `npm run data:regulation-mc`. Le abilità e gli oggetti non applicati dal motore
 restano impostati e sono segnalati come effetti non implementati. Livelli diversi da 50
 vengono conservati, ma non producono risultati con la formula Champions.
+
+## Esportazione
+
+Il pulsante Esporta, accanto a Importa in entrambe le squadre, copia negli appunti
+il testo per il teambuilder Showdown. Esporta solo i membri della relativa squadra,
+nell'ordine corrente, leggendo build e mosse condivise aggiornate anche dal Damage
+calculator. Non riutilizza il testo originale importato. Una squadra vuota non è
+esportabile; valori SP non validi o nomi non risolti bloccano la copia con un messaggio.
+
+Il testo contiene specie/forma attuale, genere, oggetto, abilità, livello, natura,
+spread e mosse, comprese quelle di stato. Usa i nomi canonici del dataset e la riga
+`EVs:` con valori SP Champions, senza conversioni a 252 EV. Le mosse vuote vengono
+omesse: Showdown non rappresenta i buchi tra gli slot. Nessuna mossa viene aggiunta.
+L'assenza di oggetto o abilità non genera nomi inventati.
+
+HP attuali, boost, stato alterato, copie temporanee di abilità, meteo, schermi e
+altre condizioni di battaglia restano esclusi dal set esportato. Gli extra importati
+riconosciuti dal formato testuale Showdown (per esempio Shiny e Happiness) sono
+conservati; righe sconosciute, nickname e IV non vengono generati.
+
+La copia usa `navigator.clipboard.writeText()` sul click dell'utente. Se il browser
+la impedisce, si apre il dialog esistente in modalità esportazione, con testo
+selezionato, di sola lettura, e pulsante Seleziona testo per la copia manuale.
+L'esportazione non modifica la squadra o le configurazioni salvate.
 
 ## Stato condiviso e salvataggio
 

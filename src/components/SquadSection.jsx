@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { parseShowdownTeam } from '../lib/showdownImport.js'
+import { exportShowdownTeam } from '../lib/showdownExport.js'
 import { getWorkspaceBuild } from '../lib/teamWorkspace.js'
 import { getPokemonMoveSlots } from '../lib/damage/championsMoveSets.js'
 import { getTeamMove } from '../lib/teamData.js'
@@ -11,7 +12,8 @@ import MegaToggleButton from './MegaToggleButton'
 export default function SquadSection({ side, title, team, roster, builds, moveSets, selected, onSelect, onConfigure, onInfo, onMegaToggle, onAdd, onRemove, onClear, onImport, onCatalog }) {
   const [message, setMessage] = useState('')
   const [editor, setEditor] = useState(null)
-  const [busy, setBusy] = useState(false)
+  const [busy, setBusy] = useState('')
+  const exporting = editor?.mode === 'export'
   const dialog = useRef(null)
   const section = useRef(null)
   const megaFocusTarget = useRef(null)
@@ -32,13 +34,27 @@ export default function SquadSection({ side, title, team, roster, builds, moveSe
 
   async function importClipboard() {
     let text = ''
-    setBusy(true)
+    setBusy('import')
     try {
       text = await navigator.clipboard.readText()
       importText(text)
     } catch (error) {
       setEditor({ text, error: text ? error.message : 'Incolla qui l’export Showdown se la lettura degli appunti non è disponibile.' })
-    } finally { setBusy(false) }
+    } finally { setBusy('') }
+  }
+
+  async function exportClipboard() {
+    let text
+    setMessage('')
+    try { text = exportShowdownTeam({ side, team, builds, moveSets }) }
+    catch (error) { setMessage(error.message); return }
+    setBusy('export')
+    try {
+      await navigator.clipboard.writeText(text)
+      setMessage(`Copiati ${team.length} Pokémon negli appunti. Incolla il testo nel teambuilder di Showdown.`)
+    } catch {
+      setEditor({ mode: 'export', text, error: 'Copia automatica non disponibile. Seleziona il testo e copialo manualmente.' })
+    } finally { setBusy('') }
   }
 
   return (
@@ -46,11 +62,12 @@ export default function SquadSection({ side, title, team, roster, builds, moveSe
       <header className="squad-header">
         <div><p className="eyebrow compact">{side === 'attacker' ? 'La tua formazione' : 'Il tuo avversario'}</p><h2 id={`squad-title-${side}`}>{title} <span>{team.length}/6</span></h2></div>
         <div className="squad-actions">
-          <button className="ghost-button" type="button" disabled={busy} onClick={importClipboard} aria-label={`Importa ${title.toLowerCase()} da Showdown`}>{busy ? 'Lettura…' : 'Importa'}</button>
+          <button className="ghost-button" type="button" disabled={Boolean(busy)} onClick={importClipboard} aria-label={`Importa ${title.toLowerCase()} da Showdown`}>{busy === 'import' ? 'Lettura…' : 'Importa'}</button>
+          <button className="secondary-button" type="button" disabled={Boolean(busy) || !team.length} onClick={exportClipboard} aria-label={`Esporta ${title.toLowerCase()} per Showdown`}>{busy === 'export' ? 'Copia…' : 'Esporta'}</button>
           <button className="secondary-button" type="button" disabled={!team.length} onClick={onClear}>Svuota</button>
         </div>
       </header>
-      <p className="squad-import-hint">Importa legge dagli appunti l’export testuale di Showdown e sostituisce questa squadra.</p>
+      <p className="squad-import-hint">Importa sostituisce questa squadra dal testo Showdown negli appunti. Esporta copia la squadra con le modifiche attuali.</p>
       {message && <p className="squad-import-message" role="status">{message}</p>}
       <div className="squad-add-controls">
         <label className="select-field"><span>Aggiungi Pokémon</span>
@@ -89,11 +106,11 @@ export default function SquadSection({ side, title, team, roster, builds, moveSe
         })}
       </div>
       {editor && <dialog ref={dialog} className="showdown-import-dialog" onCancel={() => setEditor(null)} aria-labelledby={`import-title-${side}`}>
-        <h2 id={`import-title-${side}`}>Importa {title.toLowerCase()}</h2>
-        <p>Incolla il testo dell’export Showdown. La squadra attuale viene sostituita solo se il testo è valido.</p>
+        <h2 id={`import-title-${side}`}>{exporting ? 'Esporta' : 'Importa'} {title.toLowerCase()}</h2>
+        <p>{exporting ? 'Copia il testo e incollalo nel teambuilder di Pokémon Showdown.' : 'Incolla il testo dell’export Showdown. La squadra attuale viene sostituita solo se il testo è valido.'}</p>
         <p className="import-error" role="alert">{editor.error}</p>
-        <textarea autoFocus aria-label={`Export Showdown per ${title.toLowerCase()}`} value={editor.text} onChange={(event) => setEditor({ ...editor, text: event.target.value })} placeholder={'Garchomp-Mega-Z @ Garchompite Z\nAbility: Levitate\nLevel: 50\n…'} />
-        <div className="squad-actions"><button className="secondary-button" type="button" onClick={() => setEditor(null)}>Annulla</button><button className="ghost-button" type="button" onClick={() => { try { importText(editor.text) } catch (error) { setEditor({ ...editor, error: error.message }) } }}>Importa testo</button></div>
+        <textarea autoFocus readOnly={exporting} onFocus={(event) => { if (exporting) event.currentTarget.select() }} aria-label={`Export Showdown per ${title.toLowerCase()}`} value={editor.text} onChange={(event) => setEditor({ ...editor, text: event.target.value })} placeholder={'Garchomp-Mega-Z @ Garchompite Z\nAbility: Levitate\nLevel: 50\n…'} />
+        <div className="squad-actions"><button className="secondary-button" type="button" onClick={() => setEditor(null)}>{exporting ? 'Chiudi' : 'Annulla'}</button>{exporting ? <button className="ghost-button" type="button" onClick={() => dialog.current.querySelector('textarea').select()}>Seleziona testo</button> : <button className="ghost-button" type="button" onClick={() => { try { importText(editor.text) } catch (error) { setEditor({ ...editor, error: error.message }) } }}>Importa testo</button>}</div>
       </dialog>}
     </section>
   )
