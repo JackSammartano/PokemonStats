@@ -52,11 +52,17 @@ offensivi/difensivi verificati. HP attuali e stato sono configurabili per lato;
 Flash Fire richiede l'attivazione esplicita del relativo effetto offensivo.
 Multiscale considera gli HP attuali; Guts sostituisce la penalità da scottatura.
 
-Per le mosse multicolpo si selezionano il numero di colpi andati a segno e il
-colpo dopo cui si attivano gli effetti casuali; `0` significa nessuna attivazione.
-Sono disponibili Flame Body, Static, Poison Point, Effect Spore e Poison Touch.
-Le garanzie sono condizionate a queste scelte: non sono probabilità di KO e non
-includono i fallimenti di precisione. Le mosse OHKO restano escluse dall'optimizer.
+Per le mosse multicolpo si seleziona il numero di colpi andati a segno. Gli effetti
+secondari casuali delle mosse non vengono forzati nella sequenza, nemmeno se una
+vecchia build conserva `secondaryAfterHit` o `secondaryStatus`. Per valutare un
+attacco successivo si impostano boost e stati nella configurazione del Pokémon.
+Gli effetti garantiti al 100% restano applicabili tra i colpi, rispettando abilità
+e oggetti che li modificano o impediscono.
+
+I controlli separati delle reazioni di abilità come Flame Body, Static, Poison
+Point, Effect Spore e Poison Touch restano disponibili. Le garanzie sono
+condizionate a quelle scelte: non sono probabilità di KO e non includono i
+fallimenti di precisione. Le mosse OHKO restano escluse dall'optimizer.
 
 La sequenza ricalcola stato, HP, oggetti, abilità e statistiche tra i colpi e si
 interrompe quando uno dei due Pokémon va KO. Focus Sash, Sturdy, bacche resistenti,

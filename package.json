@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
+    "build": "vite build && node scripts/check-licenses.mjs",
     "lint": "oxlint",
     "test": "node --test src/lib/damage/*.test.js src/lib/*.test.js scripts/*.test.mjs",
     "data:regulation-mc": "node scripts/import-regulation-mc.mjs",

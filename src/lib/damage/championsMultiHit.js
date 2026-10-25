@@ -28,15 +28,16 @@ function status(pokemon, next, field, source, reflected = false) {
   if (ability === 'synchronize' && source && !reflected && !['slp', 'frz'].includes(next)) status(source, next, field, pokemon, true)
 }
 
-function secondaryEffects(attacker, defender, move, field, index) {
+function secondaryEffects(attacker, defender, move, field) {
   if (move.secondarySuppressed) return
   for (const effect of move.secondaries ?? []) {
-    if (effect.chance !== 100 && move.conditions?.secondaryAfterHit !== index + 1) continue
+    // Only guaranteed move effects apply between hits. Legacy saved choices
+    // must not force a probabilistic outcome into the damage sequence.
+    if (effect.chance !== 100) continue
     if (effect.self?.boosts) applyStatChanges(attacker, effect.self.boosts)
     if (toId(defender.ability) === 'shield-dust' && !move.abilityIgnored && !effect.self) continue
     if (effect.boosts) applyStatChanges(defender, effect.boosts, true, { source: attacker, ignoreAbility: move.abilityIgnored })
     if (effect.status) status(defender, effect.status, field, attacker)
-    if (['tri-attack', 'dire-claw'].includes(move.id)) status(defender, move.conditions?.secondaryStatus ?? (move.id === 'tri-attack' ? 'brn' : 'psn'), field, attacker)
   }
 }
 
@@ -68,7 +69,7 @@ function afterHit(attacker, defender, move, field, amount, index) {
   if (['ice-spinner', 'steel-roller'].includes(move.id)) field.terrain = ''
   if (defendingAbility === 'anger-point' && move.criticalHit && defender.currentHp) defender.boosts.atk = 6
   if (index === 0 && move.selfBoosts && !move.secondarySuppressed) applyStatChanges(attacker, move.selfBoosts)
-  secondaryEffects(attacker, defender, move, field, index)
+  secondaryEffects(attacker, defender, move, field)
   if (contact && defendingAbility === 'rough-skin') indirectDamage(attacker, attacker.stats.hp / 8)
   if (contact && defender.item === 'rocky-helmet') indirectDamage(attacker, attacker.stats.hp / 6)
   if (contact && defendingAbility === 'gooey') applyStatChanges(attacker, { spe: -1 }, true, { source: defender })

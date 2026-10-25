@@ -25,6 +25,7 @@ try {
   run(['--test', 'src/lib/damage/*.test.js', 'src/lib/*.test.js', 'scripts/*.test.mjs'])
   run(['node_modules/oxlint/bin/oxlint'])
   run(['node_modules/vite/bin/vite.js', 'build'])
+  run(['scripts/check-licenses.mjs'])
   console.log(`Update verified: ${regulation.label}. Review the data diff before committing. Nothing was published.`)
 } catch (error) {
   for (const [path, content] of backups) await writeAtomic(path, content)

@@ -9,7 +9,7 @@ export default memo(function TeamTypeSummary({ team, opponentTeam, moveSets }) {
   const risks = own.filter((row) => row.weak.length >= 2).sort((a, b) => b.weak.length - a.weak.length)
   return (
     <aside className="team-type-summary" aria-labelledby="team-types-title">
-      <header><p className="eyebrow compact">Le squadre a confronto</p><h2 id="team-types-title">Resoconto dei tipi</h2><p>Efficacia dei tipi. Abilità, oggetti e condizioni di campo non sono inclusi.</p></header>
+      <header><h2 id="team-types-title">Resoconto dei tipi</h2><p>Efficacia dei tipi. Abilità, oggetti e condizioni di campo non sono inclusi.</p></header>
       <section><h3>Debolezze ricorrenti della mia squadra</h3><p>Tipi a cui sono deboli almeno due membri. Il conteggio non considera le mosse avversarie.</p>{!team.length ? <p>Aggiungi Pokémon per vedere le priorità difensive.</p> : risks.length ? <ul className="type-risk-list">{risks.slice(0, 4).map((row) => <li key={row.type}><span className={`type-badge type-${row.type}`}>{row.type}</span><span>{row.weak.length} deboli · {row.resistant.length + row.immune.length} resistenti o immuni</span><small>Deboli: {row.weak.map((member) => member.name).join(', ')}</small>{row.resistant.length + row.immune.length === 0 && <strong>Nessuna resistenza</strong>}</li>)}</ul> : <p>Nessuna debolezza di tipo condivisa da almeno due membri.</p>}</section>
       <TeamInsights team={team} opponentTeam={opponentTeam} moveSets={moveSets} />
       <section><h3>Difesa per tipo</h3><div className="type-defense-head"><span>Tipo</span><span>Mia</span><span>Avversaria</span></div>

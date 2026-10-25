@@ -39,8 +39,6 @@ export function getMoveConditionFields(move) {
     const [min, max] = Array.isArray(move.multihit) ? move.multihit : [move.multiaccuracy ? 1 : move.multihit, move.multihit]
     result.push({ key: 'hits', label: 'Colpi andati a segno sul bersaglio', type: 'number', min, max, default: Array.isArray(move.multihit) ? 3 : max })
   }
-  if (move.hasSecondary && move.secondaries?.some((effect) => effect.chance !== 100)) result.push(number('secondaryAfterHit', 'Effetto secondario casuale: dopo quale colpo (0 = non attivo)', 10))
-  if (['tri-attack', 'dire-claw'].includes(toId(move.name))) result.push({ key: 'secondaryStatus', label: 'Stato dell’effetto secondario scelto', type: 'select', default: toId(move.name) === 'tri-attack' ? 'brn' : 'psn', options: toId(move.name) === 'tri-attack' ? [['brn', 'Scottatura'], ['par', 'Paralisi'], ['frz', 'Congelamento']] : [['psn', 'Veleno'], ['par', 'Paralisi'], ['slp', 'Sonno']] })
   return result
 }
 

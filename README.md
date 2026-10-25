@@ -2,6 +2,18 @@
 
 Frontend React + Vite per consultare Regulation Set M-C, con dati Pokémon Showdown e immagini locali versionate. Il catalogo completo è disponibile senza attendere PokéAPI.
 
+## Missione e principi di sviluppo
+
+PokémonStats deve essere un «porto sicuro» per i giocatori: un riferimento
+affidabile, mantenibile e aggiornabile in modo semplice e verificabile a ogni
+cambio di regulation. Accuratezza e continuità degli aggiornamenti sono requisiti
+di prodotto e devono guidare l'intero sviluppo.
+
+Ogni funzionalità deve chiarire come verrà mantenuta nella regulation successiva.
+I [principi di sviluppo](docs/development-principles.md) sono vincolanti per tutti
+i contributori e per gli agenti che lavorano sul repository. La procedura operativa
+di aggiornamento è descritta in [docs/regulations.md](docs/regulations.md).
+
 ## Funzionalita
 
 - Roster Regulation Set M-C generato da Pokémon Showdown, con Pokémon base, forme funzionali e Mega Evolutions.
