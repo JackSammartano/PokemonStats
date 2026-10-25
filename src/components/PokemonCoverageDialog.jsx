@@ -20,7 +20,7 @@ export default function PokemonCoverageDialog({ pokemon, side, team, opponentTea
     const rect = dialog.current.getBoundingClientRect()
     if (event.clientX < rect.left || event.clientX > rect.right || event.clientY < rect.top || event.clientY > rect.bottom) close()
   } }}>
-    <header className="coverage-dialog-header"><div><p className="eyebrow compact">{side === 'attacker' ? 'La mia squadra' : 'Squadra avversaria'}</p><h2 id="pokemon-coverage-title">{pokemon.displayName}</h2></div><div className="coverage-dialog-actions">
+    <header className="coverage-dialog-header"><div><h2 id="pokemon-coverage-title">{pokemon.displayName}</h2></div><div className="coverage-dialog-actions">
       <MegaToggleButton action={mega} onToggle={onMegaToggle} />
       <button type="button" className="secondary-button" onClick={close} autoFocus aria-label="Chiudi dettagli copertura">Chiudi ×</button>
     </div></header>

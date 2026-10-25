@@ -1,5 +1,6 @@
 import { getTeamMove, getTeamMoveOptions } from '../lib/teamData.js'
 import { REGULATION } from '../lib/regulation.js'
+import { getMovePresentation } from '../lib/damage/championsMovePresentation.js'
 
 export default function FourMoveSelector({ pokemon, moves, onChange, rows = [], selectedSlot = -1, onSelect, label, readOnly = false }) {
   const { options: available, source } = getTeamMoveOptions(pokemon)
@@ -15,6 +16,7 @@ export default function FourMoveSelector({ pokemon, moves, onChange, rows = [], 
       </div>
       {moves.map((moveId, slot) => {
         const row = rows[slot]
+        const presentation = getMovePresentation(getTeamMove(moveId))
         return (
           <div className={`move-slot ${selectedSlot === slot ? 'active' : ''}`} key={slot}>
             <div className="move-slot-input">
@@ -28,6 +30,15 @@ export default function FourMoveSelector({ pokemon, moves, onChange, rows = [], 
               </label>
               {onSelect && <button className="move-detail-button" type="button" disabled={!pokemon || !row?.move} aria-pressed={selectedSlot === slot} onClick={() => onSelect(slot)} aria-label={`Dettagli ${row?.move?.name ?? `mossa ${slot + 1}`} di ${pokemon?.displayName}`}>Dettagli</button>}
             </div>
+            {presentation && (
+              <div className="move-slot-information">
+                <dl className="move-base-values">
+                  <div title="Potenza base prima dei modificatori; per le mosse multicolpo si riferisce al singolo colpo."><dt>Potenza base</dt><dd>{presentation.power}</dd></div>
+                  <div title="Precisione base, prima dei modificatori. Le mosse sempre a segno non effettuano il controllo di precisione; restano valide le altre condizioni della mossa."><dt>Precisione base</dt><dd>{presentation.accuracy}</dd></div>
+                </dl>
+                {presentation.description && <p className="move-effect-description" lang="en">{presentation.description}</p>}
+              </div>
+            )}
             {row?.result && (
               <div className="move-slot-result">
                 <span className={`type-badge type-${row.result.move.type}`}>{row.result.move.type}</span>

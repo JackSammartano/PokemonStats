@@ -77,6 +77,36 @@ Un cambio di regole, banlist, mod o meccaniche non riconosciute interrompe
 l'importazione. Una regulation futura può richiedere codice: la pipeline rende
 visibili gli interventi necessari, non può implementare automaticamente nuovi effetti.
 
+## Descrizioni delle mosse e attribuzione
+
+La pipeline importa `data/text/moves.ts` dalla stessa revisione Showdown dei dati
+di battaglia. Per ogni mossa risolve `shortDesc` dal testo generale, applica gli
+override dei parent mod in ordine e infine quello del mod della regulation.
+Un testo definito direttamente sulla mossa ha precedenza, come in Showdown.
+In M-B, ad esempio, la catena è testo generale → `champions` → `championsregmb`.
+Le descrizioni inglesi vengono salvate nello snapshot: l'app non richiede dati
+esterni durante la navigazione e non mantiene un dizionario manuale degli effetti.
+
+Una descrizione breve mancante o vuota interrompe l'importazione indicando la
+mossa interessata. `data:check -- --details` elenca `incompleteMovePresentation`:
+mosse con testo mancante o precisione non valida. La verifica `--complete`, usata
+anche prima della pubblicazione, si interrompe se questo elenco non è vuoto.
+Il confronto fra regulation rileva anche le modifiche ai testi importati.
+Questi controlli verificano la completezza dei dati; l'accuratezza dei testi
+dipende dalla fonte e la copertura del motore danni resta una verifica separata.
+
+Il Damage Calculator omette il paragrafo quando la fonte dichiara esplicitamente
+`No additional effect.`, anche se la frase è seguita da sole indicazioni sui
+bersagli. Mantiene le descrizioni degli effetti condizionali, per esempio il
+danno aggiuntivo di Earthquake contro Dig. Potenza e precisione restano valori
+base, distinti dai modificatori della battaglia.
+
+I credits collegano il repository Showdown e la licenza MIT con copyright,
+distribuita in `public/licenses/pokemon-showdown.txt`. La build verifica che
+questa copia e quella in `dist/licenses/pokemon-showdown.txt` corrispondano al
+testo conservato in `docs/licenses/pokemon-showdown.txt`. Il controllo viene
+eseguito anche da `data:update` e per entrambe le build di `data:simulate`.
+
 ## Simulazione M-B → M-C
 
 Entrambi gli snapshot sono completi e versionati in `src/data/regulations/`.

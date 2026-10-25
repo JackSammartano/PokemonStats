@@ -3,8 +3,9 @@ import { test } from 'node:test'
 import mc from '../src/data/regulations/mc.js'
 import mb from '../src/data/regulations/mb.js'
 import { compareRegulations } from './compare-regulations.mjs'
-import { fingerprintAbility, fingerprintItem, validateSnapshot, verifyFormat } from './import-regulation.mjs'
+import { fingerprintAbility, fingerprintItem, getMovePresentationMetadata, validateSnapshot, verifyFormat } from './import-regulation.mjs'
 import { readRegulationConfig } from './regulation-config.mjs'
+import { getCoverage } from './check-regulation.mjs'
 
 test('historical M-B is a complete isolated snapshot and the transition includes the six M-C Megas', () => {
   validateSnapshot(mb)
@@ -35,6 +36,47 @@ test('item fingerprints include Fling, seed boosts and handlers while ignoring p
   assert.notEqual(fingerprintItem({ ...item, fling: { basePower: 60 } }), fingerprint)
   assert.notEqual(fingerprintItem({ ...item, boosts: { spd: 1 } }), fingerprint)
   assert.notEqual(fingerprintItem({ ...item, onStart() { return 2 } }), fingerprint)
+})
+
+test('move presentation imports source text and accuracy without serializing callbacks', () => {
+  assert.deepEqual(getMovePresentationMetadata({ name: 'Example', accuracy: true, damage: 'level' }, { shortDesc: 'Damage equals the user’s level.' }), { accuracy: true, shortDesc: 'Damage equals the user’s level.', fixedDamage: 'level' })
+  const source = { name: 'Future Move', accuracy: 85, basePowerCallback() {}, onHit() {} }
+  assert.deepEqual(getMovePresentationMetadata(source, { shortDesc: ' A new effect supplied by the source. ' }), { accuracy: 85, shortDesc: 'A new effect supplied by the source.', variablePower: true })
+  assert.equal(getMovePresentationMetadata({ name: 'Example', accuracy: 100, damageCallback() {} }, { shortDesc: 'Fixed damage.' }).fixedDamage, true)
+})
+
+test('move text resolves general, Champions and regulation-specific overrides in order', () => {
+  const move = { name: 'Example', accuracy: 100 }
+  const text = { shortDesc: 'General.', champions: { shortDesc: 'Champions.' }, championsregmb: { shortDesc: 'Historical regulation.' } }
+  assert.equal(getMovePresentationMetadata(move, text).shortDesc, 'General.')
+  assert.equal(getMovePresentationMetadata(move, text, ['champions']).shortDesc, 'Champions.')
+  assert.equal(getMovePresentationMetadata(move, text, ['champions', 'championsregmb']).shortDesc, 'Historical regulation.')
+  assert.equal(getMovePresentationMetadata(move, text, ['champions', 'futuremod']).shortDesc, 'Champions.')
+  assert.equal(getMovePresentationMetadata({ ...move, shortDesc: 'Direct override.' }, text, ['champions']).shortDesc, 'Direct override.')
+})
+
+test('missing or explicitly empty descriptions stop import rather than silently losing effects', () => {
+  const move = { name: 'Future Move', accuracy: 100 }
+  for (const text of [undefined, {}, { shortDesc: '' }, { shortDesc: '  ' }, { shortDesc: 42 }]) {
+    assert.throws(() => getMovePresentationMetadata(move, text), /Missing short description: Future Move/)
+  }
+  assert.throws(() => getMovePresentationMetadata(move, { shortDesc: 'General.', champions: { shortDesc: '' } }, ['champions']), /Missing short description/)
+})
+
+test('coverage identifies missing descriptions and accuracy in both damaging and status moves', () => {
+  for (const snapshot of [mb, mc]) assert.deepEqual(getCoverage(snapshot).incompleteMovePresentation, [])
+  const broken = structuredClone(mc)
+  delete broken.moves.psychic.presentation.shortDesc
+  broken.moves.protect.presentation.accuracy = null
+  assert.deepEqual(getCoverage(broken).incompleteMovePresentation, ['protect', 'psychic'])
+})
+
+test('regulation comparison reports changes to move text and its completeness', () => {
+  const next = structuredClone(mc)
+  next.moves.psychic.presentation.shortDesc = 'Changed effect from the updated source.'
+  assert.deepEqual(compareRegulations(mc, next).moves.changed, ['psychic'])
+  delete next.moves.psychic.presentation.shortDesc
+  assert.deepEqual(compareRegulations(mc, next).targetCoverage.incompleteMovePresentation, ['psychic'])
 })
 
 test('format validation stops on mod, rules, or bans changes', () => {

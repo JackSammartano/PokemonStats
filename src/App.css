@@ -129,7 +129,15 @@
 
 .damage-moves-overview .move-slot {
   margin-bottom: 0;
+  padding: 14px;
 }
+
+.damage-moves-overview .move-slot-information { margin-top: 12px; }
+.damage-moves-overview .move-base-values { display: flex; flex-wrap: wrap; gap: 8px 18px; margin: 0; }
+.damage-moves-overview .move-base-values > div { display: flex; flex-wrap: wrap; align-items: baseline; gap: 5px; }
+.damage-moves-overview .move-base-values dt { color: var(--muted); font-size: 11px; }
+.damage-moves-overview .move-base-values dd { margin: 0; color: var(--text); font-size: 12px; font-weight: 800; }
+.damage-moves-overview .move-effect-description { margin: 9px 0 0; color: var(--text); font-size: 12px; line-height: 1.5; overflow-wrap: anywhere; }
 
 @supports (grid-template-rows: subgrid) {
   .damage-moves-overview > .four-move-selector {
@@ -290,7 +298,7 @@
 .build-stat-heading,
 .build-stat-row {
   display: grid;
-  grid-template-columns: 38px minmax(50px, 1fr) minmax(50px, 1fr) 42px;
+  grid-template-columns: 30px minmax(0, 1fr) 50px 32px;
   align-items: center;
   gap: 6px;
   margin-bottom: 6px;
@@ -322,6 +330,69 @@
 .build-no-boost {
   text-align: center;
 }
+
+.stat-point-control {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  min-width: 0;
+  height: 38px;
+}
+
+.stat-point-control button {
+  flex: 0 0 22px;
+  width: 22px;
+  height: 30px;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: #fff;
+  color: var(--text);
+  font: inherit;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.stat-point-control button:disabled { opacity: 0.4; cursor: default; }
+.stat-point-control output { flex: 0 0 16px; text-align: right; font-variant-numeric: tabular-nums; }
+.stat-point-bump-value { color: #b33535; font-weight: 800; }
+.stat-point-track { position: relative; flex: 1; min-width: 0; height: 30px; }
+.stat-point-ticks { position: absolute; inset: 9px 6px; pointer-events: none; }
+.stat-point-ticks i { position: absolute; transform: translateX(-50%); width: 1px; height: 12px; background: #b7c6ad; }
+.stat-point-ticks .invested { background: #397651; }
+.stat-point-ticks .bump { width: 2px; height: 18px; margin-top: -3px; background: #b33535; }
+.stat-point-track input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 30px;
+  margin: 0;
+  padding: 0;
+  appearance: none;
+  -webkit-appearance: none;
+  background: transparent;
+  cursor: pointer;
+}
+.stat-point-track input::-webkit-slider-runnable-track { height: 24px; background: transparent; }
+.stat-point-track input::-moz-range-track { height: 24px; background: transparent; }
+.stat-point-track input::-webkit-slider-thumb {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 12px;
+  height: 24px;
+  border: 2px solid #24543d;
+  border-radius: 4px;
+  background: rgba(237, 243, 231, 0.7);
+}
+.stat-point-track input::-moz-range-thumb {
+  box-sizing: border-box;
+  width: 12px;
+  height: 24px;
+  border: 2px solid #24543d;
+  border-radius: 4px;
+  background: rgba(237, 243, 231, 0.7);
+}
+.stat-point-hint { position: absolute; width: 1px; height: 1px; padding: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 
 .build-stat-table > small {
   display: block;
@@ -689,13 +760,11 @@ button:focus-visible,
   .damage-workspace {
     grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
     gap: 24px;
-    height: calc(100dvh - 32px);
-    align-items: stretch;
   }
 
-  .damage-results-panel,
   .damage-configuration-panel {
     min-height: 0;
+    max-height: calc(100dvh - 32px);
     overflow-y: auto;
     scrollbar-gutter: stable;
   }
@@ -745,14 +814,15 @@ button:focus-visible,
 
 .pokemon-select-preview {
   display: grid;
-  grid-template-columns: 54px minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr);
   gap: 10px;
   align-items: center;
 }
 
 .pokemon-select-preview img {
-  width: 54px;
-  height: 54px;
+  justify-self: center;
+  width: 80px;
+  height: 80px;
   object-fit: contain;
 }
 
@@ -874,7 +944,8 @@ button:focus-visible,
 
 .damage-battle-panel {
   grid-column: 1 / -1;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin-top: 24px;
   padding: 18px 0;
   border-top: 1px solid var(--border);
   border-bottom: 1px solid var(--border);
@@ -1404,6 +1475,7 @@ meter::-webkit-meter-optimum-value {
   }
 
   .damage-battle-panel {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     padding: 18px 0;
     border-top: 1px solid var(--border);
     border-right: 0;

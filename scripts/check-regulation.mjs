@@ -9,6 +9,7 @@ import { toId } from '../src/lib/damage/championsMath.js'
 import { POKEMON_IMAGES } from '../src/data/pokemonImages.js'
 import { readRegulationConfig, root } from './regulation-config.mjs'
 import { validateSnapshot } from './import-regulation.mjs'
+import { isMovePresentationComplete } from '../src/lib/damage/championsMovePresentation.js'
 
 export function getCoverage(data) {
   const damaging = Object.entries(data.moves).filter(([, move]) => move.category !== 'status')
@@ -17,6 +18,7 @@ export function getCoverage(data) {
     damagingMoves: damaging.length,
     supportedDamagingMoves: damaging.filter(([id]) => CHAMPIONS_MOVES[id]).length,
     missingMoves: damaging.filter(([id]) => !CHAMPIONS_MOVES[id]).map(([id]) => id),
+    incompleteMovePresentation: Object.entries(data.moves).filter(([, move]) => !isMovePresentationComplete(move)).map(([id]) => id),
     unclassifiedAbilities: abilities.filter((id) => getAbilityCoverage(id, data.abilityMechanics) === 'unknown'),
     changedAbilities: abilities.filter((id) => getAbilityCoverage(id, data.abilityMechanics) === 'changed'),
     partialAbilities: abilities.filter((id) => getAbilityCoverage(id, data.abilityMechanics) === 'partial'),
@@ -48,12 +50,16 @@ export async function checkRegulation({ complete = false, details = false } = {}
   const summary = details ? coverage : {
     damagingMoves: coverage.damagingMoves, supportedDamagingMoves: coverage.supportedDamagingMoves,
     missingMoves: coverage.missingMoves.length, unclassifiedAbilities: coverage.unclassifiedAbilities.length,
+    incompleteMovePresentation: coverage.incompleteMovePresentation.length,
     changedAbilities: coverage.changedAbilities.length, partialAbilities: coverage.partialAbilities.length,
     noDirectEffectAbilities: coverage.noDirectEffectAbilities.length,
     unclassifiedItems: coverage.unclassifiedItems.length,
     changedItems: coverage.changedItems.length,
   }
   console.log(JSON.stringify({ regulation: regulation.label, source: regulation.commit, forms: snapshot.roster.length, items: snapshot.items.length, coverage: summary }, null, 2))
+  if (complete && coverage.incompleteMovePresentation.length) {
+    throw new Error(`Incomplete move presentation: ${coverage.incompleteMovePresentation.join(', ')}`)
+  }
   if (complete && (coverage.missingMoves.length || coverage.unclassifiedAbilities.length || coverage.changedAbilities.length || coverage.partialAbilities.length || coverage.unclassifiedItems.length || coverage.changedItems.length)) {
     throw new Error('Damage coverage is incomplete; review the listed mechanics before release')
   }

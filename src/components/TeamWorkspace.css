@@ -147,9 +147,6 @@
 .showdown-import-dialog p { color: var(--muted); font-size: 13px; line-height: 1.5; }
 .showdown-import-dialog textarea { width: 100%; min-height: 260px; box-sizing: border-box; margin: 8px 0 18px; padding: 12px; border: 1px solid #cbd5e1; border-radius: 12px; font-family: monospace; font-size: 12px; resize: vertical; }
 .showdown-import-dialog .import-error { color: #b45309; }
-.build-identity-fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
-.build-identity-fields input, .build-identity-fields select { padding: 10px 8px; }
-.build-identity-fields .select-field span { font-size: 9px; letter-spacing: 0.04em; }
 .calculation-note { padding: 14px; border: 1px solid #fde68a; border-radius: 14px; background: #fffbeb; color: #92400e; font-size: 12px; line-height: 1.6; }
 .move-row-note { margin: 10px 0 0; }
 .build-stat-table .invalid-sp-total { color: #be123c; font-weight: 800; }
@@ -166,4 +163,4 @@
 }
 @media (min-width: 901px) and (max-width: 1150px) { .team-workspace-layout { grid-template-columns: minmax(0, 1fr) 300px; gap: 16px; } .team-type-summary { padding: 16px; } .type-defense-head, .type-defense-row > summary { grid-template-columns: 66px 1fr 1fr; } }
 @media (max-width: 900px) { .team-workspace-layout { grid-template-columns: 1fr; } }
-@media (max-width: 560px) { .squad-roster { grid-template-columns: repeat(2, minmax(0, 1fr)); } .squad-section { padding: 16px; } .squad-add-controls { align-items: stretch; flex-direction: column; } .squad-header h2 { font-size: 22px; } .showdown-import-dialog { padding: 18px; } .build-identity-fields { gap: 6px; } }
+@media (max-width: 560px) { .squad-roster { grid-template-columns: repeat(2, minmax(0, 1fr)); } .squad-section { padding: 16px; } .squad-add-controls { align-items: stretch; flex-direction: column; } .squad-header h2 { font-size: 22px; } .showdown-import-dialog { padding: 18px; } }

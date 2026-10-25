@@ -357,6 +357,7 @@ function App() {
       </div>
       <footer className="site-footer">
         <span>Pokémon Stats · Regulation {REGULATION.label}</span>
+        <span>Dati e descrizioni: <a href="https://github.com/smogon/pokemon-showdown" target="_blank" rel="noopener noreferrer">Pokémon Showdown</a> · <a href={`${import.meta.env.BASE_URL}licenses/pokemon-showdown.txt`} target="_blank" rel="noopener noreferrer">Licenza MIT</a></span>
         <a href="https://www.vecteezy.com/free-photos/pokemon-background" target="_blank" rel="noopener noreferrer">Pokemon Background Stock photos by Vecteezy</a>
       </footer>
     </main>

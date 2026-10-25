@@ -177,13 +177,13 @@ test('copying or losing Klutz updates item suppression before the next hit', () 
   assert.ok(damage(move, { ability: 'huge-power' }, { ability: 'wandering-spirit' }).max < damage(move, { ability: 'huge-power' }).max)
 })
 
-test('stat reactions and prevention change only subsequent hits', () => {
-  const crunch = { ...CHAMPIONS_MOVES.crunch, multihit: 2, conditions: { secondaryAfterHit: 1 } }
-  const baseline = damage({ ...crunch, conditions: { secondaryAfterHit: 0 } })
-  for (const ability of ['big-pecks', 'clear-body', 'white-smoke', 'shield-dust']) assert.equal(damage(crunch, {}, { ability }).max, baseline.max, ability)
-  assert.ok(damage(crunch).max > baseline.max)
-  assert.ok(damage(crunch, { ability: 'mold-breaker' }, { ability: 'big-pecks' }).max > baseline.max)
-  assert.equal(damage(crunch, {}, { ability: 'mirror-armor' }).max, baseline.max)
+test('guaranteed move effects, stat reactions and prevention change only subsequent hits', () => {
+  const gravApple = { ...CHAMPIONS_MOVES['grav-apple'], multihit: 2 }
+  const baseline = damage({ ...gravApple, secondaries: [] })
+  for (const ability of ['big-pecks', 'clear-body', 'white-smoke', 'shield-dust']) assert.equal(damage(gravApple, {}, { ability }).max, baseline.max, ability)
+  assert.ok(damage(gravApple).max > baseline.max)
+  assert.ok(damage(gravApple, { ability: 'mold-breaker' }, { ability: 'big-pecks' }).max > baseline.max)
+  assert.equal(damage(gravApple, {}, { ability: 'mirror-armor' }).max, baseline.max)
   const source = pokemon({ currentHp: 1000 }), mirror = pokemon({ ability: 'mirror-armor' })
   applyStatChanges(mirror, { def: -1 }, true, { source })
   assert.equal(source.boosts.def, -1)
@@ -191,6 +191,7 @@ test('stat reactions and prevention change only subsequent hits', () => {
   assert.ok(damage({ ...CHAMPIONS_MOVES['foul-play'], multihit: 2 }, {}, { ability: 'justified' }).max > damage({ ...CHAMPIONS_MOVES['foul-play'], multihit: 2 }).max)
   const gyro = { ...CHAMPIONS_MOVES['gyro-ball'], multihit: 2 }
   assert.ok(damage(gyro, {}, { ability: 'gooey' }).max > damage(gyro).max)
+  const crunch = { ...CHAMPIONS_MOVES.crunch, multihit: 2 }
   assert.ok(damage(crunch, {}, { ability: 'weak-armor' }).max > damage(crunch).max)
 })
 

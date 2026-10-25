@@ -2,30 +2,30 @@ import { memo, useState } from 'react'
 import FourMoveSelector from './FourMoveSelector'
 import SpeedComparison from './SpeedComparison'
 import PokemonImage from './PokemonImage'
+import StatPointControl from './StatPointControl'
+import { getChampionsStatBumps } from '../lib/damage/championsMath.js'
+import { getPokemonDamageItemOptions } from '../lib/damage/championsItemOptions.js'
 import { CHAMPIONS_NATURES } from '../lib/damage/championsData.js'
 import { getItemCoverageNote } from '../lib/damage/championsItems.js'
-import { CHAMPIONS_TEAM_ITEMS, getAbilityOptions } from '../lib/teamData.js'
+import { getAbilityOptions } from '../lib/teamData.js'
 import { getWorkspaceBuild } from '../lib/teamWorkspace.js'
 import { getAbilityCoverageNote } from '../lib/damage/championsCoverage.js'
 import { resolveAbilityWeather } from '../lib/damage/championsAbilities.js'
 import { getPokemonMoveSlots } from '../lib/damage/championsMoveSets.js'
-import { calculateMoveRows, getBuildStats } from '../lib/damage/championsMatchup.js'
+import { calculateMoveRows, getBaseStats, getBuildStats } from '../lib/damage/championsMatchup.js'
 import { describeTypeEffectiveness } from '../lib/typeLabels.js'
 import { getMoveConditionFields } from '../lib/damage/championsMoveConditions.js'
 import { BATTLE_CONDITION_FIELDS } from '../lib/damage/championsBattleConditions.js'
 import { getEffectiveAbility } from '../lib/damage/championsBattle.js'
 
 const STAT_LABELS = { hp: 'HP', atk: 'Atk', def: 'Def', spa: 'SpA', spd: 'SpD', spe: 'Spe' }
-const SP_OPTIONS = Array.from({ length: 33 }, (_, index) => index)
 const BOOST_OPTIONS = Array.from({ length: 13 }, (_, index) => index - 6)
-const ITEM_OPTIONS = [{ value: '', label: 'Nessuno' }, ...CHAMPIONS_TEAM_ITEMS.map((item) => ({ value: item.id, label: item.name }))]
 
 export default memo(function DamageCalculator({ pokemon, teams, attackerName, defenderName, onAttackerChange, onDefenderChange, moveSets, onMoveChange, selectedMove, onSelectMove, builds, onBuildChange }) {
   const [field, setField] = useState({ weather: '', gameType: 'Doubles', critical: false })
   const attacker = pokemon.find((entry) => entry.displayName === attackerName) ?? pokemon[0]
   const defender = pokemon.find((entry) => entry.displayName === defenderName)
     ?? pokemon.find((entry) => entry.displayName !== attacker?.displayName) ?? pokemon[0]
-  const itemOptions = ITEM_OPTIONS
   const leftBuild = getWorkspaceBuild(builds, 'attacker', attacker?.displayName)
   const rightBuild = getWorkspaceBuild(builds, 'defender', defender?.displayName)
   const leftTransformed = leftBuild.ability === 'imposter' && leftBuild.transformActive
@@ -56,7 +56,6 @@ export default memo(function DamageCalculator({ pokemon, teams, attackerName, de
         <div className="damage-results-panel" role="region" aria-label="Risultati del calcolo danni" tabIndex={0}>
           <div className="selected-move-detail" aria-live="polite">
             <div>
-              <p className="eyebrow compact">Dettaglio mossa selezionata</p>
               <h2>{selectedRow?.move?.name ?? 'Seleziona una mossa'}</h2>
               <p>{source?.displayName ?? 'Pokémon 1'} <span aria-hidden="true">→</span> {target?.displayName ?? 'Pokémon 2'}</p>
             </div>
@@ -92,34 +91,34 @@ export default memo(function DamageCalculator({ pokemon, teams, attackerName, de
           {[...calculationNotes(leftBuild), ...calculationNotes(rightBuild)].length > 0 && (
             <p className="calculation-note">Calcolo parziale: {[...new Set([...calculationNotes(leftBuild), ...calculationNotes(rightBuild)])].join(' ')}</p>
           )}
-          <section className="damage-panel damage-battle-panel" aria-label="Battle controls">
-            <h3>Campo e condizioni</h3>
-            <label className="select-field"><span>Meteo</span>
-              <select value={field.weather} onChange={(event) => setField({ ...field, weather: event.target.value })}>
-                <option value="">Nessuno</option><option value="Sun">Sole</option><option value="Rain">Pioggia</option><option value="Sand">Sabbia</option><option value="Snow">Neve</option>
-              </select>
-              {weather.sourceAbility && <small className="weather-override-hint">{weather.requiresChoice ? 'Le due abilità impostano meteo diversi: seleziona il meteo effettivo dopo l’ultimo ingresso.' : `Meteo effettivo: ${weather.weather}, da ${weather.sourceAbility}.`}</small>}
-            </label>
-            <label className="select-field"><span>Formato</span>
-              <select value={field.gameType} onChange={(event) => setField({ ...field, gameType: event.target.value })}><option value="Singles">Singles</option><option value="Doubles">Doubles</option></select>
-            </label>
-            <label className="select-field"><span>Terreno</span><select value={field.terrain ?? ''} onChange={(event) => setField({ ...field, terrain: event.target.value })}><option value="">Nessuno</option><option value="Electric">Elettrico</option><option value="Grassy">Erboso</option><option value="Misty">Nebbioso</option><option value="Psychic">Psichico</option></select></label>
-            <label><input type="checkbox" checked={Boolean(field.isGravity)} onChange={(event) => setField({ ...field, isGravity: event.target.checked })} />Gravity</label>
-            <label><input type="checkbox" checked={Boolean(field.isWonderRoom)} onChange={(event) => setField({ ...field, isWonderRoom: event.target.checked })} />Wonder Room</label>
-            <label><input type="checkbox" checked={Boolean(field.isMagicRoom)} onChange={(event) => setField({ ...field, isMagicRoom: event.target.checked })} />Magic Room</label>
-            <label><input type="checkbox" checked={Boolean(field.isFairyAura)} onChange={(event) => setField({ ...field, isFairyAura: event.target.checked })} />Fairy Aura da un altro Pokémon</label>
-            <label><input type="checkbox" checked={Boolean(field.isCloudNine)} onChange={(event) => setField({ ...field, isCloudNine: event.target.checked })} />Cloud Nine da un altro Pokémon (Doubles)</label>
-            <label><input type="checkbox" checked={Boolean(field.isDamp)} onChange={(event) => setField({ ...field, isDamp: event.target.checked })} />Damp da un altro Pokémon (Doubles)</label>
-            <div className="damage-toggles"><label><input type="checkbox" checked={field.critical} onChange={(event) => setField({ ...field, critical: event.target.checked })} />Brutto colpo (tutte le mosse)</label></div>
-          </section>
         </div>
         <div className="damage-configuration-panel" role="region" aria-label="Configurazione dei Pokémon" tabIndex={0}>
           <div className="damage-controls">
-            <PokemonBuildControls side="attacker" label="Pokémon 1" pokemon={attacker} roster={pokemon} build={leftBuild} effectiveAbility={leftAbility} itemOptions={itemOptions} onPokemonChange={onAttackerChange} onChange={(changes) => onBuildChange('attacker', attacker, changes)} />
-            <PokemonBuildControls side="defender" label="Pokémon 2" pokemon={defender} roster={pokemon} build={rightBuild} effectiveAbility={rightAbility} itemOptions={itemOptions} onPokemonChange={onDefenderChange} onChange={(changes) => onBuildChange('defender', defender, changes)} />
+            <PokemonBuildControls side="attacker" label="Pokémon 1" pokemon={attacker} roster={pokemon} build={leftBuild} effectiveAbility={leftAbility} onPokemonChange={onAttackerChange} onChange={(changes) => onBuildChange('attacker', attacker, changes)} />
+            <PokemonBuildControls side="defender" label="Pokémon 2" pokemon={defender} roster={pokemon} build={rightBuild} effectiveAbility={rightAbility} onPokemonChange={onDefenderChange} onChange={(changes) => onBuildChange('defender', defender, changes)} />
           </div>
         </div>
       </div>
+      <section className="damage-panel damage-battle-panel" aria-label="Battle controls">
+        <h3>Campo e condizioni</h3>
+        <label className="select-field"><span>Meteo</span>
+          <select value={field.weather} onChange={(event) => setField({ ...field, weather: event.target.value })}>
+            <option value="">Nessuno</option><option value="Sun">Sole</option><option value="Rain">Pioggia</option><option value="Sand">Sabbia</option><option value="Snow">Neve</option>
+          </select>
+          {weather.sourceAbility && <small className="weather-override-hint">{weather.requiresChoice ? 'Le due abilità impostano meteo diversi: seleziona il meteo effettivo dopo l’ultimo ingresso.' : `Meteo effettivo: ${weather.weather}, da ${weather.sourceAbility}.`}</small>}
+        </label>
+        <label className="select-field"><span>Formato</span>
+          <select value={field.gameType} onChange={(event) => setField({ ...field, gameType: event.target.value })}><option value="Singles">Singles</option><option value="Doubles">Doubles</option></select>
+        </label>
+        <label className="select-field"><span>Terreno</span><select value={field.terrain ?? ''} onChange={(event) => setField({ ...field, terrain: event.target.value })}><option value="">Nessuno</option><option value="Electric">Elettrico</option><option value="Grassy">Erboso</option><option value="Misty">Nebbioso</option><option value="Psychic">Psichico</option></select></label>
+        <label><input type="checkbox" checked={Boolean(field.isGravity)} onChange={(event) => setField({ ...field, isGravity: event.target.checked })} />Gravity</label>
+        <label><input type="checkbox" checked={Boolean(field.isWonderRoom)} onChange={(event) => setField({ ...field, isWonderRoom: event.target.checked })} />Wonder Room</label>
+        <label><input type="checkbox" checked={Boolean(field.isMagicRoom)} onChange={(event) => setField({ ...field, isMagicRoom: event.target.checked })} />Magic Room</label>
+        <label><input type="checkbox" checked={Boolean(field.isFairyAura)} onChange={(event) => setField({ ...field, isFairyAura: event.target.checked })} />Fairy Aura da un altro Pokémon</label>
+        <label><input type="checkbox" checked={Boolean(field.isCloudNine)} onChange={(event) => setField({ ...field, isCloudNine: event.target.checked })} />Cloud Nine da un altro Pokémon (Doubles)</label>
+        <label><input type="checkbox" checked={Boolean(field.isDamp)} onChange={(event) => setField({ ...field, isDamp: event.target.checked })} />Damp da un altro Pokémon (Doubles)</label>
+        <div className="damage-toggles"><label><input type="checkbox" checked={field.critical} onChange={(event) => setField({ ...field, critical: event.target.checked })} />Brutto colpo (tutte le mosse)</label></div>
+      </section>
       {!weather.requiresChoice && <SpeedComparison attacker={attacker} defender={defender} leftBuild={leftBuild} rightBuild={rightBuild} weather={weather.weather} battle={selectedRow?.result} reversed={reversed} />}
     </section>
   )
@@ -150,27 +149,25 @@ function MoveConditionControls({ move, effectiveAbility, onChange }) {
   </fieldset>
 }
 
-function PokemonBuildControls({ side, label, pokemon, roster, build, effectiveAbility, itemOptions, onPokemonChange, onChange }) {
+function PokemonBuildControls({ side, label, pokemon, roster, build, effectiveAbility, onPokemonChange, onChange }) {
   const stats = getBuildStats(pokemon, build)
+  const baseStats = pokemon ? getBaseStats(pokemon) : null
+  const itemOptions = getPokemonDamageItemOptions(pokemon, build.item, build.itemName)
   return (
     <section className="damage-panel" aria-label={side === 'attacker' ? 'Attacker controls' : 'Defender controls'}>
-      <h3>{label}</h3>
-      <label className="select-field"><span>Pokémon</span>
-        <div className="pokemon-select-preview">{pokemon && <PokemonImage pokemon={pokemon} size={54} />}
+      <div className="pokemon-select-preview">
+        {pokemon && <PokemonImage pokemon={pokemon} size={80} />}
+        <label className="select-field"><span>Pokémon</span>
           <select value={pokemon?.displayName ?? ''} onChange={(event) => onPokemonChange(event.target.value)}>
             {roster.map((entry) => <option key={entry.displayName} value={entry.displayName}>{entry.displayName}</option>)}
           </select>
-        </div>
-      </label>
-      <div className="build-identity-fields">
-        <label className="select-field"><span>Genere</span><select aria-label={`${label} genere`} value={build.gender ?? ''} onChange={(event) => onChange({ gender: event.target.value })}><option value="">—</option><option value="M">M</option><option value="F">F</option></select></label>
-        <label className="select-field"><span>Livello</span><input aria-label={`${label} livello`} type="number" min="1" max="100" value={build.level ?? 50} onChange={(event) => onChange({ level: Number(event.target.value) })} /></label>
+        </label>
       </div>
       <label className="select-field"><span>Abilità</span><select value={build.ability} onChange={(event) => onChange({ ability: event.target.value, abilityName: event.target.selectedOptions[0].textContent })}>
         {getAbilityOptions(pokemon, build.ability, build.abilityName).map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
       </select></label>
       <label className="select-field"><span>Oggetto</span><select value={build.item} onChange={(event) => onChange({ item: event.target.value, itemName: event.target.selectedOptions[0].textContent })}>
-        {(build.item && !itemOptions.some((item) => item.value === build.item) ? [...itemOptions, { value: build.item, label: build.itemName || build.item }] : itemOptions).map((option) => option.options ? <optgroup key={option.label} label={option.label}>{option.options.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}</optgroup> : <option key={option.value} value={option.value}>{option.label}</option>)}
+        {itemOptions.map((option) => option.options ? <optgroup key={option.label} label={option.label}>{option.options.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}</optgroup> : <option key={option.value} value={option.value}>{option.label}</option>)}
       </select></label>
       <label className="select-field"><span>Stato</span><select value={build.status || (build.burned ? 'brn' : '')} onChange={(event) => onChange({ status: event.target.value, burned: event.target.value === 'brn' })}>
         <option value="">Nessuno</option><option value="brn">Scottato</option><option value="par">Paralizzato</option><option value="psn">Avvelenato</option><option value="tox">Iperavvelenato</option><option value="slp">Addormentato</option><option value="frz">Congelato</option>
@@ -196,12 +193,15 @@ function PokemonBuildControls({ side, label, pokemon, roster, build, effectiveAb
         {Object.entries(STAT_LABELS).map(([id, text]) => (
           <div className="build-stat-row" key={id}>
             <strong>{text}</strong>
-            <select aria-label={`${label} ${text} SP`} value={build.sps[id]} onChange={(event) => onChange({ sps: { ...build.sps, [id]: Number(event.target.value) } })}>{SP_OPTIONS.map((sp) => <option key={sp} value={sp}>{sp}</option>)}</select>
+            <StatPointControl label={`${label} ${text} SP`} value={build.sps[id]}
+              bumps={baseStats ? getChampionsStatBumps({ base: baseStats[id], nature: build.nature, stat: id }) : []}
+              onChange={(value) => onChange({ sps: { ...build.sps, [id]: value } })} />
             {id === 'hp' ? <span className="build-no-boost">—</span> : <select aria-label={`${label} ${text} boost`} value={build.boosts[id]} onChange={(event) => onChange({ boosts: { ...build.boosts, [id]: Number(event.target.value) } })}>{BOOST_OPTIONS.map((boost) => <option key={boost} value={boost}>{boost > 0 ? `+${boost}` : boost}</option>)}</select>}
             <span>{stats?.[id] ?? '—'}</span>
           </div>
         ))}
         <small>I valori mostrati includono SP e natura; i boost si applicano al calcolo.</small>
+        <small>I segni rossi indicano i bump: +2 alla statistica con un solo SP.</small>
         <small className={Object.values(build.sps).reduce((sum, value) => sum + value, 0) > 66 ? 'invalid-sp-total' : ''}>SP totali: {Object.values(build.sps).reduce((sum, value) => sum + value, 0)}/66</small>
       </div>
       <div className="damage-toggles damage-panel-toggles">

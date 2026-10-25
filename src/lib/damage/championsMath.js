@@ -93,6 +93,17 @@ export function calculateChampionsStats({ baseStats, nature = 'Serious', sps = {
   )
 }
 
+export function getChampionsStatBumps({ base, nature, stat }) {
+  const bumps = []
+  let previous = calculateChampionsStat({ base, nature, stat, sp: 0 })
+  for (let sp = 1; sp <= 32; sp++) {
+    const value = calculateChampionsStat({ base, nature, stat, sp })
+    if (value - previous === 2) bumps.push(sp)
+    previous = value
+  }
+  return bumps
+}
+
 export function calculateBaseDamage({ attack, basePower, defense, level = 50 }) {
   return Math.floor(
     of32(

@@ -1,5 +1,19 @@
 # Champions Damage Calculator Worklog
 
+## Effetti secondari casuali delle mosse — 2026-10-25
+
+Implementato il piano approvato: rimossi i controlli `secondaryAfterHit` e
+`secondaryStatus` e la possibilità di forzare quegli effetti nel motore. Le vecchie
+impostazioni salvate sono ignorate. Restano le condizioni necessarie al danno e
+gli effetti garantiti al 100%, comprese le interazioni tra colpi della stessa mossa.
+Boost e stati per un attacco successivo si configurano nella scheda Pokémon.
+I controlli separati delle reazioni di abilità non sono coinvolti in questa modifica.
+L'appunto del 24 ottobre sotto riportato è quindi risolto per gli effetti casuali
+delle mosse; gli effetti garantiti multicolpo restano rilevanti.
+
+Il layout corrente e le verifiche sono descritti in [four-move-calculator.md](four-move-calculator.md)
+e [damage-coverage.md](damage-coverage.md). Le sezioni successive conservano la cronologia.
+
 ## Optimizer da riprendere — 2026-10-24
 
 Su richiesta dell'utente, rimossi dalla pagina Damage calculator «Ordina le build»,

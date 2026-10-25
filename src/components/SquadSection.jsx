@@ -60,7 +60,7 @@ export default function SquadSection({ side, title, team, roster, builds, moveSe
   return (
     <section ref={section} className={`squad-section squad-${side}`} aria-labelledby={`squad-title-${side}`}>
       <header className="squad-header">
-        <div><p className="eyebrow compact">{side === 'attacker' ? 'La tua formazione' : 'Il tuo avversario'}</p><h2 id={`squad-title-${side}`}>{title} <span>{team.length}/6</span></h2></div>
+        <div><h2 id={`squad-title-${side}`}>{title} <span>{team.length}/6</span></h2></div>
         <div className="squad-actions">
           <button className="ghost-button" type="button" disabled={Boolean(busy)} onClick={importClipboard} aria-label={`Importa ${title.toLowerCase()} da Showdown`}>{busy === 'import' ? 'Lettura…' : 'Importa'}</button>
           <button className="secondary-button" type="button" disabled={Boolean(busy) || !team.length} onClick={exportClipboard} aria-label={`Esporta ${title.toLowerCase()} per Showdown`}>{busy === 'export' ? 'Copia…' : 'Esporta'}</button>

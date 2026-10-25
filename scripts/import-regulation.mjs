@@ -9,6 +9,21 @@ import { configPath, readRegulationConfig, root } from './regulation-config.mjs'
 
 const moveId = (value) => value.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
 
+// Presentation stays separate from the fields consumed by the damage engine.
+export function getMovePresentationMetadata(move, text, mods = []) {
+  let shortDesc = text?.shortDesc
+  for (const mod of mods) {
+    if (text?.[mod]?.shortDesc !== undefined) shortDesc = text[mod].shortDesc
+  }
+  // Showdown also permits descriptions directly on a modded move.
+  if (move.shortDesc !== undefined || move.desc !== undefined) shortDesc = move.shortDesc || move.desc
+  if (typeof shortDesc !== 'string' || !shortDesc.trim()) throw new Error(`Missing short description: ${move.name}`)
+  const metadata = { accuracy: move.accuracy, shortDesc: shortDesc.trim() }
+  if (move.damage || move.damageCallback) metadata.fixedDamage = move.damage ?? true
+  if (move.basePowerCallback || move.onBasePower) metadata.variablePower = true
+  return metadata
+}
+
 export function fingerprintAbility(ability) {
   const behavior = Object.fromEntries(Object.entries(ability)
     .filter(([key]) => key.startsWith('on') || key === 'condition' || key === 'flags' || key === 'suppressWeather')
@@ -96,10 +111,11 @@ export async function generateSnapshot(regulation, { offline = false } = {}) {
   await mkdir(new URL(`.cache/showdown/${regulation.commit}/`, root), { recursive: true })
   const read = createSourceReader(regulation.commit, offline)
   verifyFormat(await read('config/formats.ts'), regulation)
-  const [pokedex, abilityText, baseLearnsets, baseMoves, baseItems, baseAbilities] = await Promise.all([
+  const [pokedex, abilityText, baseLearnsets, baseMoves, baseItems, baseAbilities, moveText] = await Promise.all([
     read('data/pokedex.ts', 'Pokedex'), read('data/text/abilities.ts', 'AbilitiesText'),
     read('data/learnsets.ts', 'Learnsets'), read('data/moves.ts', 'Moves'), read('data/items.ts', 'Items'),
     read('data/abilities.ts', 'Abilities'),
+    read('data/text/moves.ts', 'MovesText'),
   ])
   let formats = {}, learnsets = baseLearnsets, moves = baseMoves, items = baseItems
   let abilities = baseAbilities
@@ -150,6 +166,7 @@ export async function generateSnapshot(regulation, { offline = false } = {}) {
       if (move.drain) teamMoves[key].drain = move.drain
       if (move.self?.boosts) teamMoves[key].selfBoosts = move.self.boosts
       if (move.secondary || move.secondaries) teamMoves[key].secondaries = move.secondaries ?? [move.secondary]
+      teamMoves[key].presentation = getMovePresentationMetadata(move, moveText[id], mods)
       return key
     })
     entry.weightkg = pokedex[entry.showdownId].weightkg

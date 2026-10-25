@@ -81,11 +81,38 @@ test('Skill Link forces the maximum and ordinary hit counts are validated', () =
   assert.throws(() => damage({}, {}, { ...move, conditions: { hits: 6 } }), RangeError)
 })
 
-test('random secondary status choice is explicit and validated', () => {
-  const move = { ...CHAMPIONS_MOVES['tri-attack'], conditions: { secondaryAfterHit: 1, secondaryStatus: 'frz' } }
-  assert.ok(getMoveConditionFields(move).some((field) => field.key === 'secondaryStatus'))
-  assert.equal(getMoveConditions(move).secondaryStatus, 'frz')
-  assert.throws(() => getMoveConditions({ ...move, conditions: { secondaryStatus: 'tox' } }), RangeError)
+test('random move secondaries expose no activation fields and legacy selections are ignored', () => {
+  for (const id of ['moonblast', 'psychic', 'crunch', 'tri-attack', 'dire-claw']) {
+    const move = { ...CHAMPIONS_MOVES[id], conditions: { secondaryAfterHit: 1, secondaryStatus: 'frz' } }
+    assert.deepEqual(getMoveConditionFields(move), [], id)
+    assert.deepEqual(getMoveConditions(move), {}, id)
+    assert.deepEqual(getMoveConditions({ ...move, conditions: { secondaryAfterHit: -1, secondaryStatus: 'obsolete' } }), {}, id)
+  }
+  for (const move of Object.values(CHAMPIONS_MOVES)) {
+    assert.equal(getMoveConditionFields(move).some(({ key }) => ['secondaryAfterHit', 'secondaryStatus'].includes(key)), false, move.name)
+  }
+})
+
+test('legacy random stat and status choices cannot change damage between hits', () => {
+  const crunch = { ...CHAMPIONS_MOVES.crunch, multihit: 2 }
+  const plain = damage({}, {}, crunch)
+  assert.deepEqual(damage({}, {}, { ...crunch, conditions: { secondaryAfterHit: 1 } }).damage, plain.damage)
+  assert.deepEqual(plain.damage, damage({}, {}, { ...crunch, secondaries: [] }).damage)
+
+  // Hex makes a status applied between hits observable through the next hit's power.
+  const move = { ...CHAMPIONS_MOVES.hex, multihit: 2, hasSecondary: true, secondaries: [{ chance: 30, status: 'brn' }] }
+  const defender = { types: ['grass'] }
+  const inactive = damage({}, defender, move)
+  const legacy = damage({}, defender, { ...move, conditions: { secondaryAfterHit: 1, secondaryStatus: 'brn' } })
+  assert.deepEqual(legacy.damage, inactive.damage)
+  assert.deepEqual(legacy.remainingHp, inactive.remainingHp)
+  assert.ok(damage({}, { ...defender, status: 'brn' }, move).min > inactive.min)
+})
+
+test('necessary move conditions survive alongside ignored legacy secondary fields', () => {
+  assert.deepEqual(getMoveConditions({ ...CHAMPIONS_MOVES['rock-blast'], conditions: { hits: 2, secondaryAfterHit: 1, secondaryStatus: 'par' } }), { hits: 2 })
+  assert.deepEqual(getMoveConditions({ ...CHAMPIONS_MOVES['rage-fist'], conditions: { hitsTaken: 3, secondaryAfterHit: 1 } }), { hitsTaken: 3 })
+  assert.deepEqual(getMoveConditions({ ...CHAMPIONS_MOVES.payback, conditions: { turnOrder: 'last', secondaryAfterHit: 1 } }), { turnOrder: 'last' })
 })
 
 test('UI rows and optimizer baseline preserve the same chosen activation', () => {
