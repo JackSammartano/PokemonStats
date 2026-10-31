@@ -17,6 +17,7 @@ import { formatName, POKEMON_BY_NAME, POKEMON_DATASET } from './lib/pokemonDatas
 import PokemonDetails from './components/PokemonDetails'
 import { getMegaAction, toggleMegaEvolution } from './lib/megaEvolution'
 const PokemonCoverageDialog = lazy(() => import('./components/PokemonCoverageDialog'))
+const CompetitiveWorkspace = lazy(() => import('./components/CompetitiveWorkspace'))
 
 const SORT_OPTIONS = [
   { label: 'Nome', value: 'name' },
@@ -55,6 +56,7 @@ const VIEW_CONTENT = {
   catalog: { title: 'Catalogo', description: `Esplora i Pokémon della Regulation ${REGULATION.label} e confronta statistiche e tipi.` },
   team: { title: 'Il mio team', description: 'Importa o prepara le due squadre e confronta tipi, mosse e configurazioni.' },
   damage: { title: 'Damage calculator', description: 'Configura i due Pokémon e analizza danni e Velocità.' },
+  competitive: { title: 'Competitivo', description: 'Studia il metagame Champions Doubles con statistiche Showdown e fonti verificabili.' },
 }
 function App() {
   const pokemon = POKEMON_DATASET
@@ -64,6 +66,7 @@ function App() {
   const opponentNames = workspace.teams.defender
   const [activePanel, setActivePanel] = useState(null)
   const { view, fromTeam, navigate } = useWorkspaceNavigation()
+  const [competitiveOpened, setCompetitiveOpened] = useState(view === 'competitive')
   const [teamDamageDraft, setTeamDamageDraft] = useState({ attackerName: '', defenderName: '' })
   const [selectedDamageMove, setSelectedDamageMove] = useState({ side: 'attacker', slot: 0 })
   const [coverageTarget, setCoverageTarget] = useState(null)
@@ -87,6 +90,7 @@ function App() {
 
   useEffect(() => {
     document.querySelector('.workspace-nav h1')?.focus({ preventScroll: true })
+    if (view === 'competitive') setCompetitiveOpened(true)
   }, [view])
 
   const supported = pokemon
@@ -224,6 +228,7 @@ function App() {
             >
               Damage calculator
             </button>
+            <button type="button" aria-current={view === 'competitive' ? 'page' : undefined} onClick={() => navigate('competitive')}>Competitivo</button>
           </div>
           {view === 'damage' && fromTeam && <button type="button" className="secondary-button back-to-team" onClick={returnToTeam}>← Torna al mio team</button>}
         </div>
@@ -345,6 +350,7 @@ function App() {
         />
 
       </div>
+      <div className="workspace-view" hidden={view !== 'competitive'}>{(competitiveOpened || view === 'competitive') && <Suspense fallback={<p role="status">Apertura statistiche competitive…</p>}><CompetitiveWorkspace /></Suspense>}</div>
       <footer className="site-footer">
         <span>Pokémon Stats · Regulation {REGULATION.label}</span>
         <span>Dati e descrizioni: <a href="https://github.com/smogon/pokemon-showdown" target="_blank" rel="noopener noreferrer">Pokémon Showdown</a> · <a href={`${import.meta.env.BASE_URL}licenses/pokemon-showdown.txt`} target="_blank" rel="noopener noreferrer">Licenza MIT</a></span>

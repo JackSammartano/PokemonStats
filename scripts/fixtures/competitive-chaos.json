@@ -1,0 +1,19 @@
+{
+  "_fixture": "Synthetic weights for tests only; not real battle statistics. Identities refer to the historical M-C roster.",
+  "info": { "metagame": "gen9championsvgc2026regmc", "cutoff": 1760, "cutoff deviation": 0, "team type": null, "number of battles": 10 },
+  "data": {
+    "Rillaboom": {
+      "usage": 0.6, "Raw count": 12,
+      "Abilities": { "grassysurge": 80, "overgrow": 20 },
+      "Items": { "miracleseed": 60, "": 40 },
+      "Moves": { "fakeout": 90, "grassyglide": 80, "protect": 30, "": 200 },
+      "Teammates": { "Garchomp-Mega-Z": 70, "Garchomp": 50 },
+      "Spreads": { "Adamant:32/32/0/0/2/0": 30, "Adamant:32/32/0/0/0/2": 20, "Jolly:2/32/0/0/0/32": 40, "Modest:2/0/0/32/0/32": 10 }
+    },
+    "Garchomp-Mega-Z": {
+      "usage": 0.3, "Raw count": 6,
+      "Abilities": { "dragonsmaw": 50 }, "Items": { "garchompitez": 50 },
+      "Moves": { "earthpower": 50 }, "Spreads": { "Timid:2/0/0/32/0/32": 50 }
+    }
+  }
+}

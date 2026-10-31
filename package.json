@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build && node scripts/check-licenses.mjs",
+    "build": "node scripts/check-competitive.mjs && vite build && node scripts/check-licenses.mjs",
     "lint": "oxlint",
     "test": "node --test src/lib/damage/*.test.js src/lib/*.test.js scripts/*.test.mjs",
     "data:regulation-mc": "node scripts/import-regulation-mc.mjs",
@@ -14,7 +14,9 @@
     "data:diff": "node scripts/compare-regulations.mjs",
     "data:simulate": "node scripts/simulate-regulations.mjs",
     "data:update": "node scripts/update-regulation.mjs",
-    "verify": "npm run data:check -- --complete && npm test && npm run lint && npm run build",
+    "competitive:import": "node scripts/import-competitive.mjs",
+    "competitive:check": "node scripts/check-competitive.mjs",
+    "verify": "npm run data:check -- --complete && npm run competitive:check && npm test && npm run lint && npm run build",
     "preview": "vite preview",
     "assets:background": "node scripts/optimize-background.mjs",
     "assets:pokemon": "node scripts/import-pokemon-images.mjs"

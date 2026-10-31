@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 
-const VIEW_PATHS = { catalog: '#/catalogo', team: '#/team', damage: '#/damage-calculator' }
+const VIEW_PATHS = { catalog: '#/catalogo', team: '#/team', damage: '#/damage-calculator', competitive: '#/competitivo' }
 
 export function readWorkspaceLocation(hash, state) {
   const view = Object.keys(VIEW_PATHS).find((key) => VIEW_PATHS[key] === hash) ?? 'catalog'

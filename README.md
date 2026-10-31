@@ -26,6 +26,7 @@ di aggiornamento è descritta in [docs/regulations.md](docs/regulations.md).
 - Pulsanti `M`/`m` su card e modale per cambiare forma con la megapietra corretta, comprese le Mega Z, mantenendo la configurazione.
 - Modale `i` con copertura in entrambe le direzioni e deduzioni per il singolo Pokémon; riepilogo dei matchup delle due squadre.
 - Viste dedicate Catalogo, Il mio team e Damage calculator, con navigazione avanti/indietro.
+- Sezione Competitivo con classifica e dettagli del metagame Showdown Champions Doubles, fonte, periodo e soglia espliciti; statistiche locali distinte dalla ranked nativa e dai tornei.
 - Passaggio dal team al calcolatore con attaccante, avversario e quattro mosse per ciascuno già impostati e ritorno contestuale al team.
 - Tab Confronta per vedere due card Pokemon complete affiancate.
 - Damage calculator Champions con selezione attacker/defender, mosse, item, abilita, nature, SP, boost e condizioni di campo.
@@ -75,6 +76,12 @@ Per rigenerare le immagini: `npm run assets:pokemon`. Per le versioni responsive
 Dettagli in [docs/pokemon-loading-rework.md](docs/pokemon-loading-rework.md), [docs/team-mega-evolutions.md](docs/team-mega-evolutions.md) e [docs/background-assets.md](docs/background-assets.md).
 
 ## Pubblicazione
+
+Le statistiche competitive hanno una pipeline separata dalle meccaniche della
+regulation. Importazione esplicita, schema, percentuali, SP, condizioni delle fonti
+e verifiche in [docs/competitive-stats.md](docs/competitive-stats.md) e
+[docs/competitive-data-sources.md](docs/competitive-data-sources.md).
+`npm run competitive:check` valida gli snapshot senza rete ed è incluso in build e verify.
 
 Il push su `main` avvia `.github/workflows/pages.yml`: installazione riproducibile con `npm ci`, lint, test, build e pubblicazione su GitHub Pages. Il deploy procede solo se tutti i controlli hanno successo.
 

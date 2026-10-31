@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 1,
+  "snapshots": [
+    {
+      "id": "2026-09-gen9championsvgc2026regmc-1760",
+      "provider": "smogon",
+      "regulationId": "mc",
+      "regulationLabel": "M-C",
+      "format": "gen9championsvgc2026regmc",
+      "formatLabel": "[Gen 9 Champions] VGC 2026 Reg M-C",
+      "battleStyle": "doubles",
+      "statSystem": "champions-sp",
+      "period": "2026-09",
+      "cutoff": 1760,
+      "sourceUrl": "https://www.smogon.com/stats/2026-09/chaos/gen9championsvgc2026regmc-1760.json",
+      "sourceHash": "923a9744a1210a9957313ee505e0735e5f0437746bd4e6e030f8b6f9113ed000",
+      "mechanicsReference": "1636bf6d0848fb3c9330576963a647d4e179d278",
+      "importedAt": "2026-10-31T11:51:09.631Z",
+      "file": "2026-09-gen9championsvgc2026regmc-1760-f57e804e29e3.json",
+      "pokemonCount": 277,
+      "battles": 1631943
+    }
+  ]
+}

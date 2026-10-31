@@ -1,0 +1,112 @@
+.competitive-workspace { display: grid; gap: 20px; min-width: 0; }
+.competitive-intro { display: flex; align-items: center; justify-content: space-between; gap: 24px; padding: 28px; border-radius: 24px; background: #183c2e; color: #fffdf2; }
+.competitive-intro h2 { margin: 5px 0 12px; font-size: clamp(24px, 3vw, 36px); letter-spacing: -0.04em; }
+.competitive-intro p { max-width: 720px; margin: 0; font-size: 13px; line-height: 1.65; color: #d4e5d7; }
+.competitive-intro .competitive-kicker { color: #f5d894; font-size: 11px; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; }
+.competitive-source-badge { flex-shrink: 0; padding: 10px 14px; border: 1px solid #5d826a; border-radius: 999px; color: #e1eedb; font-size: 11px; font-weight: 800; }
+.competitive-context, .competitive-method { margin: 0; color: var(--muted); font-size: 12px; line-height: 1.7; }
+.competitive-context { padding: 12px 16px; border-left: 3px solid #ca8a27; border-radius: 0 10px 10px 0; background: #fff8e7; color: #775119; }
+.competitive-method { padding: 12px 16px; border: 1px solid var(--border); border-radius: 12px; background: rgba(253, 254, 248, 0.97); }
+.competitive-filters { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 18px; }
+.competitive-filters label { display: grid; min-width: 0; gap: 8px; color: var(--text); font-size: 12px; font-weight: 800; }
+.competitive-filters select, .competitive-filters input { box-sizing: border-box; width: 100%; min-width: 0; min-height: 46px; padding: 10px 12px; border: 1px solid var(--border); border-radius: 12px; background: #fdfff9; color: var(--text); font: inherit; }
+.competitive-filters :is(input, select):focus-visible, .competitive-workspace button:focus-visible, .competitive-workspace a:focus-visible { outline: 3px solid #b97612; outline-offset: 3px; }
+.competitive-metadata { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin: 0; }
+.competitive-metadata > div { min-width: 0; padding: 16px; border: 1px solid var(--border); border-radius: 14px; background: #f3f7ed; }
+.competitive-metadata dt { margin-bottom: 8px; color: var(--muted); font-size: 11px; line-height: 1.5; }
+.competitive-metadata dd { margin: 0; color: var(--text); font-size: 18px; font-weight: 900; overflow-wrap: anywhere; }
+.competitive-layout { display: grid; grid-template-columns: minmax(330px, 0.85fr) minmax(0, 1.4fr); align-items: start; gap: 22px; }
+.competitive-ranking, .competitive-detail, .competitive-attributions, .competitive-empty { box-sizing: border-box; min-width: 0; border: 1px solid var(--border); border-radius: 22px; background: rgba(253, 254, 248, 0.97); box-shadow: 0 12px 32px rgba(20, 55, 35, 0.08); }
+.competitive-ranking { position: sticky; top: 20px; overflow: hidden; }
+.competitive-section-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 20px 18px 14px; }
+.competitive-section-heading h3 { margin: 0; font-size: 17px; letter-spacing: -0.03em; }
+.competitive-section-heading > span { flex-shrink: 0; color: var(--muted); font-size: 11px; font-weight: 800; }
+.competitive-ranking-labels { display: flex; justify-content: space-between; margin: 0 18px; padding-bottom: 10px; color: var(--muted); font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.08em; }
+.competitive-ranking-list { max-height: min(800px, 68dvh); overflow-y: auto; scrollbar-gutter: stable; padding: 3px 6px; }
+.competitive-ranking-row { display: grid; grid-template-columns: 25px 44px minmax(0, 1fr) auto; align-items: center; gap: 8px; box-sizing: border-box; width: 100%; min-height: 78px; margin: 3px 0; padding: 10px 9px; border: 1px solid transparent; border-radius: 12px; background: transparent; color: var(--text); text-align: left; font: inherit; cursor: pointer; }
+.competitive-ranking-row:hover { background: #f0f4e9; }
+.competitive-ranking-row[aria-pressed="true"] { border-color: #70946a; background: #eaf2e0; }
+.competitive-ranking-row img { width: 44px; height: 44px; object-fit: contain; }
+.competitive-rank { color: #71806e; font-size: 11px; font-weight: 800; }
+.competitive-ranking-name { display: grid; gap: 6px; min-width: 0; }
+.competitive-ranking-name > strong { font-size: 12px; line-height: 1.35; overflow-wrap: anywhere; }
+.competitive-ranking-name > small { color: var(--muted); font-size: 10px; line-height: 1.5; overflow-wrap: anywhere; }
+.competitive-usage { font-size: 13px; white-space: nowrap; }
+.competitive-ranking-note, .competitive-no-results { margin: 0; padding: 14px 18px; color: var(--muted); font-size: 10px; line-height: 1.65; }
+.competitive-ranking-note { border-top: 1px solid var(--border); }
+@media (min-width: 901px) {
+  .competitive-ranking {
+    position: static;
+    align-self: stretch;
+    contain: size;
+    min-height: 0;
+    display: grid;
+    grid-template-rows: auto auto minmax(0, 1fr) auto;
+  }
+  .competitive-ranking-list { min-height: 0; max-height: none; }
+}
+.competitive-detail { padding: 22px; scroll-margin-top: 16px; }
+.competitive-detail-heading { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px; margin-bottom: 18px; color: #45613e; font-size: 11px; font-weight: 800; }
+.competitive-profile { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; gap: 18px; padding-bottom: 18px; border-bottom: 1px solid var(--border); }
+.competitive-profile > * { min-width: 0; }
+.competitive-profile .pokemon-heading { grid-template-columns: minmax(0, 1fr); gap: 8px; }
+.competitive-profile .pokemon-heading h2 { font-size: 25px; line-height: 1.2; overflow-wrap: anywhere; }
+.competitive-profile .pokemon-heading img { width: 112px; height: 112px; justify-self: center; }
+.competitive-profile .type-badge, .competitive-profile .weakness-chip, .competitive-profile .resistance-chip { padding: 5px 8px; font-size: 9px; }
+.competitive-profile .stat-row { grid-template-columns: 28px minmax(0, 1fr) 25px; gap: 7px; font-size: 11px; }
+.competitive-profile .section-title { font-size: 10px; }
+.competitive-profile .weakness-block { display: grid; gap: 10px; }
+.competitive-detail-note { margin: 14px 0; color: var(--muted); font-size: 11px; line-height: 1.7; }
+.competitive-distributions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; margin: 20px 0; }
+.competitive-distribution { min-width: 0; padding: 16px; border: 1px solid var(--border); border-radius: 14px; background: #fffefa; }
+.competitive-distribution h3 { margin: 0 0 15px; font-size: 14px; letter-spacing: -0.02em; }
+.competitive-distribution > p { color: var(--muted); font-size: 11px; line-height: 1.65; }
+.competitive-distribution ol { display: grid; gap: 14px; margin: 0; padding: 0; list-style: none; }
+.competitive-distribution-value { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; font-size: 11px; line-height: 1.5; }
+.competitive-distribution-value > :first-child { min-width: 0; overflow-wrap: anywhere; }
+.competitive-distribution-value > strong:last-child { flex-shrink: 0; }
+.competitive-distribution-value button { padding: 0; border: 0; background: none; color: #24543d; text-align: left; text-decoration: underline; text-underline-offset: 3px; font: inherit; cursor: pointer; }
+.competitive-share-track { height: 4px; margin-top: 6px; border-radius: 4px; background: #e9eddf; overflow: hidden; }
+.competitive-share-track > span { display: block; height: 100%; border-radius: inherit; background: #70946a; }
+.competitive-expand { margin-top: 16px; padding: 6px 0; border: 0; background: none; color: #24543d; text-align: left; font: inherit; font-size: 11px; font-weight: 800; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+.competitive-distribution .competitive-truncation { margin: 10px 0 0; font-size: 10px; }
+.competitive-spread { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 3px; margin: 8px 0 0; }
+.competitive-spread > div { min-width: 0; padding: 5px 2px; border-radius: 5px; background: #f0f3e8; text-align: center; }
+.competitive-spread dt { color: var(--muted); font-size: 9px; }
+.competitive-spread dd { margin: 3px 0 0; font-size: 11px; font-weight: 800; }
+.competitive-original { color: #24543d; font-size: 11px; font-weight: 800; }
+.competitive-attributions, .competitive-empty { padding: 24px; }
+.competitive-attributions h2 { margin: 0 0 14px; font-size: 19px; }
+.competitive-attributions p, .competitive-attributions dl { margin: 10px 0 0; color: var(--muted); font-size: 11px; line-height: 1.8; }
+.competitive-attributions dl > div { margin-top: 12px; }
+.competitive-attributions dt { color: var(--text); font-weight: 800; }
+.competitive-attributions dd { margin: 3px 0 0; }
+.competitive-attributions a { color: #24543d; }
+.competitive-empty h3 { margin-top: 0; }
+.competitive-empty p { color: var(--muted); font-size: 13px; line-height: 1.7; }
+@media (max-width: 1100px) {
+  .competitive-layout { grid-template-columns: minmax(300px, 0.8fr) minmax(0, 1fr); gap: 16px; }
+  .competitive-distributions { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 900px) {
+  .competitive-intro { align-items: flex-start; flex-direction: column; }
+  .competitive-layout { grid-template-columns: minmax(0, 1fr); }
+  .competitive-ranking { position: static; }
+  .competitive-ranking-list { max-height: 48dvh; }
+  .competitive-distributions { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .competitive-metadata { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 560px) {
+  .competitive-intro, .competitive-detail, .competitive-attributions, .competitive-empty { padding: 18px; }
+  .competitive-filters, .competitive-distributions { grid-template-columns: minmax(0, 1fr); }
+  .competitive-source-badge { font-size: 10px; padding: 8px 10px; }
+  .competitive-profile { grid-template-columns: minmax(0, 1fr); }
+  .competitive-profile .pokemon-heading { grid-template-columns: minmax(0, 1fr) 88px; }
+  .competitive-profile .pokemon-heading h2 { font-size: 22px; }
+  .competitive-profile .pokemon-heading img { width: 88px; height: 88px; }
+  .competitive-ranking-row { grid-template-columns: 22px 38px minmax(0, 1fr) auto; gap: 5px; padding: 9px 5px; }
+  .competitive-ranking-row img { width: 38px; height: 38px; }
+  .competitive-usage { font-size: 12px; }
+  .competitive-ranking-list { scrollbar-gutter: auto; }
+  .competitive-metadata dd { font-size: 15px; }
+}

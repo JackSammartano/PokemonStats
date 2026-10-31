@@ -5,6 +5,13 @@ attiva e le fonti fissate per ogni regulation supportata. `src/lib/regulation.js
 espone lo snapshot attivo a catalogo, team, import Showdown, Mega e calcolatore.
 Gli snapshot storici non sono inclusi nel bundle se non vengono importati.
 
+Le osservazioni del metagame hanno una pipeline distinta: vedere
+[competitive-stats.md](competitive-stats.md). Un cambio regulation non riutilizza
+automaticamente le statistiche di quella precedente: la vista Competitivo mostra
+esplicitamente l'assenza di uno snapshot compatibile finché non viene importato.
+Il controllo offline dei dati competitivi è incluso in `build` e non richiede
+l'accesso a Smogon durante un aggiornamento delle meccaniche.
+
 ## Aggiornamento ordinario
 
 Prerequisiti: Node.js 24, dipendenze installate con `npm ci`, working tree controllato

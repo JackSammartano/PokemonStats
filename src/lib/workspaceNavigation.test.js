@@ -4,6 +4,7 @@ import { readWorkspaceLocation } from './workspaceNavigation.js'
 
 test('workspace routes support direct links and fall back to the catalog', () => {
   assert.deepEqual(readWorkspaceLocation('#/team'), { view: 'team', fromTeam: false })
+  assert.deepEqual(readWorkspaceLocation('#/competitivo'), { view: 'competitive', fromTeam: false })
   assert.deepEqual(readWorkspaceLocation('#/damage-calculator'), { view: 'damage', fromTeam: false })
   assert.deepEqual(readWorkspaceLocation('#/unknown'), { view: 'catalog', fromTeam: false })
 })
@@ -13,5 +14,6 @@ test('the return-to-team action is contextual to the calculator history entry', 
   assert.equal(readWorkspaceLocation('#/damage-calculator', state).fromTeam, true)
   assert.equal(readWorkspaceLocation('#/catalogo', state).fromTeam, false)
   assert.equal(readWorkspaceLocation('#/team', state).fromTeam, false)
+  assert.equal(readWorkspaceLocation('#/competitivo', state).fromTeam, false)
   assert.equal(readWorkspaceLocation('#/damage-calculator', { fromTeam: true }).fromTeam, false)
 })
