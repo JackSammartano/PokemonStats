@@ -3,8 +3,8 @@
 Verifica iniziale: 31 ottobre 2026. Lo studio distingue documentazione, risposte
 campionate e autorizzazioni di riuso. Una risposta HTTP 200 non è una licenza.
 La sezione corrente separa gli aggregati della ladder Smogon / Pokémon Showdown
-dalla ranked nativa consultata tramite Champions Battle Data. Le altre fonti
-restano oggetto dello studio, senza codice di integrazione attivo.
+dalla ranked nativa consultata tramite Champions Battle Data e dai tornei Limitless.
+Le altre fonti restano oggetto dello studio, senza codice di integrazione attivo.
 
 ## Fonte integrata: Smogon / Pokémon Showdown
 
@@ -78,12 +78,12 @@ Data di generazione della classifica, eventuale data dei dettagli e momento di
 consultazione sono distinti. L'assenza della data nei dettagli Current è dichiarata.
 Non si equiparano automaticamente stagioni M7 e regulation M-C.
 
-## Altre fonti studiate
+## Tornei integrati e altre fonti studiate
 
 | Provider | Verifiche del 31 ottobre 2026 | Riuso e decisione |
 | --- | --- | --- |
 | [PokéKit](https://poke.itlibra.com/it/opendata) | GET `usage-champions.json`: settembre 2026, Doubles M-C, soglia 1760, 150 Pokémon. Link reali anche per championssingles, ou, doublesou e vgc. | Open data riutilizzabili e ridistribuibili anche commercialmente con credits a PokéKit e Smogon/Showdown; confermato dall'eccezione open data nei [termini](https://poke.itlibra.com/en/terms). Alternativa più semplice, ma troncata. |
-| [Limitless](https://docs.limitlesstcg.com/developer) | GET games, lista VGC e details/standings/pairings del torneo `6adfbd7122fd412b92a4d932`. Formato M-C, piattaforma SWITCH; team pubblici con strumenti/abilità/nature/mosse, alcuni placing null. | Endpoint pubblici senza chiave. Header osservato `50-in-5min`, da rileggere a ogni esecuzione. Prima di archiviazione e ridistribuzione approfondire le condizioni commerciali e dei dati dei partecipanti. |
+| [Limitless](https://docs.limitlesstcg.com/developer) | GET games, pagine 1 e 2 VGC M-C; details/standings dei tornei `6adfbd7122fd412b92a4d932` e `6acf1e8a8a8383117e3eb877`. Piattaforma SWITCH; team pubblici con strumenti/abilità/nature/mosse, alcuni placing null. | Integrato su consultazione, senza chiave. Header osservato `50-in-5min`, da rileggere a ogni esecuzione; limiti non garantiti. Nessuna licenza generale di redistribuzione individuata nei [termini](https://play.limitlesstcg.com/tos): nessun archivio permanente o bulk export. |
 | [MunchStats](https://github.com/PizzaTimeJoshua/munchstats) | Route statistiche M-C/Rillaboom, pokemon-teams, Limitless M-C teams e teams `champions-mc` rispondono sul dominio munchstats.com, con redirect a www.munchstats.com. | Nessuna licenza generale trovata nella root; metadato GitHub `license: null`. Destinazione a terzi, permessi di redistribuzione e limiti non chiariti: nessun riuso di codice o dati in questa fase. |
 | [VGC History](https://vgchistory.com/data) | GET statistiche Garchomp, Miracle Seed, Protect, Grace Beck; standings/sheets/matches NAIC 2026, sitemap e data.js. | Riuso incoraggiato, caching richiesto per ridurre traffico, credits con link suggeriti. Nessuna licenza standard o clausola commerciale specifica individuata. Catalogo eventi e condizioni da approfondire prima dell'integrazione. |
 
@@ -104,6 +104,52 @@ Limitless espone tornei ospitati sulla piattaforma, non necessariamente eventi
 ufficiali. Distinguere SWITCH e SIM. I pairing possono includere game-by-game
 results nel campione verificato: non attribuire questa disponibilità a VGC History.
 Un team incompleto non deve essere completato con le scelte più frequenti.
+
+### Limitless: perimetro dell’integrazione
+
+Verifica del 31 ottobre 2026: [documentazione dei tornei](https://docs.limitlesstcg.com/developer/tournaments),
+[condizioni](https://play.limitlesstcg.com/tos) e [privacy](https://play.limitlesstcg.com/privacy).
+La documentazione presenta l’API per progetti terzi; games e gli endpoint tornei
+impiegati non richiedono una chiave. Access-Control-Allow-Origin consente
+l’accesso dal frontend, verificato sulla build nel browser. L’assenza di
+Access-Control-Expose-Headers può impedire la lettura di RateLimit e Retry-After;
+il client applica anche un budget locale e pause conservative, senza retry automatici.
+
+Richieste effettive: `/api/games`,
+`/api/tournaments?game=VGC&format=M-C&limit=20&page=1`, pagina successiva,
+`/api/tournaments/{id}/details` e `/standings`. La scheda non usa `/pairings`.
+Campi usati: ID, nome, data, formato, partecipanti, organizzatore, piattaforma,
+visibilità, fasi, nome/ID giocatore, placing, record, drop e decklist con
+id/name/item/ability/attacks/nature/tera quando presenti. Nessun EV/SP osservato
+nei team sheet campionati. Assenza, parzialità e nomi non riconciliati sono mantenuti.
+
+Controllo aggiuntivo del 31 ottobre 2026: sei tornei, 1.290 presenze nei team,
+14 varianti non collegate dal primo validatore. Tredici hanno un ID che coincide
+con il roster dopo normalizzazione: Eternal Flower Floette, Indeedee ♀,
+Basculegion ♀, Meowstic ♀, Alolan Ninetales, Hisuian Arcanine/Decidueye/Samurott/
+Zoroark/Typhlosion, Paldean Tauros Aqua Breed, Wash Rotom e Heat Rotom.
+L’integrazione usa questi ID e conserva i nomi originali; senza ID usa solo nomi
+del catalogo o alias verificati e univoci. Un conflitto tra forme resta segnalato.
+Il caso `floette` / Floette non ha destinazione nel roster attivo: non viene
+sostituito con Floette Eternal, neppure quando porta una megapietra.
+
+[Battle Cruise VGC](https://play.limitlesstcg.com/tournament/6ad8ee598a8383117e3f0bb4)
+restituisce `platform: null`, `isOnline: false`, fasi valide e 59 giocatori con team.
+Il [Side](https://play.limitlesstcg.com/tournament/6ad8fcc5115c12b73a5a90ed)
+omette invece `platform`. Il validatore iniziale bloccava entrambi prima di leggere
+gli standings; ora accetta questi metadati mancanti senza inventare la piattaforma.
+La validazione delle fasi e dei valori non nulli resta attiva.
+
+Attribuzione visibile «Dati dei tornei: Limitless» collegata a
+<https://play.limitlesstcg.com>, insieme al link del torneo selezionato. Informazioni
+espandibili riportano documentazione, condizioni e data della verifica.
+Non è stata individuata una formula di attribuzione obbligatoria o una licenza
+generale per dati commerciali: questi credits sono una scelta di trasparenza,
+non una dichiarazione di autorizzazione alla redistribuzione. I termini distinguono
+i diritti degli autori dei contenuti; il client conserva solo cache temporanea
+in memoria, massimo due minuti, senza archivio, API mirror o export di team.
+Un uso commerciale con archiviazione o redistribuzione richiede una verifica
+aggiuntiva dei diritti. Nessun contatto al gestore è stato inviato.
 
 VGC History documenta piazzamenti `[first,last]`, `movedTo`, `retired`, ritiri e
 classifiche Swiss o parziali: non convertire questi casi in piazzamenti esatti.

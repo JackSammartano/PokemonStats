@@ -1,11 +1,73 @@
 # Sezione Competitivo
 
-La vista `#/competitivo` separa due fonti selezionabili: statistiche mensili
-Showdown Champions Doubles e ranked nativa tramite Champions Battle Data.
+La vista `#/competitivo` separa tre fonti selezionabili: statistiche mensili
+Showdown Champions Doubles, ranked nativa tramite Champions Battle Data e tornei
+ospitati su Limitless.
 La versione Showdown usa settembre 2026, Regulation M-C, soglia Smogon 1760.
-Le due viste non contengono team individuali, archetipi, win rate o trend e non
+Le due viste statistiche non contengono team individuali, archetipi, win rate o trend e non
 mescolano le osservazioni dei provider. Le [fonti e condizioni](competitive-data-sources.md)
 descrivono le integrazioni e le alternative studiate.
+
+## Tornei Limitless
+
+`TournamentExplorer.jsx` viene caricato solo scegliendo **Tornei**. Il client
+`src/lib/competitive/limitless.js` legge `/games`, cerca un ID esattamente uguale
+alla label della regulation Champions attiva e carica una pagina di 20 tornei
+VGC del formato. Non sostituisce un formato assente con uno precedente o simile.
+La ricerca dell’elenco riguarda la pagina corrente; la pagina successiva viene
+richiesta esplicitamente. Una pagina piena abilita Successiva, senza inventare
+un conteggio totale; l’eventuale pagina vuota permette di tornare indietro.
+
+Solo la scelta di un evento avvia `/details` e, dopo la verifica di identità,
+formato e visibilità pubblica, `/standings`. Nessuna richiesta a pairing, profili
+o fonti secondarie. L’evento mostra piattaforma Switch/simulatore, organizzatore,
+data UTC, partecipanti dichiarati, fasi e link originale. Gli eventi sulla
+piattaforma non sono presentati come ufficiali o come classifiche finali certificate.
+
+La ricerca nel torneo considera giocatore e specie dei team sheet caricati.
+I dettagli di ogni giocatore mostrano il piazzamento pubblicato (o assente),
+record vittorie/sconfitte/pareggi, ritiro e i membri disponibili. Il numero di team
+è un conteggio dei fogli presenti fra i giocatori elencati, non una usage rate.
+Team parziali, record e nature assenti restano espliciti; nessuno spread viene
+ricostruito. Una megapietra non trasforma la specie pubblicata in una Mega.
+L’ID della fonte viene normalizzato e cercato esattamente nel roster attivo.
+Il nome visualizzato può differire, ad esempio Eternal Flower Floette corrisponde
+a `floette-eternal`, collegato a `floetteeternal` / Floette Eternal nel catalogo.
+I nomi del catalogo e gli alias Limitless verificati controllano eventuali
+conflitti: se ID e nome identificano due forme diverse, nessuna immagine viene
+assegnata. Senza ID è ammesso un nome esatto o un alias verificato e univoco;
+un ID sconosciuto non viene invece sostituito usando il nome. La normalizzazione
+dei nomi conserva il genere, traducendo ♀/♂ in f/m prima del confronto.
+Forme sconosciute mantengono testo originale e placeholder, compreso `floette`
+senza la forma Eternal. La ricerca include anche il nome del catalogo collegato;
+il nome originale resta nel dato normalizzato e nel titolo della voce.
+Tooltip e tipi delle mosse vengono dal dataset locale della regulation attiva.
+
+Il client centralizza timeout di 15 secondi, annullamento al cambio fonte/pagina/
+selezione, validazione e cache in memoria di massimo 16 risposte per due minuti
+(o meno se richiesto da Cache-Control). Nessuna persistenza o fallback scaduto.
+Non esegue retry automatici. Legge RateLimit e Retry-After quando accessibili;
+HTTP 429/503 impone la pausa indicata oppure cinque minuti. Un budget locale
+conservativo di 40 richieste in cinque minuti per scheda browser opera anche
+quando CORS nasconde gli header; non rappresenta una garanzia dei limiti del
+fornitore. Credenziali omesse, cache HTTP disabilitata. I dati validi già in memoria
+restano consultabili durante una pausa. Le ricerche locali non generano richieste.
+
+Manutenzione: a ogni cambio regulation verificare il registro `/games`, un evento
+reale e la compatibilità di dettagli e team sheet. Nessun ID torneo è fissato nel
+codice. Cambi schema producono un errore esplicito senza salvare la risposta.
+Gli alias di `createLimitlessPokemonResolver` vengono attivati solo quando la
+destinazione è nel roster fornito: non aggiungono specie o forme alla regulation.
+Nuovi alias richiedono osservazione della fonte, verifica del target e test;
+nessun confronto approssimativo o deduzione da strumenti, abilità o mosse.
+La piattaforma è facoltativa: `null` o campo omesso diventa «Piattaforma non
+indicata», mantenendo Online/In presenza come pubblicato. Non viene dedotta
+Switch dal formato. Una piattaforma di tipo errato o fasi non valide restano errori
+distinti e bloccanti. Battle Cruise VGC e il Side hanno evidenziato questo caso.
+L’API non è una verifica di legalità dei team; eventuali regole personalizzate
+pubblicate rimandano all’evento originale. I diritti di archivio permanente e
+ridistribuzione richiedono un chiarimento prima di estendere questa integrazione.
+Il trasferimento di mosse/spread alle due squadre resta un incremento successivo.
 
 ## Architettura e aggiornamento
 
@@ -281,3 +343,30 @@ overlay non tagliato, passaggio del puntatore sul tooltip, un solo overlay apert
 focus/ARIA/Escape, chiusura con scroll, tocco, secondo tocco e tocco esterno a 390
 e 320 px. La ranked usa fixture sintetiche per verificare nomi e descrizioni
 assenti senza traffico al provider.
+
+Tornei Limitless: `npm run verify` superato con 286 test, inclusi 14 nuovi casi
+offline su registro/formati, paginazione, validazione, team parziali, identità,
+piazzamenti assenti, cache e scadenza, abort, budget e Retry-After. Nessun dataset
+reale dei partecipanti è conservato come fixture. Il client è stato verificato
+su registro, prima pagina e un evento reale con 45 giocatori e 45 team pubblicati.
+Sulla build Edge ha confermato CORS e quattro richieste complessive, con dettagli
+solo dopo selezione. Ulteriori prove con risposte sintetiche: ricerche senza
+richieste, ritorno con cache, pagina vuota, selezioni rapide e risposta ritardata
+annullata, evento privato senza richiesta di standings, HTTP 503 e pausa prima
+della riprova, tooltip da tastiera, badge tipo, dati mancanti e forme sconosciute.
+Controllati pannelli desktop della stessa altezza e assenza di overflow a 1440,
+1024, 768, 390 e 320 px, senza eccezioni JavaScript. Condizioni commerciali di
+archiviazione/redistribuzione non certificate: resta il perimetro di consultazione
+con cache temporanea descritto sopra.
+
+Correzione identità/piattaforma: `npm run verify` superato con 292 test, inclusi
+sei nuovi casi su tutte le 13 varianti osservate, fallback del nome senza ID,
+conflitti, roster differente, Floette ambiguo, piattaforma assente e fasi errate.
+Browser sulla build: registro e dettagli/standings reali di Battle Cruise VGC
+(59 giocatori) e Side (33), con solo l’elenco di scoperta fissato ai due eventi
+per evitare ulteriori richieste di paginazione. Verificati nome e immagine locale
+di Floette Eternal, ricerca con il nome del catalogo, Floette ordinario mantenuto
+senza associazione, piattaforma non indicata e In presenza, senza errori JavaScript
+o overflow a 1440, 390 e 320 px. Ripetute con payload sintetici anche le verifiche
+di paginazione, cache, ricerche, selezioni rapide, tooltip e gestione errori
+dell’incremento Tornei. Nessun team reale aggiunto al repository.

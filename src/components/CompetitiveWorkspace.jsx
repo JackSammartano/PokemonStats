@@ -18,21 +18,26 @@ const moveTypeFor = createCompetitiveMoveTypes(REGULATION_MOVES)
 const numbers = new Intl.NumberFormat('it-IT')
 const STAT_LABELS = ['HP', 'Atk', 'Def', 'SpA', 'SpD', 'Spe']
 const NativeRankings = lazy(() => import('./NativeRankings'))
+const TournamentExplorer = lazy(() => import('./TournamentExplorer'))
 
 export default function CompetitiveWorkspace() {
   const [source, setSource] = useState('showdown')
   const [nativeOpened, setNativeOpened] = useState(false)
+  const [tournamentsOpened, setTournamentsOpened] = useState(false)
   function changeSource(next) {
     setSource(next)
     if (next === 'native') setNativeOpened(true)
+    if (next === 'tournaments') setTournamentsOpened(true)
   }
   return <section className="competitive-workspace" aria-label="Statistiche competitive">
     <nav className="competitive-source-nav" aria-label="Fonte delle statistiche">
       <button type="button" aria-pressed={source === 'showdown'} onClick={() => changeSource('showdown')}>Showdown</button>
       <button type="button" aria-pressed={source === 'native'} onClick={() => changeSource('native')}>Ranked Champions</button>
+      <button type="button" aria-pressed={source === 'tournaments'} onClick={() => changeSource('tournaments')}>Tornei</button>
     </nav>
     <div hidden={source !== 'showdown'}><ShowdownRankings /></div>
     {nativeOpened && <div hidden={source !== 'native'}><Suspense fallback={<p role="status">Apertura ranked Champions…</p>}><NativeRankings active={source === 'native'} /></Suspense></div>}
+    {tournamentsOpened && <div hidden={source !== 'tournaments'}><Suspense fallback={<p role="status">Apertura tornei…</p>}><TournamentExplorer active={source === 'tournaments'} /></Suspense></div>}
   </section>
 }
 

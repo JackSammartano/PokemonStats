@@ -28,6 +28,7 @@ di aggiornamento è descritta in [docs/regulations.md](docs/regulations.md).
 - Viste dedicate Catalogo, Il mio team e Damage calculator, con navigazione avanti/indietro.
 - Sezione Competitivo con classifica e dettagli del metagame Showdown Champions Doubles, fonte, periodo e soglia espliciti; statistiche locali distinte dalla ranked nativa e dai tornei.
 - Vista Ranked Champions separata, con stagioni e dettagli letti da Champions Battle Data su consultazione, cache temporanea e attribuzione.
+- Vista Tornei con elenco Limitless paginato della regulation attiva, classifica e team sheet pubblicati, dettagli su richiesta e collegamento all’evento originale.
 - Tooltip di mosse, strumenti, abilità e nature nei dettagli competitivi, disponibili con mouse, tastiera e tocco, da descrizioni locali della regulation.
 - Passaggio dal team al calcolatore con attaccante, avversario e quattro mosse per ciascuno già impostati e ritorno contestuale al team.
 - Tab Confronta per vedere due card Pokemon complete affiancate.
@@ -36,7 +37,7 @@ di aggiornamento è descritta in [docs/regulations.md](docs/regulations.md).
 - Danno mostrato in percentuale e tabella Velocità con scenari per i soli due Pokémon selezionati.
 - Mosse di stato, abilità e oggetti importati conservati anche quando il motore danni non ne implementa gli effetti.
 - Optimizer `Find KO` / `Find Survival` con ranking `Minimum investment` o `Practical build`.
-- Dati Pokémon, calcoli, statistiche Showdown e immagini sono locali; la ranked nativa contatta la propria fonte solo dopo l'apertura esplicita. Nessuna richiesta API esterna all'avvio.
+- Dati Pokémon, calcoli, statistiche Showdown e immagini sono locali; ranked nativa e tornei contattano le proprie fonti solo dopo l'apertura esplicita. Nessuna richiesta API esterna all'avvio.
 - Corrispondenze esplicite per le forme, senza sostituire una Mega mancante con un'altra.
 
 ## Comandi
