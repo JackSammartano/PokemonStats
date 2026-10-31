@@ -5,6 +5,7 @@ import { POKEMON_DATASET } from '../lib/pokemonDataset.js'
 import { REGULATION, REGULATION_MOVES } from '../lib/regulation.js'
 import PokemonImage from './PokemonImage'
 import CompetitiveTooltip from './CompetitiveTooltip'
+import { createTournamentTransfer } from '../lib/tournamentTransfer.js'
 import './TournamentExplorer.css'
 
 const client = createLimitlessClient()
@@ -32,7 +33,7 @@ function useProviderResult(active, key, load, retry) {
 // Stable loaders keep rendering and filtering independent from provider requests.
 const loadGames = (signal) => client.games({ signal })
 
-export default function TournamentExplorer({ active }) {
+export default function TournamentExplorer({ active, onRequestTeamTransfer }) {
   const [page, setPage] = useState(1)
   const [query, setQuery] = useState('')
   const [playerQuery, setPlayerQuery] = useState('')
@@ -78,22 +79,22 @@ export default function TournamentExplorer({ active }) {
           {(event.details.specialRules.length > 0 || event.details.hasCustomBans) && <p className="competitive-detail-note">Regole aggiuntive pubblicate: consulta il torneo originale. {event.details.specialRules.join(' · ')}</p>}
           <div className="tournament-standings-heading"><h4>Classifica pubblicata</h4><span>{event.standings.filter((row) => row.team?.length).length} team / {event.standings.length} giocatori elencati</span></div>
           <label className="tournament-search"><span>Cerca nel torneo</span><input type="search" value={playerQuery} onChange={(event) => setPlayerQuery(event.target.value)} placeholder="Giocatore o Pokémon" /></label>
-          <div className="tournament-standings">{standings.map((row) => <Standing key={row.id} row={row} />)}{standings.length === 0 && <p>Nessun risultato pubblicato per questa ricerca.</p>}</div>
+          <div className="tournament-standings">{standings.map((row) => <Standing key={row.id} row={row} onExport={() => onRequestTeamTransfer(createTournamentTransfer(event, row))} />)}{standings.length === 0 && <p>Nessun risultato pubblicato per questa ricerca.</p>}</div>
         </>}
       </section>
     </div>}
-    <footer className="competitive-attributions"><p>Dati dei tornei: <a href={LIMITLESS_ORIGIN} target="_blank" rel="noreferrer">Limitless</a>. {event && `Consultati il ${dateLabel(event.retrievedAt)}.`}</p><details className="competitive-data-info"><summary>Fonti dati e attribuzioni</summary><div><p>Consultazione delle API pubbliche Limitless, con cache in memoria fino a due minuti. Nessun archivio permanente o ridistribuzione dei team sheet. I contenuti restano dei rispettivi autori; l’accessibilità pubblica non equivale a una licenza aperta.</p><p><a href="https://docs.limitlesstcg.com/developer/tournaments" target="_blank" rel="noreferrer">Documentazione API</a> · <a href={`${LIMITLESS_ORIGIN}/tos`} target="_blank" rel="noreferrer">Condizioni di utilizzo</a> · Verifica: 31 ottobre 2026.</p></div></details></footer>
+    <footer className="competitive-attributions"><p>Dati dei tornei: <a href={LIMITLESS_ORIGIN} target="_blank" rel="noreferrer">Limitless</a>. {event && `Consultati il ${dateLabel(event.retrievedAt)}.`}</p><details className="competitive-data-info"><summary>Fonti dati e attribuzioni</summary><div><p>Consultazione delle API pubbliche Limitless, con cache in memoria fino a due minuti. Nessun archivio automatico delle risposte API. Le configurazioni caricate dall’utente possono essere salvate localmente in Squadre salvate. I contenuti restano dei rispettivi autori; l’accessibilità pubblica non equivale a una licenza aperta.</p><p><a href="https://docs.limitlesstcg.com/developer/tournaments" target="_blank" rel="noreferrer">Documentazione API</a> · <a href={`${LIMITLESS_ORIGIN}/tos`} target="_blank" rel="noreferrer">Condizioni di utilizzo</a> · Verifica: 31 ottobre 2026.</p></div></details></footer>
   </section>
 }
 
 function ProviderError({ error, retry }) { return <div className="tournament-error" role="alert"><p>{error}</p><button type="button" className="secondary-button" onClick={retry}>Riprova</button></div> }
 function TeamValue({ kind, value }) { return value ? <CompetitiveTooltip kind={kind} value={value}>{value}</CompetitiveTooltip> : <span className="tournament-missing">Non pubblicato</span> }
-function Standing({ row }) {
+function Standing({ row, onExport }) {
   return <details className="tournament-standing"><summary>
     <span className="tournament-place" aria-label={row.placing ? `Piazzamento ${row.placing}` : 'Piazzamento non pubblicato'}>{row.placing ?? '—'}</span>
     <span className="tournament-player"><strong>{row.name}</strong><small aria-label="Record vittorie, sconfitte e pareggi">{['wins', 'losses', 'ties'].map((key) => row.record[key] ?? '—').join(' / ')}{row.drop > 0 ? ' · Ritirato' : ''}</small></span>
     <span className="tournament-team-preview">{row.team?.map((member, index) => <PokemonImage key={index} pokemon={pokemonById.get(member.showdownId) ?? {}} size={36} alt={member.sourceName ?? member.sourceId ?? 'Pokémon non identificato'} />)}{!row.team?.length ? <small>Team non pubblicato</small> : row.team.length < 6 && <small>Team parziale · {row.team.length} Pokémon</small>}</span>
-  </summary><div className="tournament-team">{row.team?.length ? row.team.map((member, index) => <TeamMember key={index} member={member} />) : <p>Il team sheet non è disponibile.</p>}</div></details>
+  </summary><div className="tournament-team">{row.team?.length ? row.team.map((member, index) => <TeamMember key={index} member={member} />) : <p>Il team sheet non è disponibile.</p>}</div><div className="tournament-export"><button className="ghost-button" type="button" disabled={!row.team?.length} onClick={onExport}>Esporta team</button></div></details>
 }
 function TeamMember({ member }) {
   const pokemon = pokemonById.get(member.showdownId)

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { createDamageBuild } from './damage/championsMatchup.js'
 import { moveSetKey } from './damage/championsMoveSets.js'
 import { REGULATION, REGULATION_POKEMON } from './regulation.js'
+import { missingSetFields, resolvedSetFields } from './teamCompleteness.js'
 
 export const LEGACY_TEAM_STORAGE_KEY = 'pokemonstats.team-workspace.v1'
 export const TEAM_STORAGE_KEY = `pokemonstats.team-workspace.v1.${REGULATION.id}`
@@ -14,6 +15,7 @@ export function getWorkspaceBuild(builds, side, name) {
   const build = { ...defaults, ...saved, sps: { ...defaults.sps, ...saved.sps }, boosts: { ...defaults.boosts, ...saved.boosts } }
   delete build.ivs
   delete build.nickname
+  if (saved.missingFields !== undefined) build.missingFields = missingSetFields(saved)
   return build
 }
 
@@ -26,6 +28,7 @@ export function updateWorkspaceBuild(builds, side, name, changes) {
   }
   delete build.ivs
   delete build.nickname
+  if (current.missingFields !== undefined || changes.missingFields !== undefined) build.missingFields = resolvedSetFields(current, changes)
   return { ...builds, [moveSetKey(side, name)]: build }
 }
 

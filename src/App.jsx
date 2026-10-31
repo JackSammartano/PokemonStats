@@ -20,6 +20,9 @@ import { isSavedTeamCompatible, loadSavedTeam, useTeamLibrary } from './lib/team
 import TeamLibrary from './components/TeamLibrary'
 import CompetitiveTransferDialog from './components/CompetitiveTransferDialog'
 import { applyCompetitiveTransfer } from './lib/competitiveTransfer.js'
+import { applyTournamentTransfer } from './lib/tournamentTransfer.js'
+import TournamentTransferDialog from './components/TournamentTransferDialog'
+import { missingSetFields } from './lib/teamCompleteness.js'
 const PokemonCoverageDialog = lazy(() => import('./components/PokemonCoverageDialog'))
 const CompetitiveWorkspace = lazy(() => import('./components/CompetitiveWorkspace'))
 
@@ -70,6 +73,7 @@ function App() {
   const [teamSection, setTeamSection] = useState('planning')
   const [teamNotice, setTeamNotice] = useState(null)
   const [transferRequest, setTransferRequest] = useState(null)
+  const [tournamentTransferRequest, setTournamentTransferRequest] = useState(null)
   const { moveSets, builds } = workspace
   const teamNames = workspace.teams.attacker
   const opponentNames = workspace.teams.defender
@@ -93,6 +97,7 @@ function App() {
   useEffect(() => {
     if (view !== 'team') setLibraryAction(null)
     if (view !== 'competitive') setTransferRequest(null)
+    if (view !== 'competitive') setTournamentTransferRequest(null)
   }, [view])
 
   useEffect(() => {
@@ -174,6 +179,17 @@ function App() {
     navigate('team')
   }
 
+  function handleTournamentTransfer(side, request) {
+    const next = applyTournamentTransfer(workspace, side, request)
+    setWorkspace(next)
+    setTeamDamageDraft((current) => ({ ...current, [side === 'attacker' ? 'attackerName' : 'defenderName']: next.teams[side][0] }))
+    setTournamentTransferRequest(null)
+    setCoverageTarget(null)
+    setTeamSection('planning')
+    setTeamNotice({ text: 'Team caricato. I campi non pubblicati restano da completare in Configura, in particolare gli SP.', error: false })
+    navigate('team')
+  }
+
   const changeBuild = useCallback((side, entry, changes) => {
     if (!entry) return
     setWorkspace((current) => ({ ...current, builds: updateWorkspaceBuild(current.builds, side, entry.displayName, changes) }))
@@ -213,7 +229,12 @@ function App() {
   }
 
   const changeMoveSlot = useCallback((side, entry, slot, moveId) => {
-    setWorkspace((current) => ({ ...current, moveSets: updatePokemonMoveSlot(current.moveSets, side, entry, slot, moveId) }))
+    if (!entry) return
+    setWorkspace((current) => {
+      const build = getWorkspaceBuild(current.builds, side, entry.displayName)
+      return { ...current, moveSets: updatePokemonMoveSlot(current.moveSets, side, entry, slot, moveId),
+        builds: missingSetFields(build).includes('moves') ? updateWorkspaceBuild(current.builds, side, entry.displayName, { missingFields: missingSetFields(build).filter((field) => field !== 'moves') }) : current.builds }
+    })
   }, [setWorkspace])
 
   function openDamageFromTeam() {
@@ -387,8 +408,9 @@ function App() {
         />
 
       </div>
-      <div className="workspace-view" hidden={view !== 'competitive'}>{(competitiveOpened || view === 'competitive') && <Suspense fallback={<p role="status">Apertura statistiche competitive…</p>}><CompetitiveWorkspace onRequestTransfer={setTransferRequest} /></Suspense>}</div>
+      <div className="workspace-view" hidden={view !== 'competitive'}>{(competitiveOpened || view === 'competitive') && <Suspense fallback={<p role="status">Apertura statistiche competitive…</p>}><CompetitiveWorkspace onRequestTransfer={setTransferRequest} onRequestTeamTransfer={setTournamentTransferRequest} /></Suspense>}</div>
       {transferRequest && <CompetitiveTransferDialog request={transferRequest} workspace={workspace} onApply={handleCompetitiveTransfer} onClose={() => setTransferRequest(null)} />}
+      {tournamentTransferRequest && <TournamentTransferDialog request={tournamentTransferRequest} workspace={workspace} onApply={handleTournamentTransfer} onClose={() => setTournamentTransferRequest(null)} />}
       <footer className="site-footer">
         <span>Pokémon Stats · Regulation {REGULATION.label}</span>
         <span>Dati e descrizioni: <a href="https://github.com/smogon/pokemon-showdown" target="_blank" rel="noopener noreferrer">Pokémon Showdown</a> · <a href={`${import.meta.env.BASE_URL}licenses/pokemon-showdown.txt`} target="_blank" rel="noopener noreferrer">Licenza MIT</a></span>

@@ -5,8 +5,10 @@ import { createDamageBuild } from './damage/championsMatchup.js'
 import { getPokemonMoveSlots, moveSetKey } from './damage/championsMoveSets.js'
 import { getTeamMove } from './teamData.js'
 import { getWorkspaceBuild } from './teamWorkspace.js'
+import { missingSetFields, TEAM_SET_FIELDS } from './teamCompleteness.js'
 
 export const TEAM_LIBRARY_KEY = 'pokemonstats.saved-teams.v1'
+export const TEAM_LIBRARY_VERSION = 2
 export const MAX_TEAM_BACKUP_BYTES = 2_000_000
 const stats = ['hp', 'atk', 'def', 'spa', 'spd', 'spe']
 const byName = new Map(REGULATION_ROSTER.map((pokemon) => [pokemon.displayName, pokemon]))
@@ -16,7 +18,7 @@ const string = (value, max = 500) => typeof value === 'string' && value.length <
 const fail = (message) => { throw new Error(message) }
 const date = (value) => string(value, 40) && Number.isFinite(Date.parse(value))
 const token = (value) => string(value, 100) && /^[a-zA-Z0-9_-]+$/.test(value)
-export const emptyTeamLibrary = () => ({ version: 1, teams: [] })
+export const emptyTeamLibrary = () => ({ version: TEAM_LIBRARY_VERSION, teams: [] })
 export const isSavedTeamCompatible = (team) => team.regulation.id === REGULATION.id && team.regulation.format === REGULATION.format && team.regulation.commit === REGULATION.commit && team.regulation.mechanics === REGULATION.mechanics
 
 function validateSavedMoves(moves, pokemonId, compatible) {
@@ -58,19 +60,20 @@ export function validateSavedTeam(team) {
     validateSavedMoves(member.moves, member.pokemonId, isSavedTeamCompatible(team))
     const extraLines = build.extraLines ?? []
     if (!Array.isArray(extraLines) || extraLines.length > 40 || extraLines.some((line) => !string(line, 1000))) fail('Informazioni aggiuntive del salvataggio non valide.')
+    if (build.missingFields !== undefined && (!Array.isArray(build.missingFields) || build.missingFields.some((field) => !TEAM_SET_FIELDS.includes(field)) || new Set(build.missingFields).size !== build.missingFields.length)) fail(`${label}: metadati dei campi da completare non validi.`)
     return { pokemonId: member.pokemonId, build: { level: build.level, gender: build.gender, nature: build.nature,
       item: build.item, itemName: build.itemName, ability: build.ability, abilityName: build.abilityName,
-      sps: Object.fromEntries(stats.map((stat) => [stat, build.sps[stat]])), extraLines: [...extraLines] }, moves: [...member.moves] }
+      sps: Object.fromEntries(stats.map((stat) => [stat, build.sps[stat]])), extraLines: [...extraLines], ...(build.missingFields?.length ? { missingFields: [...build.missingFields] } : {}) }, moves: [...member.moves] }
   })
   return { id: team.id, name: team.name.trim(), createdAt: team.createdAt, updatedAt: team.updatedAt,
     regulation: { id: regulation.id, label: regulation.label, format: regulation.format, commit: regulation.commit, mechanics: regulation.mechanics }, members }
 }
 
 export function validateTeamLibrary(library) {
-  if (!object(library) || library.version !== 1 || !Array.isArray(library.teams) || library.teams.length > 100) fail('Archivio non valido o versione non supportata (massimo 100 squadre).')
+  if (!object(library) || ![1, TEAM_LIBRARY_VERSION].includes(library.version) || !Array.isArray(library.teams) || library.teams.length > 100) fail('Archivio non valido o versione non supportata (massimo 100 squadre).')
   const teams = library.teams.map(validateSavedTeam)
   if (new Set(teams.map((team) => team.id)).size !== teams.length) fail('L’archivio contiene identificativi duplicati.')
-  return { version: 1, teams }
+  return { version: TEAM_LIBRARY_VERSION, teams }
 }
 export function parseTeamLibrary(text) {
   if (!string(text, MAX_TEAM_BACKUP_BYTES) || new TextEncoder().encode(text).length > MAX_TEAM_BACKUP_BYTES) fail('Il backup supera il limite di 2 MB.')
@@ -94,7 +97,7 @@ export function createSavedTeam(workspace, side, name, { id = crypto.randomUUID(
     const moves = rawMoves === undefined ? getPokemonMoveSlots(workspace.moveSets, side, pokemon) : rawMoves
     return { pokemonId: pokemon.showdownId, build: { level: build.level, gender: build.gender, nature: build.nature,
       item: build.item, itemName: build.itemName ?? '', ability: build.ability, abilityName: build.abilityName ?? '',
-      sps: { ...build.sps }, extraLines: [...(build.extraLines ?? [])] }, moves }
+      sps: { ...build.sps }, extraLines: [...(build.extraLines ?? [])], ...(missingSetFields(build).length ? { missingFields: missingSetFields(build) } : {}) }, moves }
   })
   return validateSavedTeam({ id: previous?.id ?? id, name, createdAt: previous?.createdAt ?? now, updatedAt: now, regulation: REGULATION, members })
 }
@@ -104,7 +107,7 @@ export function putSavedTeam(library, team) {
   const teams = [...library.teams]
   if (index === -1) teams.unshift(normalized)
   else teams[index] = normalized
-  return validateTeamLibrary({ version: 1, teams })
+  return validateTeamLibrary({ version: TEAM_LIBRARY_VERSION, teams })
 }
 export function loadSavedTeam(workspace, side, saved) {
   if (!['attacker', 'defender'].includes(side)) fail('Squadra di destinazione non valida.')

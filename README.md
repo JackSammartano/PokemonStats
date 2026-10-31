@@ -30,8 +30,9 @@ di aggiornamento è descritta in [docs/regulations.md](docs/regulations.md).
 - Sezione Competitivo con classifica e dettagli del metagame Showdown Champions Doubles, fonte, periodo e soglia espliciti; statistiche locali distinte dalla ranked nativa e dai tornei.
 - Vista Ranked Champions separata, con stagioni e dettagli letti da Champions Battle Data su consultazione, cache temporanea e attribuzione.
 - Vista Tornei con elenco Limitless paginato della regulation attiva, classifica e team sheet pubblicati, dettagli su richiesta e collegamento all’evento originale.
+- Esporta team dai partecipanti dei tornei verso una delle due squadre, con anteprima e conferma di sostituzione. I campi non pubblicati restano da completare, anche nelle copie salvate e nei backup.
 - Tooltip di mosse, strumenti, abilità e nature nei dettagli competitivi, disponibili con mouse, tastiera e tocco, da descrizioni locali della regulation.
-- Trasferimento da Showdown di mosse scelte o di uno spread natura/SP verso Mia squadra o Squadra avversaria, con anteprima e conferma.
+- Selezione negli elenchi Showdown e Ranked Champions di fino a quattro mosse, uno strumento, un’abilità, una natura e una distribuzione SP. Pulsante Esporta con scelta della squadra, riepilogo e conferma; i campi non scelti restano invariati.
 - Passaggio dal team al calcolatore con attaccante, avversario e quattro mosse per ciascuno già impostati e ritorno contestuale al team.
 - Tab Confronta per vedere due card Pokemon complete affiancate.
 - Damage calculator Champions con selezione attacker/defender, mosse, item, abilita, nature, SP, boost e condizioni di campo.

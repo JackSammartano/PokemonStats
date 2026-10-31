@@ -21,17 +21,18 @@
 .team-library-dialog p { margin: 0; font-size: 12px; line-height: 1.7; overflow-wrap: anywhere; }
 .team-library-dialog input, .team-library-dialog select { box-sizing: border-box; width: 100%; min-width: 0; padding: 12px; font: inherit; color: var(--text); border: 1px solid var(--border); border-radius: 10px; background: white; }
 .team-library-message { padding: 12px; background: #edf5e7; border-radius: 10px; }
+.team-missing-note { padding: 8px 10px; border: 1px solid #e4c985; border-radius: 8px; background: #fff8df; color: #73551e; font-size: 11px; line-height: 1.6; overflow-wrap: anywhere; }
+.tournament-transfer-members { display: grid; gap: 10px; }
+.tournament-transfer-members article { min-width: 0; padding: 12px; border: 1px solid var(--border); border-radius: 12px; }
+.tournament-transfer-members header { display: flex; gap: 8px; align-items: center; }
+.tournament-transfer-members img { flex-shrink: 0; object-fit: contain; }
+.tournament-transfer-members strong { font-size: 13px; overflow-wrap: anywhere; }
 .team-section-nav { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; padding: 8px; border: 1px solid var(--border); border-radius: 16px; background: rgba(253,254,248,.97); }
 .team-section-nav button { min-height: 42px; padding: 10px 18px; border: 1px solid transparent; border-radius: 10px; background: transparent; color: var(--text); font: inherit; font-size: 12px; font-weight: 800; cursor: pointer; }
 .team-section-nav button[aria-pressed=true] { background: #24543d; color: #fffdf2; }
 .team-section-nav button:focus-visible { outline: 3px solid #b97612; outline-offset: 3px; }
 .team-library-message { font-size: 12px; line-height: 1.6; overflow-wrap: anywhere; }
 .team-library-error { background: #fff0ef; color: #a32929; border: 1px solid #e7b4ae; }
-.competitive-transfer-moves { display: grid; gap: 10px; max-height: 240px; overflow-y: auto; min-width: 0; margin: 0; padding: 12px; border: 1px solid var(--border); border-radius: 12px; }
-.competitive-transfer-moves legend { font-size: 12px; font-weight: 800; }
-.competitive-transfer-moves label { display: flex; gap: 10px; align-items: start; font-size: 12px; overflow-wrap: anywhere; }
-.competitive-transfer-moves input { flex-shrink: 0; width: 18px; height: 18px; margin: 0; padding: 0; }
-.competitive-transfer-moves small { color: var(--muted); }
 .competitive-transfer-preview { display: grid; gap: 12px; padding: 12px; border: 1px solid var(--border); border-radius: 12px; background: #f3f7ed; }
 .squad-add-controls { flex-wrap: wrap; }
 .squad-add-controls label { flex: 1 1 180px; }

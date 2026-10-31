@@ -15,8 +15,19 @@ l'accesso a Smogon durante un aggiornamento delle meccaniche.
 La [libreria Squadre salvate](saved-teams.md) conserva anche archivi di regulation
 precedenti: ID, formato e commit devono corrispondere alla build per caricarli.
 Un cambio regulation non elimina le copie storiche e non le converte implicitamente.
-Il trasferimento dal Competitivo usa soltanto snapshot della regulation/revisione
-attiva e valori SP Champions verificati.
+Il trasferimento Showdown usa soltanto snapshot della regulation/revisione attiva
+e valori SP Champions verificati. L’esportazione ranked richiede forma, strumenti,
+abilità e mosse compatibili con il catalogo/learnset attivi, senza associare
+automaticamente la stagione nativa alla regulation. Natura e SP sono scelte
+indipendenti; gli SP devono rispettare i limiti Champions e provenire da una voce
+effettivamente pubblicata dalla fonte.
+
+Il trasferimento dei team Limitless richiede evento pubblico VGC della regulation
+attiva e revisione del catalogo coerente. Usa gli alias verificati del provider;
+forme e valori sconosciuti bloccano la sostituzione. Non deduce Mega o SP dai set.
+I campi non pubblicati sono conservati come `build.missingFields` nel workspace
+e nei backup v2: non vanno reinterpretati automaticamente al cambio regulation.
+La lettura degli archivi v1 resta supportata senza riscrittura automatica.
 
 ## Aggiornamento ordinario
 

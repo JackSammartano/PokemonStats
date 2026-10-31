@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { createSavedTeam, isSavedTeamCompatible, MAX_TEAM_BACKUP_BYTES, parseTeamLibrary, putSavedTeam, serializeTeamLibrary } from '../lib/teamLibrary.js'
 import { POKEMON_DATASET } from '../lib/pokemonDataset.js'
 import PokemonImage from './PokemonImage'
+import { missingSetFields } from '../lib/teamCompleteness.js'
 import './TeamLibrary.css'
 
 const byId = new Map(POKEMON_DATASET.map((pokemon) => [pokemon.showdownId, pokemon]))
@@ -38,6 +39,7 @@ export default function TeamLibrary({ workspace, library, error, onChange, onLoa
       const compatible = isSavedTeamCompatible(team)
       return <article className="saved-team" key={team.id} data-saved-team-id={team.id}><h3>{team.name}</h3><p>{team.regulation.label} · {dateLabel(team.updatedAt)} · {team.members.length} Pokémon</p><div className="saved-team-preview">{team.members.map((member) => <PokemonImage key={member.pokemonId} pokemon={byId.get(member.pokemonId) ?? {}} size={40} alt={byId.get(member.pokemonId)?.displayName ?? member.pokemonId} />)}</div>
         {!compatible && <p className="saved-team-incompatible">Regulation o revisione diversa: caricamento non disponibile. Il salvataggio è conservato nel backup.</p>}
+        {team.members.some((member) => missingSetFields(member.build).length) && <p className="team-missing-note">Bozza: alcuni campi non pubblicati sono ancora da completare in Configura.</p>}
         <div className="team-library-actions"><button type="button" className="ghost-button" disabled={!compatible} onClick={() => onAction({ mode: 'load', id: team.id, side: 'attacker' })}>Carica nella mia squadra</button><button type="button" className="secondary-button" disabled={!compatible} onClick={() => onAction({ mode: 'load', id: team.id, side: 'defender' })}>Carica nella squadra avversaria</button></div>
         <div className="team-library-actions"><button type="button" className="secondary-button" disabled={!!error} onClick={() => onAction({ mode: 'rename', id: team.id })}>Rinomina</button><button type="button" className="secondary-button" disabled={!compatible || !!error} onClick={() => onAction({ mode: 'update', id: team.id, side: 'attacker' })}>Aggiorna</button><button type="button" className="secondary-button" disabled={!!error} onClick={() => onAction({ mode: 'delete', id: team.id })}>Elimina</button></div>
       </article>

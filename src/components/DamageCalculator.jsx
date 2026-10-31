@@ -17,6 +17,7 @@ import { describeTypeEffectiveness } from '../lib/typeLabels.js'
 import { getMoveConditionFields } from '../lib/damage/championsMoveConditions.js'
 import { BATTLE_CONDITION_FIELDS } from '../lib/damage/championsBattleConditions.js'
 import { getEffectiveAbility } from '../lib/damage/championsBattle.js'
+import { missingSetFields, missingSetLabel } from '../lib/teamCompleteness.js'
 
 const STAT_LABELS = { hp: 'HP', atk: 'Atk', def: 'Def', spa: 'SpA', spd: 'SpD', spe: 'Spe' }
 const BOOST_OPTIONS = Array.from({ length: 13 }, (_, index) => index - 6)
@@ -150,6 +151,7 @@ function MoveConditionControls({ move, effectiveAbility, onChange }) {
 }
 
 function PokemonBuildControls({ side, label, pokemon, roster, build, effectiveAbility, onPokemonChange, onChange }) {
+  const missing = missingSetFields(build)
   const stats = getBuildStats(pokemon, build)
   const baseStats = pokemon ? getBaseStats(pokemon) : null
   const itemOptions = getPokemonDamageItemOptions(pokemon, build.item, build.itemName)
@@ -163,10 +165,13 @@ function PokemonBuildControls({ side, label, pokemon, roster, build, effectiveAb
           </select>
         </label>
       </div>
-      <label className="select-field"><span>Abilità</span><select value={build.ability} onChange={(event) => onChange({ ability: event.target.value, abilityName: event.target.selectedOptions[0].textContent })}>
+      {missing.length > 0 && <p className="team-missing-note">Dati non pubblicati, da completare: {missingSetLabel(build)}. Imposta i valori che vuoi usare per il calcolo.</p>}
+      <label className="select-field"><span>Abilità</span><select value={missing.includes('ability') ? '__unpublished' : build.ability} onChange={(event) => onChange({ ability: event.target.value, abilityName: event.target.selectedOptions[0].textContent })}>
+        {missing.includes('ability') && <option value="__unpublished" disabled>Non pubblicata · da scegliere</option>}
         {getAbilityOptions(pokemon, build.ability, build.abilityName).map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
       </select></label>
-      <label className="select-field"><span>Oggetto</span><select value={build.item} onChange={(event) => onChange({ item: event.target.value, itemName: event.target.selectedOptions[0].textContent })}>
+      <label className="select-field"><span>Oggetto</span><select value={missing.includes('item') ? '__unpublished' : build.item} onChange={(event) => onChange({ item: event.target.value, itemName: event.target.selectedOptions[0].textContent })}>
+        {missing.includes('item') && <option value="__unpublished" disabled>Non pubblicato · da scegliere</option>}
         {itemOptions.map((option) => option.options ? <optgroup key={option.label} label={option.label}>{option.options.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}</optgroup> : <option key={option.value} value={option.value}>{option.label}</option>)}
       </select></label>
       <label className="select-field"><span>Stato</span><select value={build.status || (build.burned ? 'brn' : '')} onChange={(event) => onChange({ status: event.target.value, burned: event.target.value === 'brn' })}>
@@ -185,9 +190,12 @@ function PokemonBuildControls({ side, label, pokemon, roster, build, effectiveAb
         })}
         <small>Gli effetti casuali si applicano soltanto al colpo indicato. I supporti da alleati richiedono Doubles.</small>
       </details>
-      <label className="select-field"><span>Natura</span><select value={build.nature} onChange={(event) => onChange({ nature: event.target.value })}>
+      <label className="select-field"><span>Natura</span><select value={missing.includes('nature') ? '__unpublished' : build.nature} onChange={(event) => onChange({ nature: event.target.value })}>
+        {missing.includes('nature') && <option value="__unpublished" disabled>Non pubblicata · da scegliere</option>}
         {Object.entries(CHAMPIONS_NATURES).map(([name, [plus, minus]]) => <option key={name} value={name}>{name[0].toUpperCase() + name.slice(1)} {plus === minus ? '(neutra)' : `(+${STAT_LABELS[plus]} / −${STAT_LABELS[minus]})`}</option>)}
       </select></label>
+      {missing.includes('sps') && <p className="team-missing-note">SP non pubblicati. Modifica la distribuzione oppure <button className="secondary-button" type="button" onClick={() => onChange({ sps: { ...build.sps } })}>Conferma SP attuali</button></p>}
+      {missing.includes('moves') && <p className="team-missing-note">Le mosse sono parziali o non pubblicate. Puoi modificarle sopra oppure <button className="secondary-button" type="button" onClick={() => onChange({ missingFields: missing.filter((field) => field !== 'moves') })}>Conferma slot mosse attuali</button></p>}
       <div className="build-stat-table">
         <div className="build-stat-heading"><span>Stat</span><span>SP</span><span>Boost</span><span>Valore</span></div>
         {Object.entries(STAT_LABELS).map(([id, text]) => (

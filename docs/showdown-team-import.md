@@ -40,6 +40,9 @@ il testo per il teambuilder Showdown. Esporta solo i membri della relativa squad
 nell'ordine corrente, leggendo build e mosse condivise aggiornate anche dal Damage
 calculator. Non riutilizza il testo originale importato. Una squadra vuota non è
 esportabile; valori SP non validi o nomi non risolti bloccano la copia con un messaggio.
+I team caricati dai tornei con campi non pubblicati richiedono di completarli o
+confermarli in Configura prima dell’export testuale. Il backup JSON v2 di Squadre
+salvate conserva invece anche le bozze e i rispettivi avvisi, senza perdere dati.
 
 Il testo contiene specie/forma attuale, genere, oggetto, abilità, livello, natura,
 spread e mosse, comprese quelle di stato. Usa i nomi canonici del dataset e la riga

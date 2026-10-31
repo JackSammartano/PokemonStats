@@ -3,6 +3,7 @@ import { CHAMPIONS_NATURES } from './damage/championsData.js'
 import { getPokemonMoveSlots } from './damage/championsMoveSets.js'
 import { getWorkspaceBuild } from './teamWorkspace.js'
 import { getTeamMove } from './teamData.js'
+import { missingSetFields, missingSetLabel } from './teamCompleteness.js'
 
 const roster = new Map(REGULATION_ROSTER.map((pokemon) => [pokemon.displayName, pokemon]))
 const items = new Map(REGULATION_ITEMS.map((item) => [item.id, item.name]))
@@ -20,6 +21,7 @@ export function exportShowdownTeam({ side, team, builds, moveSets }) {
     if (!entry || seen.has(entry.showdownId)) throw new Error(`Pokémon non riconosciuto o duplicato: ${pokemon.displayName}.`)
     seen.add(entry.showdownId)
     const build = getWorkspaceBuild(builds, side, entry.displayName)
+    if (missingSetFields(build).length) throw new Error(`${entry.displayName}: completa ${missingSetLabel(build)} in Configura prima dell’export Showdown. Il backup JSON conserva la bozza con i campi mancanti.`)
     const invalid = (detail) => new Error(`${entry.displayName}: ${detail}`)
     if (!Object.hasOwn(CHAMPIONS_NATURES, build.nature)) throw invalid('natura non riconosciuta.')
     if (!['', 'M', 'F'].includes(build.gender)) throw invalid('genere non valido.')

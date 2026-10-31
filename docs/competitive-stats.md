@@ -86,16 +86,73 @@ distinti e bloccanti. Battle Cruise VGC e il Side hanno evidenziato questo caso.
 L’API non è una verifica di legalità dei team; eventuali regole personalizzate
 pubblicate rimandano all’evento originale. I diritti di archivio permanente e
 ridistribuzione richiedono un chiarimento prima di estendere questa integrazione.
-Il trasferimento di mosse/spread è disponibile per Showdown come descritto sotto;
-ranked nativa e tornei restano fonti di consultazione in questo incremento.
+L’esportazione dei campi selezionati è disponibile per Showdown e ranked nativa
+come descritto sotto. I tornei permettono di caricare il team di un partecipante
+nel workspace su richiesta esplicita, senza archiviare le risposte API.
+
+## Esporta team dai tornei
+
+Aprire un partecipante e premere **Esporta team**. L’anteprima mostra i membri,
+i campi pubblicati, gli avvisi e la squadra di destinazione. **Carica e sostituisci**
+rimpiazza l’intera formazione scelta e le sue configurazioni; l’altro lato resta
+intatto. Annullare non modifica il workspace. Nessuna nuova richiesta HTTP viene
+effettuata: si usano i dettagli e gli standings già consultati.
+
+`tournamentTransfer.js` verifica evento pubblico VGC, formato, revisione attiva,
+identità del partecipante, forme e valori del catalogo. Valori sconosciuti o
+duplicati bloccano tutto il caricamento con una spiegazione; nessuna importazione
+parziale. Le forme non vengono dedotte dalla megapietra o dall’abilità. Restano
+applicabili soltanto gli alias Limitless verificati per la regulation corrente.
+Come nell’import Showdown, mosse riconosciute fuori learnset e abilità riconosciute
+non proprie della forma base vengono conservate con un avviso esplicito.
+
+I team pubblicati con meno di sei membri e i campi mancanti sono ammessi, senza
+completamenti automatici. Limitless non fornisce SP: `build.missingFields` li
+segnala sempre come da configurare. Mosse, strumento, abilità e natura assenti
+restano anch’essi segnalati. Il calcolatore sospende i risultati finché i campi
+necessari non sono impostati o confermati in **Configura**. I valori interni di
+inizializzazione non rappresentano uno spread osservato. Non vengono salvati
+giocatori, standings o risposte originali nell’archivio delle configurazioni.
+La copia non viene aggiunta automaticamente a Squadre salvate; il salvataggio
+esplicito conserva gli avvisi anche nel backup v2. Vedere [saved-teams.md](saved-teams.md).
+
+Verifiche dell’incremento: `npm run verify` superato con 331 test, lint, build e
+controlli dati/licenze. Fixture sintetiche coprono sostituzione atomica dei due
+lati, forme, valori sconosciuti, team parziali, metadati e blocco dei calcoli.
+Browser sulla build: anteprima e annullamento, sei membri e team parziale,
+destinazioni indipendenti, blocco dei valori sconosciuti, nessuna richiesta HTTP
+aggiuntiva, archivio v1 invariato fino all’azione esplicita, salvataggio v2 e
+ricaricamento, conferma SP/mosse e larghezze 1440/1024/768/390/320 px. Passate anche
+le regressioni browser delle selezioni Showdown/ranked e della libreria
+(backup/ripristino, quota, archivi storici), senza eccezioni JavaScript.
+Le prove browser usano esclusivamente eventi e partecipanti sintetici.
 
 ## Trasferimento Showdown alle squadre
 
-«Scegli mosse per il team» apre una modale senza mosse preselezionate: l’utente
-sceglie da una a quattro voci nell’ordine desiderato, fra quelle pubblicate nello
-snapshot e nel learnset verificato. Le frequenze individuali non vengono trasformate
-in un set osservato. Gli slot rimanenti sono vuoti. «Usa questo spread» applica
-una singola coppia natura/sei SP pubblicata, senza conversioni da EV tradizionali.
+Gli elenchi del dettaglio contengono checkbox: fino a quattro mosse, uno strumento,
+un’abilità, una natura e una distribuzione SP. Un secondo clic deseleziona; scegliere
+un’altra voce di una categoria singola sostituisce la precedente. Il pulsante
+«Esporta», in fondo al dettaglio, è disabilitato finché non viene selezionata almeno
+una voce. I precedenti comandi «Scegli mosse per il team» e «Usa questo spread»
+non sono più nell’interfaccia; la modale non contiene più gli elenchi da selezionare.
+
+Si possono esportare anche soltanto uno strumento, una natura o gli SP. Mosse non
+selezionate significa mantenere le mosse attuali; quando se ne sceglie almeno una,
+i quattro slot vengono sostituiti rispettando l’ordine dei clic e lasciando vuoti
+gli altri. I campi non scelti restano invariati. Per un nuovo membro i campi non
+scelti partono dai valori predefiniti e le mosse non scelte restano vuote.
+
+Gli SP Showdown sono pubblicati con una natura, indicata nella riga e nel riepilogo.
+Selezionare gli SP applica solo i sei punti: per applicare una natura va selezionata
+anche nell’elenco Nature. È possibile comporre esplicitamente una configurazione
+diversa dalla coppia pubblicata. La combinazione è una scelta dell’utente e non
+viene presentata come un set osservato. Non si convertono EV tradizionali in SP.
+
+Le righe scelte sono evidenziate, le voci incompatibili sono disabilitate con una
+motivazione. Checkbox, spazio della riga e tastiera permettono la selezione;
+i pulsanti descrittivi restano dedicati ai tooltip, senza selezionare incidentalmente.
+Le selezioni si azzerano al cambio Pokémon, snapshot/periodo o fonte. Annullare la
+conferma conserva le scelte negli elenchi e non cambia il workspace.
 
 La modale seleziona La mia squadra o Squadra avversaria e mostra valori attuali
 e successivi prima della conferma. Aggiorna solo il Pokémon con lo stesso ID di
@@ -107,9 +164,9 @@ solo lo spread lascia tutte le mosse vuote.
 `src/lib/competitiveTransfer.js` ricontrolla fonte Smogon, regulation, formato,
 revisione delle meccaniche e sistema `champions-sp`, presenza della voce nello
 snapshot, mosse disponibili e spread effettivamente pubblicato. Le modifiche sono
-atomiche: un errore lascia il workspace invariato. Aggiornare le mosse mantiene
-il resto del profilo; applicare lo spread modifica solo natura/SP, conservando
-strumento, abilità, mosse e condizioni già impostate. Confermare apre Il mio team
+atomiche: un errore lascia il workspace invariato. Vengono applicati solo i campi
+selezionati; SP e natura sono indipendenti anche nell’esportazione Showdown.
+Confermare apre Il mio team
 con il membro destinazione selezionato. L’altro lato resta indipendente.
 
 La [libreria](saved-teams.md) permette poi di archiviare la formazione risultante.
@@ -123,6 +180,67 @@ aggiunta di Rillaboom, applicazione dello spread allo stesso membro, manteniment
 delle mosse, ritorno alla pagina team e persistenza dopo ricaricamento. Nessuna
 richiesta ai provider ranked o tornei durante queste verifiche.
 
+## Esportazione dei campi ranked nativi
+
+Le cinque categorie sono selezionabili nei dettagli Ranked Champions caricati
+correttamente e con una forma esatta nel catalogo. «Esporta» usa la stessa
+modale di conferma Showdown, con fonte Champions Battle Data, Doubles,
+stagione e data dei dettagli (oppure data non indicata), senza attribuire alla
+stagione la regulation attiva. Nature e spread nativi restano distribuzioni
+indipendenti: la scelta di uno non preseleziona l’altra categoria.
+
+`createNativeBuildTransfer` crea una richiesta con fonte `champions-battle-data`,
+dettagli già normalizzati e riferimento al catalogo corrente. Non genera uno
+snapshot Smogon artificiale. `competitiveTransferOptions` riconcilia nomi e ID
+contro il dataset versionato, mantenendo gli ID effettivi con trattino. Un alias
+che duplica una mossa ha la selezione disabilitata: le distribuzioni originali e
+le percentuali nella ranked restano invariate. Voci sconosciute, mosse fuori dal
+learnset e abilità non disponibili per la forma sono disabilitate con motivazioni
+distinte. Strumenti e nature devono essere riconciliati; gli SP devono essere
+sei interi 0–32 con massimo 66 totali.
+
+La scelta dei campi è esplicita e senza preselezioni. Si applica
+alla forma esatta presente o si aggiunge al primo slot libero della destinazione.
+Un lato pieno senza quel Pokémon blocca l’applicazione. Gli altri campi del membro
+e l’altra squadra restano invariati; gli slot non scelti vengono lasciati vuoti.
+Sono ricontrollati fonte, identità, formato Doubles, stagione, riferimento al catalogo
+e appartenenza dei campi alle voci pubblicate e al catalogo/learnset corrente. Questo
+controllo non certifica il regolamento della stagione nativa. Nessun trasferimento
+in presenza di errore, caricamento in corso o forma non riconciliata.
+
+Aprire, selezionare o confermare la modale non richiede nuove chiamate al provider.
+Le risposte, quote, stagioni e metadati ranked non entrano nel workspace o nei
+backup: restano solo i valori di configurazione scelti dall’utente. L’attribuzione
+è presente anche nella modale. `useCompetitiveSelection` mantiene la selezione
+temporanea e i controlli condivisi `CompetitiveChoice`/`CompetitiveExport` gestiscono
+checkbox, evidenziazione, limite di quattro mosse e pulsante finale.
+
+Verifiche del primo incremento ranked (precedente al flusso Esporta): `npm run verify`
+superato con 317 test. Sette nuovi test offline coprono
+nomi composti/alias, valori assenti, selezione ordinata, indipendenza delle squadre
+e dei campi, forme sconosciute, squadra piena, rifiuto di spread, fonte e riferimento
+errati. Una richiesta reale Rillaboom/Current ha riconciliato tutte le 10 mosse senza
+salvare la risposta. Browser sulla build con payload sintetici: fonte/stagione e date,
+selezione massima di quattro mosse, voci disabilitate, annullamento/Escape, entrambi i
+lati, aggiunta e ricaricamento, nessuna richiesta aggiuntiva o metadato persistito,
+forme sconosciute, assenza di mosse, cambio stagione e HTTP 503. Nessun overflow o
+errore JavaScript a 1440, 1024, 768, 390 e 320 px. Regressione Showdown e libreria
+ricontrollate sulla build.
+
+Verifiche del flusso Esporta con selezione negli elenchi: `npm run verify` superato
+con 322 test. I nuovi casi coprono i cinque campi insieme, ciascun campo separato,
+conservazione dei campi non scelti, natura/SP indipendenti, voci sconosciute o non
+compatibili, selezioni vuote o multiple non ammesse e aggiunte senza mosse inventate.
+Browser sulla build con snapshot Showdown locale reale e ranked sintetica: attivazione
+del pulsante dalla prima scelta e disattivazione alla deselezione, limite di quattro
+mosse e una voce per categoria, tooltip indipendenti dalla selezione, riepilogo senza
+checkbox, annullamento, entrambi i lati, esportazione completa e del solo strumento,
+SP e natura scelti separatamente, salvataggio con nome e persistenza. Verificati reset
+al cambio Pokémon/fonte/stagione, forme sconosciute disabilitate, nessuna richiesta
+API aggiuntiva o metadato del provider archiviato. Nessun overflow o errore JavaScript
+a 1440, 1024, 768, 390 e 320 px. Il reset al periodo Showdown è legato alla chiave
+dello snapshot; la build attuale dispone di un solo periodo compatibile.
+
 ## Architettura e aggiornamento
 
 React, routing hash e GitHub Pages restano quelli esistenti. Nessun backend,
@@ -133,13 +251,28 @@ build e non chiama servizi esterni dal browser; il JSON non diventa un grande mo
 Ricerca e selezione restano nella sessione passando alle altre viste e tornando;
 non sono salvate nel team o in localStorage.
 
-Su desktop (oltre 900 px) classifica e dettaglio hanno bordi superiore e inferiore
-allineati. L'altezza è determinata dal dettaglio: la classifica riempie la stessa
-altezza, con intestazione e nota sempre esterne all'elenco che scorre internamente.
-La ricerca non restringe il pannello; espandere una distribuzione nel dettaglio
-aggiorna anche lo spazio disponibile nella classifica. Il vincolo è soltanto CSS,
-senza misure JavaScript e senza dipendere dal dataset o dalla regulation.
-Su mobile i pannelli rimangono impilati e l'elenco ha altezza massima 48dvh.
+Su desktop (oltre 900 px) classifica e dettaglio Pokémon hanno bordi superiore e
+inferiore allineati. Il dettaglio riserva un’altezza stabile `clamp(560px, 82dvh,
+980px)` fin dal caricamento, con scorrimento interno e spazio scrollbar riservato.
+La classifica riempie la stessa altezza, con intestazione e nota esterne all’elenco
+che scorre. Risposte ritardate, distribuzioni espanse, errori e dati assenti non
+cambiano le dimensioni esterne del pannello. Anche Esporta resta nel contenuto
+scorrevole ed è raggiungibile in fondo.
+
+Su mobile i pannelli rimangono impilati: l’elenco ha altezza massima 48dvh e il
+dettaglio usa `min(82dvh, 980px)`, evitando una dimensione minima maggiore dello
+schermo sui telefoni bassi. Il vincolo è CSS, senza misure o sincronizzazioni
+JavaScript e indipendente da dataset e regulation. Il cambio Pokémon riporta il
+dettaglio all’inizio; la card ranked viene ricreata per l’identità selezionata,
+senza cambiare richieste o cache del provider.
+
+Verifica con risposte sintetiche ritardate: a 1440×1050 il pannello misura 861 px
+sia durante il caricamento sia dopo, invece dei precedenti 660→circa 1397 px del
+campione. Controllati anche 1024×900, 768×950, 390×844 e 320×568: larghezza e
+altezza invariate prima/dopo, pannelli desktop allineati, scroll interno, Esporta
+raggiungibile, ritorno all’inizio, dettagli vuoti/non riconciliati e HTTP 503.
+Nessun overflow o errore JavaScript. Lint e build superati; nessuna chiamata ai
+provider esterni per queste verifiche.
 
 Entrambe le schede iniziano dai filtri, senza header introduttivo o card di
 metadati separate. Una riga compatta mantiene fonte e formato, numero di battaglie
@@ -301,13 +434,15 @@ Richiesta confermata dall'utente: trasferire singole mosse selezionate oppure
 uno spread scelto dalla schermata Competitivo a «Mia squadra» o «Squadra avversaria».
 La richiesta è implementata per Showdown: vedere
 [Trasferimento Showdown alle squadre](#trasferimento-showdown-alle-squadre).
-Ranked nativa e tornei non espongono ancora comandi di trasferimento.
+La ranked nativa espone l’esportazione dei cinque campi selezionati; i tornei
+espongono l’esportazione del team pubblicato tramite anteprima e sostituzione
+esplicita, descritta sopra.
 
 Il trasferimento permette la scelta esplicita del lato e aggiorna la forma esatta
 già presente o la aggiunge al primo slot libero. Verifica forma, regulation,
 disponibilità delle mosse e sistema SP, mostrando prima i valori che saranno
-sostituiti. Lo spread Showdown include la natura associata
-e i sei SP pubblicati insieme; le mosse sono scelte separatamente dall'utente.
+sostituiti. La natura associata allo spread Showdown è mostrata come contesto;
+natura, SP e mosse sono selezionati separatamente dall’utente.
 Non si costruisce automaticamente un set completo combinando le voci più
 frequenti delle distribuzioni marginali, né presentarlo come realmente osservato.
 Sono riutilizzati il workspace condiviso e i controlli di compatibilità esistenti,
@@ -412,8 +547,9 @@ annullata, evento privato senza richiesta di standings, HTTP 503 e pausa prima
 della riprova, tooltip da tastiera, badge tipo, dati mancanti e forme sconosciute.
 Controllati pannelli desktop della stessa altezza e assenza di overflow a 1440,
 1024, 768, 390 e 320 px, senza eccezioni JavaScript. Condizioni commerciali di
-archiviazione/redistribuzione non certificate: resta il perimetro di consultazione
-con cache temporanea descritto sopra.
+archiviazione/redistribuzione non certificate: nessun archivio automatico delle
+risposte né servizio di redistribuzione. Il successivo caricamento esplicito di
+configurazioni nel workspace è descritto in «Esporta team dai tornei».
 
 Correzione identità/piattaforma: `npm run verify` superato con 292 test, inclusi
 sei nuovi casi su tutte le 13 varianti osservate, fallback del nome senza ID,

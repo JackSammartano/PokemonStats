@@ -39,6 +39,12 @@ delle due squadre attive sostituirà il salvataggio esistente, mantenendone ID e
 data di creazione. **Elimina** chiede conferma e rimuove solo la copia archiviata.
 Le modifiche a una squadra attiva non aggiornano automaticamente le copie salvate.
 
+Dal Competitivo si possono scegliere mosse, strumento, abilità, natura e SP negli
+elenchi del dettaglio e premere **Esporta** per applicarli a una delle due squadre.
+Questo passaggio non crea una copia nell’archivio: per conservarla con nome si usa
+poi **Salva** in Pianificazione. Il salvataggio include i campi risultanti, senza
+percentuali o risposte dei provider.
+
 ## Persistenza e backup
 
 `src/lib/teamLibrary.js` gestisce schema, validazione, creazione, caricamento e
@@ -48,7 +54,10 @@ Nessuna nuova dipendenza, account, database o richiesta di rete.
 
 L’archivio è locale, con chiave `pokemonstats.saved-teams.v1`, separato dal workspace
 corrente `pokemonstats.team-workspace.v1.<regulationId>`. Non sincronizza dispositivi.
-**Scarica backup** produce `pokemonstats-squadre.json`, con `version: 1` e `teams`.
+**Scarica backup** produce `pokemonstats-squadre.json`, con `version: 2` e `teams`.
+La chiave di storage resta invariata. La lettura accetta v1 e v2, normalizzando
+v1 in memoria senza riscrivere lo storage: solo un salvataggio o ripristino
+esplicito produce v2. I vecchi set restano come configurati, senza reinterpretazioni.
 **Ripristina backup** valida l’intero file e ne mostra il contenuto prima della
 conferma: sostituisce l’archivio, lasciando intatte le due squadre attive.
 
@@ -63,7 +72,7 @@ abilità, strumenti o mosse importati restano consultabili come nel workspace.
 Per la regulation/revisione corrente gli ID delle mosse sono verificati direttamente
 nel dataset: forme con trattino come `air-slash`, `heat-wave` e `fake-out` sono valide.
 Il primo validatore li rifiutava erroneamente con una regex limitata a lettere e
-numeri. La correzione conserva lo schema v1 e non riscrive gli ID o gli archivi.
+numeri. Quella correzione manteneva lo schema v1; gli ID restano invariati anche in v2.
 Gli slot vuoti restano consentiti; non sono richieste quattro mosse selezionate.
 La cattura di una squadra valida i quattro valori originali del workspace, evitando
 di nascondere duplicati o dati errati tramite la normalizzazione visiva degli slot.
@@ -81,6 +90,24 @@ in memoria. Letture corrotte o indisponibili non provocano sovrascritture automa
 si può tentare il ripristino esplicito di un backup. Prima di modificare l’archivio
 viene controllato se un’altra scheda l’ha cambiato: in quel caso la lista si aggiorna
 e l’azione va ripetuta, evitando di sovrascrivere una versione più recente.
+
+## Configurazioni incomplete dei tornei
+
+Il backup v2 conserva `build.missingFields`, elenco facoltativo di `moves`, `item`,
+`ability`, `nature`, `sps`. Valori sconosciuti o duplicati sono rifiutati. I set
+precedenti senza metadato restano validi. Le copie incomplete sono indicate come
+bozze nell’archivio; caricamento e backup conservano tutti i campi da completare.
+
+Le card e Configura segnalano i valori non pubblicati. Per natura, abilità e
+strumento il controllo richiede una scelta esplicita; scegliere nessuno strumento
+è distinto da uno strumento non pubblicato. Modificare gli SP, oppure premere
+**Conferma SP attuali**, risolve il campo SP: confermare tutti zero è una scelta
+dell’utente, mai un dato attribuito al torneo. Modificare le mosse o confermare
+gli slot risolve il relativo avviso, consentendo anche slot intenzionalmente vuoti.
+Ogni operazione risolve soltanto i campi scelti, anche esportando singole voci da
+Showdown o ranked. Il calcolatore sospende i risultati con valori necessari ancora
+irrisolti; statistiche effettive assenti quando mancano natura o SP. L’export testuale
+Showdown richiede di completare tutti i campi; il backup JSON conserva le bozze.
 
 ## Prossima regulation
 

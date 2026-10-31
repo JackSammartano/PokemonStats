@@ -1,9 +1,18 @@
 .competitive-workspace { display: grid; gap: 14px; min-width: 0; }
+.competitive-distribution ol > .competitive-choice { display: grid; grid-template-columns: 18px minmax(0, 1fr); align-items: start; gap: 9px; padding: 9px; margin: -3px; border: 1px solid transparent; border-radius: 10px; cursor: pointer; }
+.competitive-choice > input { width: 16px; height: 16px; margin: 2px 0 0; accent-color: #24543d; cursor: pointer; }
+.competitive-choice-content { min-width: 0; }
+.competitive-distribution ol > .competitive-choice.is-selected { background: #eaf2e0; border-color: #70946a; }
+.competitive-distribution ol > .competitive-choice.is-disabled { cursor: default; }
+.competitive-choice.is-disabled > input { cursor: default; }
+.competitive-choice-reason { margin: 6px 0 0; font-size: 9px; line-height: 1.5; color: var(--muted); }
+.competitive-export { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--border); }
+.competitive-export p { flex: 1 1 200px; margin: 0; color: var(--muted); font-size: 11px; line-height: 1.6; }
+.competitive-export > button:disabled { opacity: .4; cursor: not-allowed; }
 .competitive-source-nav { display: flex; flex-wrap: wrap; gap: 8px; padding: 8px; border: 1px solid var(--border); border-radius: 16px; background: rgba(253, 254, 248, 0.97); }
 .competitive-source-nav button { min-height: 42px; padding: 10px 18px; border: 1px solid transparent; border-radius: 10px; background: transparent; color: var(--text); font: inherit; font-size: 12px; font-weight: 800; cursor: pointer; }
 .competitive-source-nav button[aria-pressed="true"] { background: #24543d; color: #fffdf2; }
 .native-ranking-row { grid-template-columns: 25px 44px minmax(0, 1fr); }
-.native-detail { min-height: 660px; }
 .native-error { margin-top: 16px; box-shadow: none; }
 .competitive-data-bar { display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px 18px; padding: 10px 14px; border: 1px solid var(--border); border-radius: 12px; background: rgba(253, 254, 248, 0.97); }
 .competitive-data-bar > p { flex: 1; min-width: 180px; margin: 0; color: var(--muted); font-size: 11px; line-height: 1.6; }
@@ -20,6 +29,7 @@
 .competitive-filters select, .competitive-filters input { box-sizing: border-box; width: 100%; min-width: 0; min-height: 46px; padding: 10px 12px; border: 1px solid var(--border); border-radius: 12px; background: #fdfff9; color: var(--text); font: inherit; }
 .competitive-filters :is(input, select):focus-visible, .competitive-workspace button:focus-visible, .competitive-workspace a:focus-visible { outline: 3px solid #b97612; outline-offset: 3px; }
 .competitive-layout { display: grid; grid-template-columns: minmax(330px, 0.85fr) minmax(0, 1.4fr); align-items: start; gap: 22px; }
+.competitive-layout > .competitive-detail { height: clamp(560px, 82dvh, 980px); min-height: 0; overflow-y: auto; scrollbar-gutter: stable; }
 .competitive-ranking, .competitive-detail, .competitive-attributions, .competitive-empty { box-sizing: border-box; min-width: 0; border: 1px solid var(--border); border-radius: 22px; background: rgba(253, 254, 248, 0.97); box-shadow: 0 12px 32px rgba(20, 55, 35, 0.08); }
 .competitive-ranking { position: sticky; top: 20px; overflow: hidden; }
 .competitive-section-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 20px 18px 14px; }
@@ -107,6 +117,7 @@
 }
 @media (max-width: 900px) {
   .competitive-layout { grid-template-columns: minmax(0, 1fr); }
+  .competitive-layout > .competitive-detail { height: min(82dvh, 980px); }
   .competitive-ranking { position: static; }
   .competitive-ranking-list { max-height: 48dvh; }
   .competitive-distributions { grid-template-columns: repeat(2, minmax(0, 1fr)); }

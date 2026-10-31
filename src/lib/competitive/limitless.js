@@ -102,7 +102,7 @@ export function normalizeTournamentDetails(payload, { id, format }) {
   })
   const specialRules = payload.specialRules ?? []
   if (!Array.isArray(specialRules) || specialRules.some((rule) => !text(rule))) fail('regole aggiuntive non riconosciute')
-  return { ...tournament, platform: payload.platform ?? null, isOnline: payload.isOnline, decklists: payload.decklists,
+  return { ...tournament, platform: payload.platform ?? null, isPublic: payload.isPublic, isOnline: payload.isOnline, decklists: payload.decklists,
     organizer: optionalText(payload.organizer?.name), phases, specialRules,
     hasCustomBans: Array.isArray(payload.bannedCards) && payload.bannedCards.length > 0 }
 }

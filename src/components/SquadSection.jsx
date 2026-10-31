@@ -8,6 +8,7 @@ import { REGULATION } from '../lib/regulation.js'
 import PokemonImage from './PokemonImage'
 import { getMegaAction } from '../lib/megaEvolution.js'
 import MegaToggleButton from './MegaToggleButton'
+import { missingSetFields, missingSetLabel } from '../lib/teamCompleteness.js'
 
 export default function SquadSection({ side, title, team, roster, builds, moveSets, selected, onSelect, onConfigure, onInfo, onMegaToggle, onAdd, onRemove, onClear, onImport, onCatalog, savedTeams, onSaveTeam, onLoadTeam, libraryUnavailable }) {
   const [message, setMessage] = useState('')
@@ -95,8 +96,9 @@ export default function SquadSection({ side, title, team, roster, builds, moveSe
                 <PokemonImage pokemon={pokemon} size={52} />
                 <div><strong>{pokemon.displayName}</strong><div className="type-row mini">{pokemon.types.map((type) => <span className={`type-badge type-${type}`} key={type}>{type}</span>)}</div></div>
               </div>
-              <p className="squad-member-build">{build.nature[0].toUpperCase() + build.nature.slice(1)} · L{build.level}{build.gender ? ` · ${build.gender}` : ''}</p>
-              <p className="squad-member-build">{build.abilityName || build.ability || 'Abilità da impostare'}<br />{build.itemName || build.item || 'Nessun oggetto'}</p>
+              {missingSetFields(build).length > 0 && <p className="team-missing-note">Da completare: {missingSetLabel(build)}</p>}
+              <p className="squad-member-build">{missingSetFields(build).includes('nature') ? 'Natura da impostare' : build.nature[0].toUpperCase() + build.nature.slice(1)} · L{build.level}{build.gender ? ` · ${build.gender}` : ''}</p>
+              <p className="squad-member-build">{missingSetFields(build).includes('ability') ? 'Abilità non pubblicata' : build.abilityName || build.ability || 'Abilità da impostare'}<br />{missingSetFields(build).includes('item') ? 'Strumento non pubblicato' : build.itemName || build.item || 'Nessun oggetto'}</p>
               <div className="squad-member-moves">{moves.map((id, slot) => { const move = getTeamMove(id); return <span key={slot} title={move?.category === 'status' ? 'Mossa di stato' : move?.type} className={move ? `squad-move type-${move.type}` : 'squad-move empty'}>{move?.name || '—'}</span> })}</div>
               <div className="squad-member-actions">
                 <button type="button" aria-pressed={selected === pokemon.displayName} onClick={() => onSelect(pokemon.displayName)}>{selected === pokemon.displayName ? 'Selezionato' : 'Confronta'}</button>

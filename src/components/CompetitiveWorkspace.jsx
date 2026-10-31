@@ -7,6 +7,8 @@ import { parseChampionsSpread, validateCompetitiveSnapshot } from '../lib/compet
 import PokemonDetails from './PokemonDetails'
 import PokemonImage from './PokemonImage'
 import CompetitiveTooltip from './CompetitiveTooltip'
+import { CompetitiveChoice, CompetitiveExport } from './CompetitiveSelection'
+import { useCompetitiveSelection } from '../lib/useCompetitiveSelection.js'
 import './CompetitiveWorkspace.css'
 
 // Ship the snapshot as a local JSON asset, avoiding a large executable JavaScript chunk.
@@ -20,7 +22,7 @@ const STAT_LABELS = ['HP', 'Atk', 'Def', 'SpA', 'SpD', 'Spe']
 const NativeRankings = lazy(() => import('./NativeRankings'))
 const TournamentExplorer = lazy(() => import('./TournamentExplorer'))
 
-export default function CompetitiveWorkspace({ onRequestTransfer }) {
+export default function CompetitiveWorkspace({ onRequestTransfer, onRequestTeamTransfer }) {
   const [source, setSource] = useState('showdown')
   const [nativeOpened, setNativeOpened] = useState(false)
   const [tournamentsOpened, setTournamentsOpened] = useState(false)
@@ -35,13 +37,13 @@ export default function CompetitiveWorkspace({ onRequestTransfer }) {
       <button type="button" aria-pressed={source === 'native'} onClick={() => changeSource('native')}>Ranked Champions</button>
       <button type="button" aria-pressed={source === 'tournaments'} onClick={() => changeSource('tournaments')}>Tornei</button>
     </nav>
-    <div hidden={source !== 'showdown'}><ShowdownRankings onRequestTransfer={onRequestTransfer} /></div>
-    {nativeOpened && <div hidden={source !== 'native'}><Suspense fallback={<p role="status">Apertura ranked Champions…</p>}><NativeRankings active={source === 'native'} /></Suspense></div>}
-    {tournamentsOpened && <div hidden={source !== 'tournaments'}><Suspense fallback={<p role="status">Apertura tornei…</p>}><TournamentExplorer active={source === 'tournaments'} /></Suspense></div>}
+    <div hidden={source !== 'showdown'}><ShowdownRankings active={source === 'showdown'} onRequestTransfer={onRequestTransfer} /></div>
+    {nativeOpened && <div hidden={source !== 'native'}><Suspense fallback={<p role="status">Apertura ranked Champions…</p>}><NativeRankings active={source === 'native'} onRequestTransfer={onRequestTransfer} /></Suspense></div>}
+    {tournamentsOpened && <div hidden={source !== 'tournaments'}><Suspense fallback={<p role="status">Apertura tornei…</p>}><TournamentExplorer active={source === 'tournaments'} onRequestTeamTransfer={onRequestTeamTransfer} /></Suspense></div>}
   </section>
 }
 
-function ShowdownRankings({ onRequestTransfer }) {
+function ShowdownRankings({ active, onRequestTransfer }) {
   const [snapshotId, setSnapshotId] = useState(compatible[0]?.id ?? '')
   const [loaded, setLoaded] = useState(null)
   const [error, setError] = useState('')
@@ -120,7 +122,7 @@ function ShowdownRankings({ onRequestTransfer }) {
                   </div>
                   <p className="competitive-ranking-note">Strumento e natura indicati sono scelte indipendenti.</p>
                 </section>
-                {selected && <PokemonMeta key={`${snapshot.id}:${selected.showdownId}`} entry={selected} snapshot={snapshot} onSelect={selectPokemon} onRequestTransfer={onRequestTransfer} />}
+                {selected && <PokemonMeta key={`${snapshot.id}:${selected.showdownId}`} entry={selected} snapshot={snapshot} onSelect={selectPokemon} active={active} onRequestTransfer={onRequestTransfer} />}
               </div>
             </>}
       </>}
@@ -128,31 +130,34 @@ function ShowdownRankings({ onRequestTransfer }) {
   </section>
 }
 
-function PokemonMeta({ entry, snapshot, onSelect, onRequestTransfer }) {
+function PokemonMeta({ entry, snapshot, onSelect, active, onRequestTransfer }) {
   const pokemon = pokemonById.get(entry.showdownId)
+  const request = useMemo(() => ({ kind: 'build', entry, snapshot }), [entry, snapshot])
+  const selection = useCompetitiveSelection(request, active)
   return <article id="competitive-pokemon-detail" className="competitive-detail" aria-label={`Statistiche di ${pokemon.displayName}`}>
     <div className="competitive-detail-heading"><span>#{entry.rank} · {formatUsage(entry.usage * 100)} usage</span><span>{formatPeriod(snapshot.period)} · soglia {snapshot.cutoff}</span></div>
     <div className="competitive-profile"><PokemonDetails pokemon={pokemon} /></div>
     <p className="competitive-detail-note">Quote tra chi usa questo Pokémon; le scelte elencate non costituiscono un set completo.</p>
     <div className="competitive-distributions">
-      <Distribution kind="moves" title="Mosse più usate" entry={entry} onTransfer={() => onRequestTransfer({ kind: 'moves', entry, snapshot })} />
-      <Distribution kind="items" title="Strumenti" entry={entry} />
-      <Distribution kind="abilities" title="Abilità" entry={entry} />
-      <Distribution kind="natures" title="Nature" entry={entry} />
+      <Distribution kind="moves" title="Mosse più usate" entry={entry} selection={selection} />
+      <Distribution kind="items" title="Strumenti" entry={entry} selection={selection} />
+      <Distribution kind="abilities" title="Abilità" entry={entry} selection={selection} />
+      <Distribution kind="natures" title="Nature" entry={entry} selection={selection} />
       <Distribution kind="teammates" title="Compagni frequenti" entry={entry} onSelect={onSelect} available={snapshot.pokemon} />
-      <Distribution kind="spreads" title="Distribuzioni SP" entry={entry} onTransfer={(spreadKey) => onRequestTransfer({ kind: 'spread', entry, snapshot, spreadKey })} />
+      <Distribution kind="spreads" title="Distribuzioni SP" entry={entry} selection={selection} />
     </div>
     <a className="competitive-original" href={snapshot.sourceUrl} target="_blank" rel="noopener noreferrer">Consulta il dataset originale Smogon ↗</a>
+    <CompetitiveExport request={request} selection={selection} onExport={onRequestTransfer} />
   </article>
 }
 
-function Distribution({ kind, title, entry, onSelect, available, onTransfer }) {
+function Distribution({ kind, title, entry, onSelect, available, selection }) {
   const [expanded, setExpanded] = useState(false)
   const distribution = entry.distributions[kind]
   const visible = distribution?.entries.slice(0, expanded ? 20 : 5) ?? []
   return <section className={`competitive-distribution competitive-distribution-${kind}`}>
     <h3>{title}</h3>
-    {kind === 'moves' && distribution?.entries.length > 0 && <button className="competitive-expand" type="button" onClick={() => onTransfer()}>Scegli mosse per il team</button>}
+    {kind === 'spreads' && <p className="competitive-distribution-note">SP pubblicati con la natura indicata. Per applicare anche la natura, selezionala nell’elenco Nature.</p>}
     {!distribution || !entry.weightedCount ? <p>Dati non disponibili per questa distribuzione.</p>
       : !distribution.entries.length ? <p>Nessuna voce con peso positivo nella fonte.</p>
         : <ol>{visible.map((row) => {
@@ -161,15 +166,14 @@ function Distribution({ kind, title, entry, onSelect, available, onTransfer }) {
           const canSelect = teammateId && available.some((pokemon) => pokemon.showdownId === teammateId)
           const label = labelFor(kind, row.key)
           const moveType = kind === 'moves' ? moveTypeFor(row.key) : null
-          return <li key={row.key}>
+          return <CompetitiveChoice key={row.key} choice={selection?.state(kind, row.key)} onToggle={() => selection.toggle(kind, row.key)}>
             <div className="competitive-distribution-value">
               {spread ? <strong><CompetitiveTooltip kind="natures" value={spread.nature}>{spread.nature}</CompetitiveTooltip></strong> : canSelect ? <button type="button" onClick={() => onSelect(teammateId)}>{label}</button> : <span className={kind === 'moves' ? 'competitive-move-label' : undefined}><CompetitiveTooltip kind={kind} value={row.key}><span>{label}</span>{moveType && <span className={`type-badge type-${moveType}`}>{moveType}</span>}</CompetitiveTooltip></span>}
               <strong>{formatShare(row.weight, entry.weightedCount)}</strong>
             </div>
             {spread ? <dl className="competitive-spread">{spread.points.map((points, index) => <div key={STAT_LABELS[index]}><dt>{STAT_LABELS[index]}</dt><dd>{points}</dd></div>)}</dl>
               : <div className="competitive-share-track" aria-hidden="true"><span style={{ width: `${Math.min(100, row.weight / entry.weightedCount * 100)}%` }} /></div>}
-            {spread && <button className="competitive-expand" type="button" onClick={() => onTransfer(row.key)}>Usa questo spread</button>}
-          </li>
+          </CompetitiveChoice>
         })}</ol>}
     {distribution && entry.weightedCount > 0 && <>
       {distribution.entries.length > 5 && <button type="button" className="competitive-expand" aria-expanded={expanded} onClick={() => setExpanded((value) => !value)}>{expanded ? 'Mostra meno' : `Mostra ${distribution.entries.length} voci`}</button>}

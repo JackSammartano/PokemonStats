@@ -80,7 +80,7 @@ test('archive validators reject duplicate members, bad SP totals, unknown nature
 })
 test('invalid or unsupported backups fail completely and never replace valid workspace data', () => {
   const original = workspace(), before = JSON.stringify(original)
-  for (const text of ['not json', JSON.stringify({ version: 2, teams: [] }), JSON.stringify({ version: 1, teams: [saved(), saved()] }), ' '.repeat(2_000_001)]) assert.throws(() => parseTeamLibrary(text))
+  for (const text of ['not json', JSON.stringify({ version: 3, teams: [] }), JSON.stringify({ version: 1, teams: [saved(), saved()] }), ' '.repeat(2_000_001)]) assert.throws(() => parseTeamLibrary(text))
   const unknown = { ...saved(), members: [{ ...saved().members[0], pokemonId: 'missingform' }] }
   assert.throws(() => loadSavedTeam(original, 'attacker', unknown), /non è disponibile/)
   const unknownMove = { ...saved(), members: [{ ...saved().members[0], moves: ['inventedmove', '', '', ''] }] }
@@ -149,4 +149,21 @@ test('historical archives retain syntactically valid unknown move IDs without as
   team.members[0].moves = ['historical-move', '', '', '']
   assert.equal(parseTeamLibrary(serializeTeamLibrary({ version: 1, teams: [team] })).teams[0].members[0].moves[0], 'historical-move')
   assert.equal(isSavedTeamCompatible(team), false)
+})
+test('library v1 backups migrate losslessly to v2 while preserving the stored original on read', () => {
+  const team = saved(), raw = JSON.stringify({ version: 1, teams: [team] })
+  const storage = { getItem: () => raw }
+  const result = readTeamLibrary(storage)
+  assert.equal(result.error, '')
+  assert.equal(result.library.version, 2)
+  assert.deepEqual(result.library.teams, [team])
+  assert.equal(storage.getItem(TEAM_LIBRARY_KEY), raw)
+  assert.equal(parseTeamLibrary(raw).version, 2)
+})
+test('invalid incompleteness metadata is rejected rather than losing markers during backup restore', () => {
+  const team = saved()
+  for (const fields of [['invented'], ['sps', 'sps'], 'sps', null]) {
+    const bad = { ...team, members: [{ ...team.members[0], build: { ...team.members[0].build, missingFields: fields } }] }
+    assert.throws(() => validateSavedTeam(bad), /metadati/)
+  }
 })

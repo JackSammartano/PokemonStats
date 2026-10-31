@@ -72,6 +72,18 @@ spread sono pubblicati insieme ma senza natura associata; nature e spread restan
 distribuzioni indipendenti. Non si ricostruiscono set completi né si assegna un
 rank separato alle Mega dalla frequenza delle megapietre.
 
+L’esportazione ranked usa gli ID del catalogo di mosse, strumenti, abilità e nature
+e i sei SP scelti esplicitamente dall’utente, dai dettagli già caricati. Non salva percentuali,
+risposte API, elenco delle distribuzioni o metadati della fonte nel workspace o
+negli archivi delle squadre. È distinta dalla copia di un dataset o da un servizio
+di redistribuzione. Le [regole API](https://championsbattledata.com/api-rules/)
+sono state ricontrollate per questo incremento; l’attribuzione con link resta
+visibile nella pagina e anche nella modale. Nessuna richiesta aggiuntiva o
+archiviazione automatica viene avviata dal trasferimento. Natura e SP possono
+essere scelti separatamente: la configurazione risultante è composta dall’utente,
+non un set completo osservato nella fonte. Non si afferma equivalenza fra stagione
+e regulation né si convertono EV tradizionali in SP.
+
 L'attribuzione «Battle data provided by Pokémon Champions Battle Data» è presente
 nella vista con link al servizio, alle condizioni e al dettaglio API del Pokémon.
 Data di generazione della classifica, eventuale data dei dettagli e momento di
@@ -155,7 +167,12 @@ Non è stata individuata una formula di attribuzione obbligatoria o una licenza
 generale per dati commerciali: questi credits sono una scelta di trasparenza,
 non una dichiarazione di autorizzazione alla redistribuzione. I termini distinguono
 i diritti degli autori dei contenuti; il client conserva solo cache temporanea
-in memoria, massimo due minuti, senza archivio, API mirror o export di team.
+in memoria, massimo due minuti, senza archivio automatico delle risposte o API mirror.
+Il comando Esporta team copia soltanto una configurazione scelta nel workspace
+dell’utente, senza ulteriori richieste. Può essere salvata esplicitamente nella
+libreria locale e nel relativo backup; non contiene standings o risposte grezze.
+Questa funzione non autorizza la redistribuzione generale dei dataset e non
+costituisce un archivio di tornei. Crediti e link originale restano nell’anteprima.
 Un uso commerciale con archiviazione o redistribuzione richiede una verifica
 aggiuntiva dei diritti. Nessun contatto al gestore è stato inviato.
 

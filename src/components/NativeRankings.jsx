@@ -6,6 +6,9 @@ import { REGULATION, REGULATION_MOVES } from '../lib/regulation.js'
 import PokemonDetails from './PokemonDetails'
 import PokemonImage from './PokemonImage'
 import CompetitiveTooltip from './CompetitiveTooltip'
+import { createNativeBuildTransfer, NATIVE_TRANSFER_CATEGORIES } from '../lib/competitiveTransfer.js'
+import { CompetitiveChoice, CompetitiveExport } from './CompetitiveSelection'
+import { useCompetitiveSelection } from '../lib/useCompetitiveSelection.js'
 
 const client = createBattleDataClient()
 const pokemonById = new Map(POKEMON_DATASET.map((pokemon) => [pokemon.showdownId, pokemon]))
@@ -21,7 +24,7 @@ function errorMessage(error) {
   return error.message
 }
 
-export default function NativeRankings({ active }) {
+export default function NativeRankings({ active, onRequestTransfer }) {
   const [season, setSeason] = useState('Current')
   const [seasons, setSeasons] = useState(['Current'])
   const [query, setQuery] = useState('')
@@ -102,7 +105,7 @@ export default function NativeRankings({ active }) {
               </div>
               <p className="competitive-ranking-note">Posizioni della fonte; usage % non disponibile.</p>
             </section>
-            <article id="native-pokemon-detail" className="competitive-detail native-detail" aria-label={selected ? `Dettagli ranked di ${selected.name}` : 'Dettagli ranked'}>
+            <article key={selectedId} id="native-pokemon-detail" className="competitive-detail native-detail" aria-label={selected ? `Dettagli ranked di ${selected.name}` : 'Dettagli ranked'}>
               {!selected ? <p>La fonte non contiene Pokémon per questa stagione.</p> : <>
                 <div className="competitive-detail-heading"><span>#{selected.position} · classifica ranked</span><span>Stagione {seasonLabel(season)} · Doubles</span></div>
                 {pokemonById.has(selected.showdownId) ? <div className="competitive-profile"><PokemonDetails pokemon={pokemonById.get(selected.showdownId)} /></div>
@@ -110,7 +113,7 @@ export default function NativeRankings({ active }) {
                 <p className="competitive-detail-note">Scheda del catalogo {REGULATION.label}; compatibilità con la stagione non certificata.</p>
                 {details?.status === 'error' ? <NativeError message={details.error} onRetry={() => setDetailRetry((value) => value + 1)} />
                   : details?.status !== 'ready' ? <p role="status">Caricamento delle scelte diffuse…</p>
-                    : <NativeDetails key={detailKey} data={details.result.data} retrievedAt={details.result.retrievedAt} />}
+                    : <NativeDetails key={detailKey} data={details.result.data} retrievedAt={details.result.retrievedAt} onRequestTransfer={onRequestTransfer} />}
               </>}
             </article>
           </div>
@@ -131,33 +134,37 @@ function NativeError({ message, onRetry }) {
   return <div className="competitive-empty native-error" role="alert"><p>{message}</p><button type="button" className="secondary-button" onClick={onRetry}>Riprova</button></div>
 }
 
-function NativeDetails({ data, retrievedAt }) {
+function NativeDetails({ data, retrievedAt, onRequestTransfer }) {
+  const request = useMemo(() => pokemonById.has(data.showdownId) ? createNativeBuildTransfer(data) : null, [data])
+  const selection = useCompetitiveSelection(request)
   return <>
     <details className="competitive-data-info native-detail-info"><summary>{data.date ? `Dati del ${dayFormat.format(new Date(data.date))}` : 'Informazioni sui dettagli'}</summary>
       <p className="native-data-date">{data.date ? `Dati del ${dayFormat.format(new Date(data.date))}.` : 'La fonte non indica una data per i dettagli attuali.'} Consultati il {dateFormat.format(new Date(retrievedAt))} UTC.</p>
       <p>Percentuali originali del servizio, senza rinormalizzazione. Le scelte elencate non costituiscono un set completo.</p>
     </details>
     <div className="competitive-distributions">
-      {Object.entries(BATTLE_DATA_GROUPS).map(([category, title]) => <NativeDistribution key={category} category={category} title={title} rows={data.groups[category]} />)}
+      {Object.entries(BATTLE_DATA_GROUPS).map(([category, title]) => <NativeDistribution key={category} category={category} title={title} rows={data.groups[category]} selection={request && NATIVE_TRANSFER_CATEGORIES[category] ? selection : undefined} />)}
     </div>
     <a className="competitive-original" href={`${BATTLE_DATA_ORIGIN}/api/battle/Doubles/${data.showdownId}?season=${data.season}`} target="_blank" rel="noopener noreferrer">Consulta i dati originali del Pokémon ↗</a>
+    <CompetitiveExport request={request} selection={selection} onExport={onRequestTransfer} />
   </>
 }
 
-function NativeDistribution({ category, title, rows }) {
+function NativeDistribution({ category, title, rows, selection }) {
   const [expanded, setExpanded] = useState(false)
   return <section className={`competitive-distribution native-distribution-${category}`}>
     <h3>{title}</h3>
     {category === 'stat_points' && <p className="competitive-distribution-note">SP senza natura associata.</p>}
     {!rows.length ? <p>La fonte non pubblica voci per questa categoria.</p> : <ol>{rows.slice(0, expanded ? rows.length : 5).map((row) => {
       const moveType = category === 'move' ? moveTypeFor(row.name) : null
-      return <li key={row.rank}>
+      const kind = NATIVE_TRANSFER_CATEGORIES[category]
+      return <CompetitiveChoice key={row.rank} choice={selection?.state(kind, String(row.rank))} onToggle={() => selection.toggle(kind, String(row.rank))}>
         <div className="competitive-distribution-value"><span className={category === 'move' ? 'competitive-move-label' : undefined}>
           {row.points ? `Spread ${row.rank}` : <CompetitiveTooltip kind={tooltipKinds[category]} value={row.name}><span>{row.name}</span>{moveType && <span className={`type-badge type-${moveType}`}>{moveType}</span>}</CompetitiveTooltip>}
         </span><strong>{formatUsage(row.percentage)}</strong></div>
         {row.points ? <dl className="competitive-spread">{row.points.map((value, index) => <div key={statLabels[index]}><dt>{statLabels[index]}</dt><dd>{value}</dd></div>)}</dl>
           : row.percentage !== null && <div className="competitive-share-track" aria-hidden="true"><span style={{ width: `${row.percentage}%` }} /></div>}
-      </li>
+      </CompetitiveChoice>
     })}</ol>}
     {rows.length > 5 && <button className="competitive-expand" type="button" aria-expanded={expanded} onClick={() => setExpanded((value) => !value)}>{expanded ? 'Mostra meno' : `Mostra ${rows.length} voci`}</button>}
   </section>

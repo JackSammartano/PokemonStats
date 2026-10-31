@@ -7,6 +7,7 @@ import { getBattleAbilityCoverageNotes } from './championsCoverage.js'
 import { getEffectiveAbility } from './championsBattle.js'
 import { createBattleConditions, getBattleConditions } from './championsBattleConditions.js'
 import { getItemCoverageNote } from './championsItems.js'
+import { missingSetFields, missingSetLabel } from '../teamCompleteness.js'
 
 const STAT_ALIASES = { hp: 'hp', attack: 'atk', defense: 'def', 'special-attack': 'spa', 'special-defense': 'spd', speed: 'spe' }
 
@@ -27,6 +28,7 @@ export function getBaseStats(pokemon) {
 }
 
 export function getBuildStats(pokemon, build) {
+  if (missingSetFields(build).some((field) => ['nature', 'sps'].includes(field))) return null
   return pokemon ? calculateChampionsStats({ baseStats: getBaseStats(pokemon), nature: build.nature, sps: build.sps }) : null
 }
 
@@ -54,6 +56,8 @@ export function calculateMoveRows(attacker, defender, attackingBuild, defendingB
       return { slot, moveId, move: metadata, result: null, reason: metadata ? metadata.category === 'status' ? 'Mossa di stato · nessun danno diretto' : 'Formula del danno non ancora implementata' : '' }
     }
     if (!attacker || !defender) return { slot, moveId, move, result: null }
+    const incomplete = [[attacker, attackingBuild], [defender, defendingBuild]].filter(([, build]) => missingSetFields(build).some((field) => field !== 'moves'))
+    if (incomplete.length) return { slot, moveId, move, result: null, reason: incomplete.map(([pokemon, build]) => `${pokemon.displayName}: completa ${missingSetLabel(build)} in Configura prima del calcolo.`).join(' ') }
     const weather = resolveAbilityWeather({ attackerAbility: getEffectiveAbility(attackingBuild, defendingBuild, field), defenderAbility: getEffectiveAbility(defendingBuild, attackingBuild, field), selectedWeather: field.weather,
       attackerEntryActive: attackingBuild.entryAbilityActive !== false, defenderEntryActive: defendingBuild.entryAbilityActive !== false, weatherSuppressed: field.isCloudNine && field.gameType === 'Doubles' })
     if (weather.requiresChoice) return { slot, moveId, move, result: null, reason: 'Le abilità impostano meteo diversi: seleziona il meteo effettivo dopo l’ultimo ingresso.' }
@@ -84,6 +88,7 @@ export function calculateMoveRows(attacker, defender, attackingBuild, defendingB
 }
 
 export function createOptimizerContext(attacker, defender, attackingBuild, defendingBuild, move, field) {
+  if ([attackingBuild, defendingBuild].some((build) => missingSetFields(build).some((field) => field !== 'moves'))) return null
   if (!attacker || !defender || !move || !CHAMPIONS_MOVES[toId(move.name)]) return null
   if (attackingBuild.isFainted || defendingBuild.isFainted) return null
   let attackConditions, defenseConditions
