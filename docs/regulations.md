@@ -12,6 +12,12 @@ esplicitamente l'assenza di uno snapshot compatibile finché non viene importato
 Il controllo offline dei dati competitivi è incluso in `build` e non richiede
 l'accesso a Smogon durante un aggiornamento delle meccaniche.
 
+La [libreria Squadre salvate](saved-teams.md) conserva anche archivi di regulation
+precedenti: ID, formato e commit devono corrispondere alla build per caricarli.
+Un cambio regulation non elimina le copie storiche e non le converte implicitamente.
+Il trasferimento dal Competitivo usa soltanto snapshot della regulation/revisione
+attiva e valori SP Champions verificati.
+
 ## Aggiornamento ordinario
 
 Prerequisiti: Node.js 24, dipendenze installate con `npm ci`, working tree controllato

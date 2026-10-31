@@ -3,6 +3,8 @@
 La pagina Il mio team contiene La mia squadra e La squadra avversaria. Entrambe hanno
 sei slot, import dagli appunti, aggiunta manuale dal roster o dal catalogo, selezione
 del membro da confrontare, configurazione nel calcolatore, rimozione e svuotamento.
+Queste funzioni sono nella scheda **Pianificazione**; la scheda **Squadre Salvate**
+ospita archivio e backup, senza cambiare le squadre attive quando viene aperta.
 La navigazione non mostra più anteprime o contatori del team; è stata rimossa anche
 l'anteprima ridondante della coppia selezionata.
 
@@ -63,11 +65,18 @@ esemplari della stessa specie in squadre opposte rimangono indipendenti.
 Una modifica manuale a natura, abilità, oggetto, livello, nickname, genere, SP,
 boost, stato o schermi nel calcolatore aggiorna lo stesso profilo usato dalla pagina team.
 
-Le informazioni sono salvate nel browser con chiave `pokemonstats.team-workspace.v1`.
+Le informazioni correnti sono salvate nel browser con chiave
+`pokemonstats.team-workspace.v1.<regulationId>`; il vecchio salvataggio non
+suddiviso per regulation viene letto come migrazione iniziale M-C, se necessario.
 Il ripristino controlla versione, membri del roster e limiti dei valori numerici.
 Se lo storage non è disponibile, la pagina lo segnala e conserva lo stato in memoria.
 Lo svuotamento di una squadra rimuove i membri dalla formazione; i loro profili restano
 memorizzati per poterli recuperare aggiungendoli nuovamente.
+
+Per conservare più formazioni con nome, usare **Salva** e la sezione
+[Squadre salvate](saved-teams.md). La tendina accanto ad Aggiungi Pokémon carica
+una copia nella relativa squadra dopo conferma. La libreria è distinta dal
+salvataggio automatico delle due squadre attive e offre backup JSON su file.
 
 ## Resoconto laterale
 

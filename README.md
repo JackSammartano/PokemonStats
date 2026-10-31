@@ -22,6 +22,7 @@ di aggiornamento è descritta in [docs/regulations.md](docs/regulations.md).
 - Stats base, tipi, debolezze difensive e abilita con descrizione.
 - Due squadre da sei Pokémon, import Showdown dagli appunti e confronto laterale dei tipi.
 - Configurazioni complete per Pokémon condivise con il calcolatore e salvate localmente nel browser.
+- Schede Pianificazione e Squadre Salvate nella pagina Il mio team, con archivio locale, caricamento nelle due squadre anche dalle tendine accanto ad Aggiungi Pokémon, rinomina/aggiornamento e backup JSON. Dettagli in [docs/saved-teams.md](docs/saved-teams.md).
 - Card uniformi con quattro slot mosse; i nickname importati vengono ignorati.
 - Pulsanti `M`/`m` su card e modale per cambiare forma con la megapietra corretta, comprese le Mega Z, mantenendo la configurazione.
 - Modale `i` con copertura in entrambe le direzioni e deduzioni per il singolo Pokémon; riepilogo dei matchup delle due squadre.
@@ -30,6 +31,7 @@ di aggiornamento è descritta in [docs/regulations.md](docs/regulations.md).
 - Vista Ranked Champions separata, con stagioni e dettagli letti da Champions Battle Data su consultazione, cache temporanea e attribuzione.
 - Vista Tornei con elenco Limitless paginato della regulation attiva, classifica e team sheet pubblicati, dettagli su richiesta e collegamento all’evento originale.
 - Tooltip di mosse, strumenti, abilità e nature nei dettagli competitivi, disponibili con mouse, tastiera e tocco, da descrizioni locali della regulation.
+- Trasferimento da Showdown di mosse scelte o di uno spread natura/SP verso Mia squadra o Squadra avversaria, con anteprima e conferma.
 - Passaggio dal team al calcolatore con attaccante, avversario e quattro mosse per ciascuno già impostati e ritorno contestuale al team.
 - Tab Confronta per vedere due card Pokemon complete affiancate.
 - Damage calculator Champions con selezione attacker/defender, mosse, item, abilita, nature, SP, boost e condizioni di campo.

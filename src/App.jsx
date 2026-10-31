@@ -16,6 +16,10 @@ import { updatePokemonMoveSlot } from './lib/damage/championsMoveSets'
 import { formatName, POKEMON_BY_NAME, POKEMON_DATASET } from './lib/pokemonDataset'
 import PokemonDetails from './components/PokemonDetails'
 import { getMegaAction, toggleMegaEvolution } from './lib/megaEvolution'
+import { isSavedTeamCompatible, loadSavedTeam, useTeamLibrary } from './lib/teamLibrary.js'
+import TeamLibrary from './components/TeamLibrary'
+import CompetitiveTransferDialog from './components/CompetitiveTransferDialog'
+import { applyCompetitiveTransfer } from './lib/competitiveTransfer.js'
 const PokemonCoverageDialog = lazy(() => import('./components/PokemonCoverageDialog'))
 const CompetitiveWorkspace = lazy(() => import('./components/CompetitiveWorkspace'))
 
@@ -61,6 +65,11 @@ const VIEW_CONTENT = {
 function App() {
   const pokemon = POKEMON_DATASET
   const { workspace, setWorkspace, saveError } = useTeamWorkspace()
+  const teamLibrary = useTeamLibrary()
+  const [libraryAction, setLibraryAction] = useState(null)
+  const [teamSection, setTeamSection] = useState('planning')
+  const [teamNotice, setTeamNotice] = useState(null)
+  const [transferRequest, setTransferRequest] = useState(null)
   const { moveSets, builds } = workspace
   const teamNames = workspace.teams.attacker
   const opponentNames = workspace.teams.defender
@@ -80,6 +89,11 @@ function App() {
   const [damageAttackerName, setDamageAttackerName] = useState('')
   const [damageDefenderName, setDamageDefenderName] = useState('')
   const deferredQuery = useDeferredValue(query)
+
+  useEffect(() => {
+    if (view !== 'team') setLibraryAction(null)
+    if (view !== 'competitive') setTransferRequest(null)
+  }, [view])
 
   useEffect(() => {
     if (!compareRequest) return
@@ -141,6 +155,23 @@ function App() {
   function handleTeamImport(side, imported) {
     setWorkspace((current) => applyImportedTeam(current, side, imported))
     setTeamDamageDraft((current) => ({ ...current, [side === 'attacker' ? 'attackerName' : 'defenderName']: imported.members[0].name }))
+  }
+
+  function handleSavedTeamLoad(side, saved) {
+    const next = loadSavedTeam(workspace, side, saved)
+    setWorkspace(next)
+    setTeamDamageDraft((current) => ({ ...current, [side === 'attacker' ? 'attackerName' : 'defenderName']: next.teams[side][0] }))
+    setCoverageTarget(null)
+    setTeamSection('planning')
+  }
+
+  function handleCompetitiveTransfer(side, request, selection) {
+    const next = applyCompetitiveTransfer(workspace, side, request, selection)
+    setWorkspace(next)
+    setTeamDamageDraft((current) => ({ ...current, [side === 'attacker' ? 'attackerName' : 'defenderName']: next.teams[side].find((name) => POKEMON_BY_NAME.get(name)?.showdownId === request.entry.showdownId) }))
+    setTransferRequest(null)
+    setTeamSection('planning')
+    navigate('team')
   }
 
   const changeBuild = useCallback((side, entry, changes) => {
@@ -312,7 +343,9 @@ function App() {
 
       </div>
       <div className="workspace-view" hidden={view !== 'team'}>
-        <div className="team-workspace-layout">
+        <nav className="team-section-nav" aria-label="Sezioni del team"><button type="button" aria-pressed={teamSection === 'planning'} aria-controls="team-planning-panel" onClick={() => { setTeamSection('planning'); setTeamNotice('') }}>Pianificazione</button><button type="button" aria-pressed={teamSection === 'saved'} aria-controls="team-saved-panel" onClick={() => { setTeamSection('saved'); setTeamNotice('') }}>Squadre Salvate</button></nav>
+        {teamNotice && <p className={`team-library-message${teamNotice.error ? ' team-library-error' : ''}`} role={teamNotice.error ? 'alert' : 'status'}>{teamNotice.text}</p>}
+        <div id="team-planning-panel" hidden={teamSection !== 'planning'}><div className="team-workspace-layout">
           <div className="team-workspace-main">
             {['attacker', 'defender'].map((side) => <SquadSection
               key={side} side={side} title={side === 'attacker' ? 'La mia squadra' : 'La squadra avversaria'}
@@ -326,11 +359,15 @@ function App() {
               onRemove={(name) => setSquadNames(side, (names) => names.filter((entry) => entry !== name))}
               onClear={() => setSquadNames(side, [])} onImport={(imported) => handleTeamImport(side, imported)}
               onCatalog={() => navigate('catalog')}
+              savedTeams={teamLibrary.library.teams.filter(isSavedTeamCompatible)} libraryUnavailable={!!teamLibrary.error}
+              onSaveTeam={() => setLibraryAction({ mode: 'save', side })}
+              onLoadTeam={(id) => setLibraryAction({ mode: 'load', id, side })}
             />)}
             <button className="ghost-button team-open-calculator" type="button" onClick={openDamageFromTeam}>Apri nel damage calculator <span aria-hidden="true">→</span></button>
           </div>
           <TeamTypeSummary team={team} opponentTeam={opponentTeam} moveSets={moveSets} />
-        </div>
+        </div></div>
+        <TeamLibrary workspace={workspace} library={teamLibrary.library} error={teamLibrary.error} onChange={teamLibrary.update} onLoad={handleSavedTeamLoad} action={libraryAction} onAction={setLibraryAction} visible={teamSection === 'saved'} onMessage={(text) => setTeamNotice({ text, error: false })} onError={(text) => setTeamNotice({ text, error: true })} />
         {view === 'team' && coveragePokemon && <Suspense fallback={<p role="status">Apertura dettagli…</p>}><PokemonCoverageDialog key={coverageTarget.side} pokemon={coveragePokemon} side={coverageTarget.side} team={team} opponentTeam={opponentTeam} moveSets={moveSets} mega={getMegaAction(coveragePokemon, getWorkspaceBuild(builds, coverageTarget.side, coverageTarget.name), workspace.teams[coverageTarget.side])} onMegaToggle={() => changeMegaForm(coverageTarget.side, coverageTarget.name)} onClose={closeCoverage} /></Suspense>}
       </div>
       <div className="workspace-view" hidden={view !== 'damage'}>
@@ -350,7 +387,8 @@ function App() {
         />
 
       </div>
-      <div className="workspace-view" hidden={view !== 'competitive'}>{(competitiveOpened || view === 'competitive') && <Suspense fallback={<p role="status">Apertura statistiche competitive…</p>}><CompetitiveWorkspace /></Suspense>}</div>
+      <div className="workspace-view" hidden={view !== 'competitive'}>{(competitiveOpened || view === 'competitive') && <Suspense fallback={<p role="status">Apertura statistiche competitive…</p>}><CompetitiveWorkspace onRequestTransfer={setTransferRequest} /></Suspense>}</div>
+      {transferRequest && <CompetitiveTransferDialog request={transferRequest} workspace={workspace} onApply={handleCompetitiveTransfer} onClose={() => setTransferRequest(null)} />}
       <footer className="site-footer">
         <span>Pokémon Stats · Regulation {REGULATION.label}</span>
         <span>Dati e descrizioni: <a href="https://github.com/smogon/pokemon-showdown" target="_blank" rel="noopener noreferrer">Pokémon Showdown</a> · <a href={`${import.meta.env.BASE_URL}licenses/pokemon-showdown.txt`} target="_blank" rel="noopener noreferrer">Licenza MIT</a></span>

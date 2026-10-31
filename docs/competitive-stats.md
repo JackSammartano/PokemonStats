@@ -86,7 +86,42 @@ distinti e bloccanti. Battle Cruise VGC e il Side hanno evidenziato questo caso.
 L’API non è una verifica di legalità dei team; eventuali regole personalizzate
 pubblicate rimandano all’evento originale. I diritti di archivio permanente e
 ridistribuzione richiedono un chiarimento prima di estendere questa integrazione.
-Il trasferimento di mosse/spread alle due squadre resta un incremento successivo.
+Il trasferimento di mosse/spread è disponibile per Showdown come descritto sotto;
+ranked nativa e tornei restano fonti di consultazione in questo incremento.
+
+## Trasferimento Showdown alle squadre
+
+«Scegli mosse per il team» apre una modale senza mosse preselezionate: l’utente
+sceglie da una a quattro voci nell’ordine desiderato, fra quelle pubblicate nello
+snapshot e nel learnset verificato. Le frequenze individuali non vengono trasformate
+in un set osservato. Gli slot rimanenti sono vuoti. «Usa questo spread» applica
+una singola coppia natura/sei SP pubblicata, senza conversioni da EV tradizionali.
+
+La modale seleziona La mia squadra o Squadra avversaria e mostra valori attuali
+e successivi prima della conferma. Aggiorna solo il Pokémon con lo stesso ID di
+forma; se assente lo aggiunge al primo slot libero. Una squadra piena impedisce
+l’aggiunta, ma consente l’aggiornamento del membro già presente. Nessuna sostituzione
+automatica di altri membri o deduzione di una Mega. Per un nuovo membro applicare
+solo lo spread lascia tutte le mosse vuote.
+
+`src/lib/competitiveTransfer.js` ricontrolla fonte Smogon, regulation, formato,
+revisione delle meccaniche e sistema `champions-sp`, presenza della voce nello
+snapshot, mosse disponibili e spread effettivamente pubblicato. Le modifiche sono
+atomiche: un errore lascia il workspace invariato. Aggiornare le mosse mantiene
+il resto del profilo; applicare lo spread modifica solo natura/SP, conservando
+strumento, abilità, mosse e condizioni già impostate. Confermare apre Il mio team
+con il membro destinazione selezionato. L’altro lato resta indipendente.
+
+La [libreria](saved-teams.md) permette poi di archiviare la formazione risultante.
+Il trasferimento non crea automaticamente una copia salvata e non aggiorna copie
+precedenti. Non aggiunge metadati del provider all’archivio o un servizio di replica.
+
+Test offline su selezione esplicita, slot vuoti, compatibilità, squadra piena,
+indipendenza dei lati e dei campi, nessuna mutazione su errore. Browser sulla build
+con snapshot locale reale: annullamento, scelta di mosse verso la squadra avversaria,
+aggiunta di Rillaboom, applicazione dello spread allo stesso membro, mantenimento
+delle mosse, ritorno alla pagina team e persistenza dopo ricaricamento. Nessuna
+richiesta ai provider ranked o tornei durante queste verifiche.
 
 ## Architettura e aggiornamento
 
@@ -260,20 +295,22 @@ in un set storico non certifica la legalità corrente della combinazione.
 - Nessun aggiornamento automatico o cron è attivo in questa fase. Un futuro job
   mensile potrà preparare una PR senza pubblicare dati non revisionati.
 
-## Attività successiva: trasferimento verso i team
+## Stato del trasferimento verso i team
 
 Richiesta confermata dall'utente: trasferire singole mosse selezionate oppure
 uno spread scelto dalla schermata Competitivo a «Mia squadra» o «Squadra avversaria».
-La funzionalità è annotata, non implementata in questo incremento, e sarà ripresa
-dopo lo sviluppo del competitivo con un piano dedicato.
+La richiesta è implementata per Showdown: vedere
+[Trasferimento Showdown alle squadre](#trasferimento-showdown-alle-squadre).
+Ranked nativa e tornei non espongono ancora comandi di trasferimento.
 
-Il trasferimento dovrà permettere la scelta esplicita del lato e dello slot di
-destinazione, verificare forma, regulation, disponibilità delle mosse e sistema SP,
-e chiarire come gestire dati già presenti. Lo spread include la natura associata
+Il trasferimento permette la scelta esplicita del lato e aggiorna la forma esatta
+già presente o la aggiunge al primo slot libero. Verifica forma, regulation,
+disponibilità delle mosse e sistema SP, mostrando prima i valori che saranno
+sostituiti. Lo spread Showdown include la natura associata
 e i sei SP pubblicati insieme; le mosse sono scelte separatamente dall'utente.
-Non si dovrà costruire automaticamente un set completo combinando le voci più
+Non si costruisce automaticamente un set completo combinando le voci più
 frequenti delle distribuzioni marginali, né presentarlo come realmente osservato.
-Saranno riutilizzati il workspace condiviso e i controlli di compatibilità esistenti,
+Sono riutilizzati il workspace condiviso e i controlli di compatibilità esistenti,
 preservando i set indipendenti delle due squadre e i relativi salvataggi.
 
 ## Ranked nativa

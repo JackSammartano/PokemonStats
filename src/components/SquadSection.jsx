@@ -9,7 +9,7 @@ import PokemonImage from './PokemonImage'
 import { getMegaAction } from '../lib/megaEvolution.js'
 import MegaToggleButton from './MegaToggleButton'
 
-export default function SquadSection({ side, title, team, roster, builds, moveSets, selected, onSelect, onConfigure, onInfo, onMegaToggle, onAdd, onRemove, onClear, onImport, onCatalog }) {
+export default function SquadSection({ side, title, team, roster, builds, moveSets, selected, onSelect, onConfigure, onInfo, onMegaToggle, onAdd, onRemove, onClear, onImport, onCatalog, savedTeams, onSaveTeam, onLoadTeam, libraryUnavailable }) {
   const [message, setMessage] = useState('')
   const [editor, setEditor] = useState(null)
   const [busy, setBusy] = useState('')
@@ -62,6 +62,7 @@ export default function SquadSection({ side, title, team, roster, builds, moveSe
       <header className="squad-header">
         <div><h2 id={`squad-title-${side}`}>{title} <span>{team.length}/6</span></h2></div>
         <div className="squad-actions">
+          <button className="secondary-button" type="button" disabled={!team.length || libraryUnavailable} onClick={onSaveTeam}>Salva</button>
           <button className="ghost-button" type="button" disabled={Boolean(busy)} onClick={importClipboard} aria-label={`Importa ${title.toLowerCase()} da Showdown`}>{busy === 'import' ? 'Lettura…' : 'Importa'}</button>
           <button className="secondary-button" type="button" disabled={Boolean(busy) || !team.length} onClick={exportClipboard} aria-label={`Esporta ${title.toLowerCase()} per Showdown`}>{busy === 'export' ? 'Copia…' : 'Esporta'}</button>
           <button className="secondary-button" type="button" disabled={!team.length} onClick={onClear}>Svuota</button>
@@ -76,6 +77,7 @@ export default function SquadSection({ side, title, team, roster, builds, moveSe
             {roster.filter((entry) => !team.some((member) => member.displayName === entry.displayName)).map((entry) => <option key={entry.displayName} value={entry.displayName}>{entry.displayName}</option>)}
           </select>
         </label>
+        <label className="select-field"><span>Carica squadra salvata</span><select value="" disabled={!savedTeams.length} aria-label={`Carica squadra salvata in ${title.toLowerCase()}`} onChange={(event) => { if (event.target.value) onLoadTeam(event.target.value) }}><option value="">{savedTeams.length ? 'Scegli una squadra…' : 'Nessuna squadra salvata'}</option>{savedTeams.map((saved) => <option key={saved.id} value={saved.id}>{saved.name}</option>)}</select></label>
         <button className="secondary-button" type="button" onClick={onCatalog}>Sfoglia il catalogo</button>
       </div>
       <div className="squad-roster">
