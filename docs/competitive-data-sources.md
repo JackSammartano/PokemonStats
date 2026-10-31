@@ -2,8 +2,9 @@
 
 Verifica iniziale: 31 ottobre 2026. Lo studio distingue documentazione, risposte
 campionate e autorizzazioni di riuso. Una risposta HTTP 200 non è una licenza.
-La sezione corrente integra solo aggregati della ladder Smogon / Pokémon Showdown.
-Le altre fonti restano oggetto dello studio, senza codice di integrazione attivo.
+La sezione corrente separa gli aggregati della ladder Smogon / Pokémon Showdown
+dalla ranked nativa consultata tramite Champions Battle Data. Le altre fonti
+restano oggetto dello studio, senza codice di integrazione attivo.
 
 ## Fonte integrata: Smogon / Pokémon Showdown
 
@@ -34,11 +35,53 @@ L'importazione conserva l'originale nella cache locale esclusa da Git e uno
 snapshot normalizzato versionato; lo storico mensile può essere conservato.
 Nessun nuovo diritto su artwork, loghi o marchi è dedotto dai termini dei dati.
 
-## Fonti studiate e non integrate
+## Fonte integrata su consultazione: Champions Battle Data
+
+La [guida API](https://championsbattledata.com/api_guide) e le
+[regole di uso](https://championsbattledata.com/api-rules/) sono state ricontrollate
+il 31 ottobre 2026. L'integrazione legge soltanto:
+
+- `GET /api/rankings?format=Doubles&season=<season>`: classifica completa,
+  identificativi, stagioni disponibili, posizioni, generatedAt e dataVersion.
+- `GET /api/battle/Doubles/<showdownId>?season=<season>`: mosse, strumenti,
+  abilità, nature, spread SP e compagni del solo Pokémon selezionato.
+
+Il controllo nel browser ha verificato CORS reale con sei richieste per aprire la
+vista, selezionare Pokémon, cambiare stagione e controllare una forma non riconciliata.
+La lista attuale conteneva 262 Pokémon; Maushold-Four e Vivillon-Fancy non trovavano
+corrispondenza esatta nel roster M-C. Si mantengono nome e posizione originali,
+senza assegnare immagini o statistiche di forme simili. Non si leggono i pesanti
+record `/api/pokemon`, gli indici globali o gli asset del provider nella UI.
+
+Uso pubblico e commerciale consentito con attribuzione e cache ragionevole.
+Niente mirror, archivi permanenti o redistribuzione come servizio dati autonomo
+senza autorizzazione scritta. L'app non archivia risposte nel repository, in
+localStorage, IndexedDB o cache HTTP persistente: usa `cache: no-store`, senza cookie
+o credenziali, e una cache applicativa in memoria di massimo 24 record e 120 secondi.
+Rispetta eventuali max-age più brevi, no-cache e no-store. Non esiste polling.
+
+Ogni richiesta ha timeout di 15 secondi ed è annullabile, senza retry automatici.
+HTTP 429 e 503 bloccano nuove richieste per il Retry-After leggibile; se manca,
+non è valido o non è esposto tramite CORS, si applica un'attesa locale prudenziale
+di 60 secondi. Non è un rate limit dichiarato dal servizio, che non ne pubblica
+uno fisso. Non si usano endpoint alternativi per aggirare gli errori.
+
+Le quote dei dettagli sono già percentuali, non pesi chaos; quelle assenti restano
+null. La posizione delle specie non viene trasformata in usage. Gli SP di uno
+spread sono pubblicati insieme ma senza natura associata; nature e spread restano
+distribuzioni indipendenti. Non si ricostruiscono set completi né si assegna un
+rank separato alle Mega dalla frequenza delle megapietre.
+
+L'attribuzione «Battle data provided by Pokémon Champions Battle Data» è presente
+nella vista con link al servizio, alle condizioni e al dettaglio API del Pokémon.
+Data di generazione della classifica, eventuale data dei dettagli e momento di
+consultazione sono distinti. L'assenza della data nei dettagli Current è dichiarata.
+Non si equiparano automaticamente stagioni M7 e regulation M-C.
+
+## Altre fonti studiate
 
 | Provider | Verifiche del 31 ottobre 2026 | Riuso e decisione |
 | --- | --- | --- |
-| [Champions Battle Data](https://championsbattledata.com/api_guide) | GET rankings Doubles, record/battle/metadata di Garchomp, variante `season=M4&days=7`, lookup, meta index e snapshot M7 del 31 ottobre. Risposte JSON e header CORS. Indici generali più pesanti controllati soltanto con HEAD: il loro schema GET non è validato integralmente. | [Regole API](https://championsbattledata.com/api-rules/): uso commerciale e cache ragionevole con attribuzione; niente archivio permanente, mirror o servizio di redistribuzione senza permesso scritto. Non versionare le risposte nel nostro repository. |
 | [PokéKit](https://poke.itlibra.com/it/opendata) | GET `usage-champions.json`: settembre 2026, Doubles M-C, soglia 1760, 150 Pokémon. Link reali anche per championssingles, ou, doublesou e vgc. | Open data riutilizzabili e ridistribuibili anche commercialmente con credits a PokéKit e Smogon/Showdown; confermato dall'eccezione open data nei [termini](https://poke.itlibra.com/en/terms). Alternativa più semplice, ma troncata. |
 | [Limitless](https://docs.limitlesstcg.com/developer) | GET games, lista VGC e details/standings/pairings del torneo `6adfbd7122fd412b92a4d932`. Formato M-C, piattaforma SWITCH; team pubblici con strumenti/abilità/nature/mosse, alcuni placing null. | Endpoint pubblici senza chiave. Header osservato `50-in-5min`, da rileggere a ogni esecuzione. Prima di archiviazione e ridistribuzione approfondire le condizioni commerciali e dei dati dei partecipanti. |
 | [MunchStats](https://github.com/PizzaTimeJoshua/munchstats) | Route statistiche M-C/Rillaboom, pokemon-teams, Limitless M-C teams e teams `champions-mc` rispondono sul dominio munchstats.com, con redirect a www.munchstats.com. | Nessuna licenza generale trovata nella root; metadato GitHub `license: null`. Destinazione a terzi, permessi di redistribuzione e limiti non chiariti: nessun riuso di codice o dati in questa fase. |
@@ -50,8 +93,7 @@ posizione, frequenza delle megapietre o somma delle configurazioni. Stagione `M7
 e regulation `M-C` sono identificativi diversi. Alcune quote dei compagni sono
 assenti. I suoi metadati denominati `baseStats` non sono usati per sostituire i
 valori base del nostro dataset: Garchomp riportava HP 183 nel campione.
-L'attribuzione richiesta in una futura integrazione sarà «Battle data provided
-by Pokémon Champions Battle Data», collegata a <https://championsbattledata.com/>.
+L'integrazione usa l'attribuzione richiesta, collegata a <https://championsbattledata.com/>.
 
 PokéKit restituisce nel JSON `usage` (percentuale), mentre il CSV documenta
 `usage_pct`. Include solo quattro spread principali: non bastano per ricavare

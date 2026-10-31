@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs'
 import { test } from 'node:test'
 import mc from '../data/regulations/mc.js'
 import { DETAIL_LIMIT, normalizeChaos, parseChampionsSpread, percentage, validateCompetitiveSnapshot } from './competitive/normalize.js'
-import { createCompetitiveLabels, formatShare, formatUsage, getCompatibleSnapshots } from './competitive/presentation.js'
+import { createCompetitiveLabels, createCompetitiveMoveTypes, formatShare, formatUsage, getCompatibleSnapshots } from './competitive/presentation.js'
 
 // Historical M-C identities; fixture weights are intentionally synthetic, never public statistics.
 const fixture = JSON.parse(readFileSync(new URL('../../scripts/fixtures/competitive-chaos.json', import.meta.url), 'utf8'))
@@ -90,6 +90,12 @@ test('labels come from historical M-C data and empty items stay distinct from mi
   assert.equal(label('items', ''), 'Nessuno strumento')
   assert.match(label('teammates', 'Garchomp-Mega-Z'), /Garchomp/)
   assert.match(label('moves', 'unknown-move'), /non riconciliato/)
+  const moveType = createCompetitiveMoveTypes(mc.moves)
+  assert.equal(moveType('fakeout'), 'normal')
+  assert.equal(moveType('Fake Out'), 'normal')
+  assert.equal(moveType('grassy-glide'), 'grass')
+  assert.equal(moveType('Grassy Glide'), 'grass')
+  assert.equal(moveType('Unknown Move'), null)
   const entry = { regulationId: 'mc', format: mc.source.format, mechanicsReference: mc.source.commit }
   assert.deepEqual(getCompatibleSnapshots({ snapshots: [entry] }, mc.source), [entry])
   assert.deepEqual(getCompatibleSnapshots({ snapshots: [entry] }, { ...mc.source, id: 'mb' }), [])

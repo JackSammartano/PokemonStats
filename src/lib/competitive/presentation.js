@@ -27,3 +27,10 @@ export function createCompetitiveLabels({ roster, moves, items }) {
 export function getCompatibleSnapshots(manifest, regulation) {
   return manifest.snapshots.filter((entry) => entry.regulationId === regulation.id && entry.format === regulation.format && entry.mechanicsReference === regulation.commit)
 }
+
+export function createCompetitiveMoveTypes(moves) {
+  const types = new Map(Object.entries(moves).flatMap(([id, move]) => [
+    [showdownId(id), move.type], [showdownId(move.name), move.type],
+  ]))
+  return (nameOrId) => types.get(showdownId(nameOrId)) ?? null
+}

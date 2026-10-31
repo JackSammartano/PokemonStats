@@ -10,15 +10,19 @@ import { configPath, readRegulationConfig, root } from './regulation-config.mjs'
 const moveId = (value) => value.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
 
 // Presentation stays separate from the fields consumed by the damage engine.
-export function getMovePresentationMetadata(move, text, mods = []) {
+export function getShortDescription(entry, text, mods = []) {
   let shortDesc = text?.shortDesc
   for (const mod of mods) {
     if (text?.[mod]?.shortDesc !== undefined) shortDesc = text[mod].shortDesc
   }
-  // Showdown also permits descriptions directly on a modded move.
-  if (move.shortDesc !== undefined || move.desc !== undefined) shortDesc = move.shortDesc || move.desc
-  if (typeof shortDesc !== 'string' || !shortDesc.trim()) throw new Error(`Missing short description: ${move.name}`)
-  const metadata = { accuracy: move.accuracy, shortDesc: shortDesc.trim() }
+  // Showdown also permits descriptions directly on modded moves and items.
+  if (entry.shortDesc !== undefined || entry.desc !== undefined) shortDesc = entry.shortDesc || entry.desc
+  if (typeof shortDesc !== 'string' || !shortDesc.trim()) throw new Error(`Missing short description: ${entry.name}`)
+  return shortDesc.trim()
+}
+
+export function getMovePresentationMetadata(move, text, mods = []) {
+  const metadata = { accuracy: move.accuracy, shortDesc: getShortDescription(move, text, mods) }
   if (move.damage || move.damageCallback) metadata.fixedDamage = move.damage ?? true
   if (move.basePowerCallback || move.onBasePower) metadata.variablePower = true
   return metadata
@@ -111,11 +115,12 @@ export async function generateSnapshot(regulation, { offline = false } = {}) {
   await mkdir(new URL(`.cache/showdown/${regulation.commit}/`, root), { recursive: true })
   const read = createSourceReader(regulation.commit, offline)
   verifyFormat(await read('config/formats.ts'), regulation)
-  const [pokedex, abilityText, baseLearnsets, baseMoves, baseItems, baseAbilities, moveText] = await Promise.all([
+  const [pokedex, abilityText, baseLearnsets, baseMoves, baseItems, baseAbilities, moveText, itemText] = await Promise.all([
     read('data/pokedex.ts', 'Pokedex'), read('data/text/abilities.ts', 'AbilitiesText'),
     read('data/learnsets.ts', 'Learnsets'), read('data/moves.ts', 'Moves'), read('data/items.ts', 'Items'),
     read('data/abilities.ts', 'Abilities'),
     read('data/text/moves.ts', 'MovesText'),
+    read('data/text/items.ts', 'ItemsText'),
   ])
   let formats = {}, learnsets = baseLearnsets, moves = baseMoves, items = baseItems
   let abilities = baseAbilities
@@ -177,7 +182,7 @@ export async function generateSnapshot(regulation, { offline = false } = {}) {
     moves: Object.fromEntries(Object.entries(teamMoves).sort(([a], [b]) => a.localeCompare(b, 'en'))),
     learnsets: teamLearnsets,
     abilityMechanics: Object.fromEntries(Object.entries(abilityMechanics).sort(([a], [b]) => a.localeCompare(b, 'en'))),
-    items: Object.values(items).filter((item) => item.name && !item.isNonstandard).map((item) => ({ id: moveId(item.name), name: item.name, fingerprint: fingerprintItem(item), megaStone: Boolean(item.megaStone), flingPower: item.fling?.basePower ?? 0, isBerry: Boolean(item.isBerry) })).sort((a, b) => a.name.localeCompare(b.name, 'en')),
+    items: Object.entries(items).filter(([, item]) => item.name && !item.isNonstandard).map(([id, item]) => ({ id: moveId(item.name), name: item.name, description: getShortDescription(item, itemText[id], mods), fingerprint: fingerprintItem(item), megaStone: Boolean(item.megaStone), flingPower: item.fling?.basePower ?? 0, isBerry: Boolean(item.isBerry) })).sort((a, b) => a.name.localeCompare(b.name, 'en')),
     megaEvolutions: buildMegaEvolutionLinks(roster, items),
   })
 }

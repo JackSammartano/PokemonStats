@@ -3,7 +3,7 @@ import { test } from 'node:test'
 import mc from '../src/data/regulations/mc.js'
 import mb from '../src/data/regulations/mb.js'
 import { compareRegulations } from './compare-regulations.mjs'
-import { fingerprintAbility, fingerprintItem, getMovePresentationMetadata, validateSnapshot, verifyFormat } from './import-regulation.mjs'
+import { fingerprintAbility, fingerprintItem, getMovePresentationMetadata, getShortDescription, validateSnapshot, verifyFormat } from './import-regulation.mjs'
 import { readRegulationConfig } from './regulation-config.mjs'
 import { getCoverage } from './check-regulation.mjs'
 
@@ -33,6 +33,7 @@ test('item fingerprints include Fling, seed boosts and handlers while ignoring p
   const item = { name: 'Fixture', fling: { basePower: 30 }, boosts: { def: 1 }, onStart() { return 1 } }
   const fingerprint = fingerprintItem(item)
   assert.equal(fingerprintItem({ ...item, name: 'Renamed', spritenum: 99 }), fingerprint)
+  assert.equal(fingerprintItem({ ...item, description: 'Presentation only.' }), fingerprint)
   assert.notEqual(fingerprintItem({ ...item, fling: { basePower: 60 } }), fingerprint)
   assert.notEqual(fingerprintItem({ ...item, boosts: { spd: 1 } }), fingerprint)
   assert.notEqual(fingerprintItem({ ...item, onStart() { return 2 } }), fingerprint)
@@ -53,6 +54,31 @@ test('move text resolves general, Champions and regulation-specific overrides in
   assert.equal(getMovePresentationMetadata(move, text, ['champions', 'championsregmb']).shortDesc, 'Historical regulation.')
   assert.equal(getMovePresentationMetadata(move, text, ['champions', 'futuremod']).shortDesc, 'Champions.')
   assert.equal(getMovePresentationMetadata({ ...move, shortDesc: 'Direct override.' }, text, ['champions']).shortDesc, 'Direct override.')
+})
+
+test('item text uses pinned general, parent and regulation overrides with direct text taking precedence', () => {
+  const item = { name: 'Fixture Item' }
+  const text = { shortDesc: 'General.', champions: { shortDesc: 'Champions.' }, championsregmb: { shortDesc: 'M-B.' } }
+  assert.equal(getShortDescription(item, text), 'General.')
+  assert.equal(getShortDescription(item, text, ['champions']), 'Champions.')
+  assert.equal(getShortDescription(item, text, ['champions', 'championsregmb']), 'M-B.')
+  assert.equal(getShortDescription({ ...item, desc: ' Direct text. ' }, text, ['champions']), 'Direct text.')
+  for (const missing of [undefined, {}, { shortDesc: '' }, { shortDesc: 42 }]) assert.throws(() => getShortDescription(item, missing), /Missing short description: Fixture Item/)
+  assert.throws(() => getShortDescription(item, { ...text, champions: { shortDesc: '' } }, ['champions']), /Missing short description/)
+})
+
+test('historical M-B and M-C item descriptions are complete and changes remain separate from mechanics', () => {
+  for (const snapshot of [mb, mc]) {
+    assert.deepEqual(getCoverage(snapshot).incompleteItemDescriptions, [])
+  }
+  assert.match(mc.items.find((item) => item.id === 'eject-button').description, /switches out/)
+  const broken = structuredClone(mc)
+  delete broken.items.find((item) => item.id === 'eject-button').description
+  assert.deepEqual(getCoverage(broken).incompleteItemDescriptions, ['eject-button'])
+  const next = structuredClone(mc)
+  next.items.find((item) => item.id === 'eject-button').description = 'Changed source text.'
+  assert.deepEqual(compareRegulations(mc, next).items.changed, ['eject-button'])
+  assert.deepEqual(getCoverage(next).changedItems, [])
 })
 
 test('missing or explicitly empty descriptions stop import rather than silently losing effects', () => {

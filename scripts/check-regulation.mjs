@@ -19,6 +19,7 @@ export function getCoverage(data) {
     supportedDamagingMoves: damaging.filter(([id]) => CHAMPIONS_MOVES[id]).length,
     missingMoves: damaging.filter(([id]) => !CHAMPIONS_MOVES[id]).map(([id]) => id),
     incompleteMovePresentation: Object.entries(data.moves).filter(([, move]) => !isMovePresentationComplete(move)).map(([id]) => id),
+    incompleteItemDescriptions: data.items.filter((item) => typeof item.description !== 'string' || !item.description.trim()).map((item) => item.id),
     unclassifiedAbilities: abilities.filter((id) => getAbilityCoverage(id, data.abilityMechanics) === 'unknown'),
     changedAbilities: abilities.filter((id) => getAbilityCoverage(id, data.abilityMechanics) === 'changed'),
     partialAbilities: abilities.filter((id) => getAbilityCoverage(id, data.abilityMechanics) === 'partial'),
@@ -51,6 +52,7 @@ export async function checkRegulation({ complete = false, details = false } = {}
     damagingMoves: coverage.damagingMoves, supportedDamagingMoves: coverage.supportedDamagingMoves,
     missingMoves: coverage.missingMoves.length, unclassifiedAbilities: coverage.unclassifiedAbilities.length,
     incompleteMovePresentation: coverage.incompleteMovePresentation.length,
+    incompleteItemDescriptions: coverage.incompleteItemDescriptions.length,
     changedAbilities: coverage.changedAbilities.length, partialAbilities: coverage.partialAbilities.length,
     noDirectEffectAbilities: coverage.noDirectEffectAbilities.length,
     unclassifiedItems: coverage.unclassifiedItems.length,
@@ -59,6 +61,9 @@ export async function checkRegulation({ complete = false, details = false } = {}
   console.log(JSON.stringify({ regulation: regulation.label, source: regulation.commit, forms: snapshot.roster.length, items: snapshot.items.length, coverage: summary }, null, 2))
   if (complete && coverage.incompleteMovePresentation.length) {
     throw new Error(`Incomplete move presentation: ${coverage.incompleteMovePresentation.join(', ')}`)
+  }
+  if (complete && coverage.incompleteItemDescriptions.length) {
+    throw new Error(`Incomplete item descriptions: ${coverage.incompleteItemDescriptions.join(', ')}`)
   }
   if (complete && (coverage.missingMoves.length || coverage.unclassifiedAbilities.length || coverage.changedAbilities.length || coverage.partialAbilities.length || coverage.unclassifiedItems.length || coverage.changedItems.length)) {
     throw new Error('Damage coverage is incomplete; review the listed mechanics before release')

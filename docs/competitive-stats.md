@@ -1,18 +1,19 @@
 # Sezione Competitivo
 
-La vista `#/competitivo` consulta statistiche mensili Showdown Champions Doubles.
-È distinta dalla ranked nativa e dai tornei. La prima versione usa settembre 2026,
-Regulation M-C, soglia Smogon 1760. Non contiene team individuali, archetipi, win
-rate o trend. Le [fonti e condizioni](competitive-data-sources.md) descrivono il
-provider integrato e le alternative studiate.
+La vista `#/competitivo` separa due fonti selezionabili: statistiche mensili
+Showdown Champions Doubles e ranked nativa tramite Champions Battle Data.
+La versione Showdown usa settembre 2026, Regulation M-C, soglia Smogon 1760.
+Le due viste non contengono team individuali, archetipi, win rate o trend e non
+mescolano le osservazioni dei provider. Le [fonti e condizioni](competitive-data-sources.md)
+descrivono le integrazioni e le alternative studiate.
 
 ## Architettura e aggiornamento
 
 React, routing hash e GitHub Pages restano quelli esistenti. Nessun backend,
 database, scheduler o nuova dipendenza. Catalogo, team e calcolatore conservano
 il proprio comportamento e i salvataggi esistenti. La vista Competitivo viene
-caricata su apertura e recupera uno snapshot JSON locale incluso nella build;
-non chiama servizi esterni dal browser. Il JSON non diventa un grande modulo JS.
+caricata su apertura. Showdown recupera uno snapshot JSON locale incluso nella
+build e non chiama servizi esterni dal browser; il JSON non diventa un grande modulo JS.
 Ricerca e selezione restano nella sessione passando alle altre viste e tornando;
 non sono salvate nel team o in localStorage.
 
@@ -23,6 +24,46 @@ La ricerca non restringe il pannello; espandere una distribuzione nel dettaglio
 aggiorna anche lo spazio disponibile nella classifica. Il vincolo è soltanto CSS,
 senza misure JavaScript e senza dipendere dal dataset o dalla regulation.
 Su mobile i pannelli rimangono impilati e l'elenco ha altezza massima 48dvh.
+
+Entrambe le schede iniziano dai filtri, senza header introduttivo o card di
+metadati separate. Una riga compatta mantiene fonte e formato, numero di battaglie
+Showdown o data di generazione del dataset ranked. Periodo/soglia o stagione
+restano nel selettore. «Informazioni sui dati», chiuso inizialmente, raccoglie
+metodologia, provenienza e orari di consultazione. Le note dei dettagli sono
+ridotte; la ranked mantiene l'avviso sugli SP senza natura associata e la data
+dei dettagli, quando disponibile, nel riepilogo del blocco richiudibile.
+I credits delle fonti restano sempre visibili; condizioni e disclaimer sono
+consultabili in «Condizioni e attribuzioni». Questi blocchi usano details/summary
+HTML nativi, accessibili anche da tastiera, senza nuove dipendenze.
+
+In «Mosse più usate» di entrambe le schede, il badge accanto al nome mostra il
+tipo della mossa nel dataset della regulation attiva. La risoluzione condivisa
+accetta gli ID Showdown e i nomi della fonte nativa, senza nuove richieste o tabelle
+manuali. Per mosse non riconciliate il badge è omesso; non si presume un tipo.
+Nella ranked storica il tipo resta quello del catalogo attivo, come indicato dalla
+nota sulla scheda locale, e non certifica eventuali meccaniche della stagione.
+
+Mosse, strumenti, abilità e nature nei riquadri di dettaglio hanno un nome
+sottolineato che apre una descrizione con il mouse o con focus da tastiera. Su
+touchscreen il tocco apre e un secondo tocco chiude; Escape, tocco esterno,
+scorrimento, ridimensionamento e navigazione chiudono il tooltip. È possibile
+spostare il puntatore sul testo senza farlo scomparire. Un solo tooltip rimane
+aperto e il posizionamento resta entro lo schermo, fuori dai contenitori che
+potrebbero tagliarlo. Non è richiesta una libreria esterna.
+
+`CompetitiveTooltip.jsx` è condiviso dalle due fonti e usa `role=tooltip` e
+`aria-describedby`; il testo è associato al pulsante con il nome della voce.
+`competitive/descriptions.js` risolve ID e nomi senza richieste esterne. Mosse,
+strumenti e abilità mostrano il testo originale inglese; le mosse includono anche
+tipo, categoria, potenza e precisione base. Per le nature gli effetti positivi,
+negativi o neutri sono derivati da `CHAMPIONS_NATURES` e spiegati in italiano,
+senza abbinamenti automatici agli spread. I dati non riconosciuti mostrano una
+descrizione esplicita di indisponibilità. La regulation di riferimento compare
+in ogni tooltip, anche nella ranked nativa.
+
+Le descrizioni degli strumenti sono importate dalla fonte fissata dalla
+[pipeline regulation](regulations.md), senza dizionari manuali: una futura
+regulation richiede la consueta rigenerazione, non aggiornamenti dei tooltip.
 
 ```bash
 npm run competitive:import -- --regulation mc --month 2026-09 --cutoff 1760
@@ -154,6 +195,40 @@ frequenti delle distribuzioni marginali, né presentarlo come realmente osservat
 Saranno riutilizzati il workspace condiviso e i controlli di compatibilità esistenti,
 preservando i set indipendenti delle due squadre e i relativi salvataggi.
 
+## Ranked nativa
+
+«Ranked Champions» viene caricata soltanto dopo la scelta esplicita della fonte.
+`NativeRankings.jsx` gestisce stagione e selezione indipendenti da Showdown;
+`src/lib/competitive/battleData.js` valida le risposte e gestisce una cache temporanea
+in memoria. Showdown resta disponibile se il provider non risponde, ma non viene
+mai mostrato come sostituzione implicita dei dati nativi.
+
+Le stagioni sono ricavate dalla risposta rankings, iniziando dall'alias Current
+(«Attuale»). È supportato solo Doubles. Una richiesta legge la classifica completa
+per stagione; le altre leggono i dettagli del solo Pokémon selezionato. Tornare
+alla vista riusa dati ancora validi o li richiede dopo la scadenza. La cache
+separa stagione, formato e identità. Le [condizioni del provider](competitive-data-sources.md)
+descrivono durata, limiti e attribuzione. Nessun importatore o archivio storico
+è stato aggiunto per questo servizio.
+
+L'adattatore richiede formato e stagione corrispondenti, classifica completa,
+identità e posizioni univoche e provenienza. Nei dettagli verifica identità,
+stagione, categorie note, percentuali coerenti, date valide e sei SP interi tra
+0 e 32 con totale fino a 66. Nuove categorie non vengono ignorate. Una forma non
+riconciliata mantiene nome e dettagli originali senza scheda locale approssimata;
+il roster non filtra né rinumera la classifica.
+
+Le schede locali riconciliate sono esplicitamente riferite al catalogo della
+regulation attiva, senza certificare il regolamento della stagione nativa.
+Nature e spread rimangono separati: nessuna natura viene assegnata automaticamente.
+La frequenza della megapietra non diventa una statistica della Mega.
+
+Richieste annullate o risposte di selezioni precedenti non possono sostituire il
+dettaglio corrente. Timeout, errori di rete, schema cambiato e HTTP 404/429/503
+sono visibili, con riprova esplicita e senza retry automatico, uso di dati scaduti
+o fallback Showdown. Nessuna risposta nativa viene salvata in localStorage o nel
+repository, né viene offerto un download massivo.
+
 ## Verifiche del primo incremento
 
 Test offline per denominatori, nature aggregate, troncamento, slot vuoti, SP,
@@ -174,5 +249,35 @@ build di produzione: classifica di 277 specie, quote reali di Rillaboom, ricerca
 senza rinormalizzazione, Mega Garchomp Z e SP, espansione delle distribuzioni,
 selezione dei compagni, navigazione diretta e cronologia, conservazione della
 selezione, attribuzioni e recupero dopo un HTTP 503 simulato sul JSON locale.
-Nessuna richiesta esterna o errore JavaScript rilevato; nessun overflow a 1440,
+Nessuna richiesta esterna dalla vista Showdown o errore JavaScript rilevato; nessun overflow a 1440,
 1024, 768, 390 e 320 px. Lo snapshot non viene richiesto all'avvio del Catalogo.
+
+Verifiche ranked nativa: test offline con payload sintetici per schemi, identità,
+date, quote mancanti, SP, cache/evizione, scadenza, blocco Retry-After, assenza di
+retry automatici, errori e annullamenti. Nel browser sulla build sono stati
+verificati CORS e dati reali con sei richieste: classifica di 262 Pokémon, Garchomp,
+stagione M7 e forma Maushold-Four non riconciliata. Nessuna richiesta al provider
+prima della scelta della fonte; cache riutilizzata al ritorno e nessuna persistenza.
+Con intercettazioni sintetiche sono stati verificati HTTP 503 e riprova, payload
+malformato e selezioni rapide con risposta precedente ritardata, senza fallback
+Showdown. Nessun errore JavaScript o overflow a 1440, 1024, 768, 390 e 320 px;
+allineamento dei pannelli desktop conservato.
+
+Compattazione verificata sulla build: header e card metadati assenti, filtri in
+apertura, informazioni chiuse inizialmente e consultabili anche da tastiera,
+credits visibili, quote mancanti e SP senza natura associata conservati. Controllati
+allineamento dei pannelli desktop e assenza di overflow a 1440, 1024, 768, 390 e
+320 px, anche con informazioni aperte. Lint e build superati. Per questa verifica
+di presentazione la ranked ha usato payload sintetici intercettati nel browser,
+senza ulteriori richieste al provider; i dati reali erano stati verificati nel
+primo incremento ranked descritto sopra.
+
+Tooltip: verificate rigenerazioni offline identiche per M-B e M-C e aggiunta delle
+sole descrizioni degli strumenti (148 e 166), senza modificare meccaniche, roster,
+mosse o dati preesistenti. Test su override e testi mancanti, confronto fra
+regulation, risoluzione di nomi/ID, nature neutre e modificatrici e dati sconosciuti.
+Browser sulla build: Eject Button, Grassy Surge, mosse con valori base e Adamant;
+overlay non tagliato, passaggio del puntatore sul tooltip, un solo overlay aperto,
+focus/ARIA/Escape, chiusura con scroll, tocco, secondo tocco e tocco esterno a 390
+e 320 px. La ranked usa fixture sintetiche per verificare nomi e descrizioni
+assenti senza traffico al provider.

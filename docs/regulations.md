@@ -84,7 +84,7 @@ Un cambio di regole, banlist, mod o meccaniche non riconosciute interrompe
 l'importazione. Una regulation futura può richiedere codice: la pipeline rende
 visibili gli interventi necessari, non può implementare automaticamente nuovi effetti.
 
-## Descrizioni delle mosse e attribuzione
+## Descrizioni delle mosse, degli strumenti e attribuzione
 
 La pipeline importa `data/text/moves.ts` dalla stessa revisione Showdown dei dati
 di battaglia. Per ogni mossa risolve `shortDesc` dal testo generale, applica gli
@@ -101,6 +101,21 @@ anche prima della pubblicazione, si interrompe se questo elenco non è vuoto.
 Il confronto fra regulation rileva anche le modifiche ai testi importati.
 Questi controlli verificano la completezza dei dati; l'accuratezza dei testi
 dipende dalla fonte e la copertura del motore danni resta una verifica separata.
+
+Gli strumenti seguono lo stesso flusso: `data/text/items.ts` viene letto dalla
+revisione fissata e il testo breve è risolto nell'ordine generale → parent mod →
+mod della regulation, con precedenza al testo definito direttamente sull'oggetto.
+Il risultato è conservato in `items[].description`, senza cambiare le impronte
+delle meccaniche. Un testo mancante o vuoto interrompe l'importazione;
+`data:check -- --details` elenca `incompleteItemDescriptions`, che deve essere
+vuoto per il controllo `--complete`. Il confronto fra regulation rileva anche
+le modifiche alle descrizioni degli strumenti. Non si modifica a mano lo snapshot.
+
+I tooltip del competitivo usano queste descrizioni, i testi delle mosse e delle
+abilità già presenti e gli effetti delle nature derivati dalla tabella esistente.
+I testi della fonte restano in inglese e sono attribuiti a Showdown con la licenza
+già distribuita; le spiegazioni delle nature sono in italiano. Nella ranked storica
+il riferimento rimane la regulation attiva, dichiarata nel tooltip.
 
 Il Damage Calculator omette il paragrafo quando la fonte dichiara esplicitamente
 `No additional effect.`, anche se la frase è seguita da sole indicazioni sui
