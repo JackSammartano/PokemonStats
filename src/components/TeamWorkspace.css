@@ -103,6 +103,39 @@
 .coverage-dialog-actions { display: flex; flex-shrink: 0; align-items: center; gap: 8px; }
 .coverage-dialog-actions .pokemon-mega-toggle { position: static; width: 36px; height: 36px; }
 .pokemon-coverage-dialog p { color: var(--muted); font-size: 12px; line-height: 1.5; }
+.coverage-pokemon-details {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1.2fr);
+  gap: 16px 24px;
+  align-items: start;
+  margin-top: 18px;
+  padding: 18px;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: #fffefa;
+}
+.coverage-pokemon-details > * { min-width: 0; }
+.coverage-pokemon-details .pokemon-heading { grid-row: 1 / span 2; grid-template-columns: minmax(0, 1fr); gap: 12px; }
+.coverage-pokemon-details .pokemon-heading h3 { margin: 0 0 10px; font-size: 18px; overflow-wrap: anywhere; }
+.coverage-pokemon-details .pokemon-heading img { width: 112px; height: 112px; justify-self: center; }
+.coverage-pokemon-details .stats-block { grid-row: 1 / span 2; gap: 8px; }
+.coverage-pokemon-details .weakness-block { display: grid; gap: 9px; }
+.coverage-pokemon-details .section-title { font-size: 10px; }
+.coverage-pokemon-details .stat-row { grid-template-columns: 30px minmax(0, 1fr) 28px; gap: 8px; font-size: 11px; }
+.coverage-pokemon-details .type-badge,
+.coverage-pokemon-details .weakness-chip,
+.coverage-pokemon-details .resistance-chip { font-size: 10px; padding: 5px 8px; }
+.coverage-pokemon-details .muted { font-size: 11px; }
+@media (max-width: 1000px) {
+  .coverage-pokemon-details { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .coverage-pokemon-details .pokemon-heading,
+  .coverage-pokemon-details .stats-block { grid-row: auto; }
+}
+@media (max-width: 640px) {
+  .coverage-pokemon-details { grid-template-columns: minmax(0, 1fr); gap: 18px; padding: 14px; }
+  .coverage-pokemon-details .pokemon-heading { grid-template-columns: minmax(0, 1fr) 88px; }
+  .coverage-pokemon-details .pokemon-heading img { width: 88px; height: 88px; }
+}
 .coverage-dialog-columns { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; margin-top: 18px; align-items: start; }
 .coverage-dialog-columns h3 { margin: 0 0 12px; font-size: 15px; }
 .pokemon-coverage-dialog .coverage-targets { gap: 8px; }

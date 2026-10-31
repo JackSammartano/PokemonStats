@@ -3,7 +3,6 @@ import './App.css'
 import './components/TeamWorkspace.css'
 import './landscape-theme.css'
 import SiteBackground from './components/SiteBackground'
-import { formatTypeMultiplier } from './lib/typeLabels'
 import PokemonActionMenu from './components/PokemonActionMenu'
 import { getPokemonCardActions } from './lib/pokemonCardActions'
 import SquadSection from './components/SquadSection'
@@ -15,18 +14,9 @@ import DamageCalculator from './components/DamageCalculator'
 import { REGULATION } from './lib/regulation.js'
 import { updatePokemonMoveSlot } from './lib/damage/championsMoveSets'
 import { formatName, POKEMON_BY_NAME, POKEMON_DATASET } from './lib/pokemonDataset'
-import PokemonImage from './components/PokemonImage'
+import PokemonDetails from './components/PokemonDetails'
 import { getMegaAction, toggleMegaEvolution } from './lib/megaEvolution'
 const PokemonCoverageDialog = lazy(() => import('./components/PokemonCoverageDialog'))
-
-const STAT_LABELS = {
-  hp: 'HP',
-  attack: 'Atk',
-  defense: 'Def',
-  'special-attack': 'SpA',
-  'special-defense': 'SpD',
-  speed: 'Spe',
-}
 
 const SORT_OPTIONS = [
   { label: 'Nome', value: 'name' },
@@ -394,79 +384,11 @@ function getStatValue(pokemon, statName) {
 
 const PokemonCard = memo(function PokemonCard({ pokemon, teams, compareLeftName, compareRightName, onAction }) {
   const actions = getPokemonCardActions(pokemon.displayName, teams, compareLeftName, compareRightName)
-  const total = pokemon.stats.reduce((sum, stat) => sum + stat.value, 0)
 
   return (
     <article className="pokemon-card">
       <PokemonActionMenu name={pokemon.displayName} actions={actions} onAction={(action) => onAction(pokemon, action)} />
-      <div className="pokemon-heading">
-        <div>
-          <h2>{pokemon.displayName}</h2>
-          <div className="type-row">
-            {pokemon.types.map((type) => (
-              <span className={`type-badge type-${type}`} key={type}>
-                {formatName(type)}
-              </span>
-            ))}
-          </div>
-        </div>
-        <PokemonImage pokemon={pokemon} alt={pokemon.displayName} />
-      </div>
-
-      <div className="stats-block">
-        <div className="section-title">
-          <span>Base stats</span>
-          <strong>{total}</strong>
-        </div>
-        {pokemon.stats.map((stat) => (
-          <div className="stat-row" key={stat.name}>
-            <span>{STAT_LABELS[stat.name] ?? formatName(stat.name)}</span>
-            <meter min="0" max="255" value={stat.value} />
-            <strong>{stat.value}</strong>
-          </div>
-        ))}
-      </div>
-
-      <div className="weakness-block">
-        <div className="section-title">
-          <span>Debolezze</span>
-        </div>
-        <div className="chip-row">
-          {pokemon.weaknesses.length > 0 ? (
-            pokemon.weaknesses.map((weakness) => (
-              <span
-                className={`weakness-chip type-${weakness.type}`}
-                key={weakness.type}
-              >
-                {formatName(weakness.type)} {formatTypeMultiplier(weakness.multiplier)}
-              </span>
-            ))
-          ) : (
-            <span className="muted">Nessuna debolezza</span>
-          )}
-        </div>
-      </div>
-
-      <div className="weakness-block">
-        <div className="section-title">
-          <span>Resistenze</span>
-        </div>
-        <div className="chip-row">
-          {pokemon.resistances.length > 0 ? (
-            pokemon.resistances.map((resistance) => (
-              <span
-                className={`resistance-chip type-${resistance.type}`}
-                key={resistance.type}
-              >
-                {formatName(resistance.type)}{' '}
-                {formatTypeMultiplier(resistance.multiplier)}
-              </span>
-            ))
-          ) : (
-            <span className="muted">Nessuna resistenza</span>
-          )}
-        </div>
-      </div>
+      <PokemonDetails pokemon={pokemon} />
 
       <div className="abilities">
         <div className="section-title">

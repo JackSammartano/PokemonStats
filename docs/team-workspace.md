@@ -52,12 +52,29 @@ Nel calcolatore non viene mostrato il catalogo: i Pokémon si cambiano attravers
 
 ## Ambito di questa modifica
 
+La modale `i` di ciascun membro, in entrambe le squadre, mostra prima delle
+deduzioni una scheda con immagine, tipi, statistiche base e totale, debolezze e
+resistenze (incluse le immunità), senza abilità né menu Aggiungi. La presentazione
+è condivisa con le card del Catalogo in `PokemonDetails.jsx`; nella modale si
+adatta a colonne su desktop e a una colonna su mobile. Le statistiche sono quelle
+base della specie o forma, non i valori della configurazione del calcolatore.
+Il cambio Mega nella modale aggiorna anche questa scheda. I dati provengono dal
+dataset della regulation attiva e le difese considerano soltanto i tipi:
+l'aggiornamento di regulation non richiede una seconda tabella da mantenere.
+
 La pagina comprende due squadre, import dagli appunti, quattro slot per Pokémon e
 resoconto laterale dei tipi. Le mosse usano il learnset M-C completo, comprese quelle
 di stato e con formule non ancora implementate. Queste ultime restano visibili e salvate;
 il calcolatore segnala quando non può produrre un risultato o applicare un effetto.
 
 ## Verifiche
+
+Scheda nella modale `i`: verificata sulla build di produzione per entrambe le
+squadre, con sei statistiche base, debolezze e immunità, assenza di abilità e
+azioni del Catalogo, aggiornamento di immagine, tipi, statistiche e difese nel
+passaggio Charizard → Mega Charizard X. Nessun overflow a 1440, 768, 390 e 320 px
+né errori JavaScript. Verificata anche la conservazione di statistiche, difese,
+abilità e menu Aggiungi nelle card del Catalogo.
 
 - Test di risoluzione della coppia, rimozione di membri selezionati e team vuoto.
 - Test dei collegamenti diretti e del ritorno contestuale.

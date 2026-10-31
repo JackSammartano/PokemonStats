@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react'
 import { derivePokemonInsights, getPokemonCoverage } from '../lib/pokemonInsights.js'
 import { describeTypeEffectiveness, formatTypeMultiplier } from '../lib/typeLabels.js'
 import MegaToggleButton from './MegaToggleButton'
+import PokemonDetails from './PokemonDetails'
 
 export default function PokemonCoverageDialog({ pokemon, side, team, opponentTeam, moveSets, mega, onMegaToggle, onClose }) {
   const dialog = useRef(null)
@@ -24,7 +25,10 @@ export default function PokemonCoverageDialog({ pokemon, side, team, opponentTea
       <MegaToggleButton action={mega} onToggle={onMegaToggle} />
       <button type="button" className="secondary-button" onClick={close} autoFocus aria-label="Chiudi dettagli copertura">Chiudi ×</button>
     </div></header>
-    <p>Efficacia dei tipi delle mosse selezionate. Abilità, oggetti e danno effettivo non sono inclusi.</p>
+    <section className="coverage-pokemon-details" aria-label="Scheda Pokémon">
+      <PokemonDetails pokemon={pokemon} headingLevel="h3" />
+    </section>
+    <p>Debolezze e resistenze dipendono dai tipi del Pokémon. I confronti sotto mostrano l’efficacia dei tipi delle mosse selezionate. Abilità, oggetti e danno effettivo non sono inclusi.</p>
     <PokemonInsights insights={insights} total={outgoing.length} />
     <div className="coverage-dialog-columns"><CoverageGroup title={`${pokemon.displayName} → ${side === 'attacker' ? 'squadra avversaria' : 'la mia squadra'}`} rows={outgoing} /><CoverageGroup title={`${side === 'attacker' ? 'Squadra avversaria' : 'La mia squadra'} → ${pokemon.displayName}`} rows={incoming} /></div>
   </dialog>
