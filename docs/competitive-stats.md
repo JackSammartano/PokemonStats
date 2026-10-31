@@ -36,12 +36,31 @@ a `floette-eternal`, collegato a `floetteeternal` / Floette Eternal nel catalogo
 I nomi del catalogo e gli alias Limitless verificati controllano eventuali
 conflitti: se ID e nome identificano due forme diverse, nessuna immagine viene
 assegnata. Senza ID è ammesso un nome esatto o un alias verificato e univoco;
-un ID sconosciuto non viene invece sostituito usando il nome. La normalizzazione
+un ID sconosciuto non viene invece sostituito usando il nome, salvo l’eccezione
+esplicita Floette descritta sotto. La normalizzazione
 dei nomi conserva il genere, traducendo ♀/♂ in f/m prima del confronto.
-Forme sconosciute mantengono testo originale e placeholder, compreso `floette`
-senza la forma Eternal. La ricerca include anche il nome del catalogo collegato;
+Forme sconosciute mantengono testo originale e placeholder. La ricerca include anche il nome del catalogo collegato;
 il nome originale resta nel dato normalizzato e nel titolo della voce.
+
+Eccezione approvata per Limitless Champions M-C (`gen9championsvgc2026regmc`):
+la coppia `id: floette`, `name: Floette` viene associata a `floetteeternal`.
+È una scelta esplicita dell’applicazione, non una forma certificata dalla fonte
+o dedotta da Floettite/Fairy Aura. Richiede che Floette Eternal sia nel roster
+e che il roster non contenga già `floette`. Non vale senza ID, con nome
+discordante, in altre regulation o senza il contesto M-C esplicito.
+La card mostra «Nome nella fonte: Floette» accanto al nome del catalogo;
+strumento, abilità, natura e mosse restano quelli pubblicati. Nessuna conversione
+in Mega Floette. Al prossimo cambio regulation l’eccezione resta disattiva finché
+non viene rivalutata esplicitamente. Il Pomelo Late Night Tour ha evidenziato
+questa coppia, oltre a due voci già pubblicate come Eternal Flower Floette.
 Tooltip e tipi delle mosse vengono dal dataset locale della regulation attiva.
+
+Presentazione dei team nei tornei: anteprime da 36 px con 8 px di spazio,
+senza contatore «6/6 Pokémon» per i team completi. Restano la freccia di apertura
+e le indicazioni di team parziale o non pubblicato. Nelle build aperte le immagini
+sono da 60 px; Strumento, Abilità e Natura sono tre colonne affiancate con valori
+a capo quando necessario. L’eventuale teratipo resta su una riga separata.
+Il layout è indipendente dalla regulation e usa le immagini e i tooltip esistenti.
 
 Il client centralizza timeout di 15 secondi, annullamento al cambio fonte/pagina/
 selezione, validazione e cache in memoria di massimo 16 risposte per due minuti
@@ -370,3 +389,17 @@ senza associazione, piattaforma non indicata e In presenza, senza errori JavaScr
 o overflow a 1440, 390 e 320 px. Ripetute con payload sintetici anche le verifiche
 di paginazione, cache, ricerche, selezioni rapide, tooltip e gestione errori
 dell’incremento Tornei. Nessun team reale aggiunto al repository.
+
+Eccezione Floette M-C successiva: `npm run verify` superato con 293 test.
+Verificati coppia ID/nome esatta, conservazione del set, esclusione di altre
+regulation, target assente e precedenza di un eventuale `floette` nel roster.
+Browser sulla build con Pomelo Late Night Tour reale: immagine e nome Floette
+Eternal, nota «Nome nella fonte: Floette», Floettite/Fairy Aura/Modest e quattro
+mosse invariati, ricerca per nome del catalogo, nessun errore JavaScript o overflow
+a 1440, 390 e 320 px. Nessun dato dei partecipanti salvato nelle fixture.
+
+Rifinitura del layout Tornei: lint e build superati. Browser sulla build con
+payload sintetici per team completo, parziale e assente, nomi lunghi, immagini
+36/60 px, spaziatura di 8 px, tre campi allineati, apertura/chiusura e tooltip
+da tastiera con Escape. Nessun overflow o errore JavaScript a 1440, 1280, 1024,
+900, 768, 540, 390 e 320 px. Nessuna richiesta ai provider per questa verifica.

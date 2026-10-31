@@ -1,7 +1,7 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import { createLimitlessClient, createLimitlessPokemonResolver, getLimitlessFormat, normalizeLimitlessGames, normalizeTournamentList, normalizeTournamentDetails, normalizeTournamentStandings } from './competitive/limitless.js'
-import { REGULATION_ROSTER } from './regulation.js'
+import { REGULATION, REGULATION_ROSTER } from './regulation.js'
 
 // Synthetic contracts: no participant data or third-party team sheet is archived here.
 const tournament = (overrides = {}) => ({ id: 'event-1', name: 'Synthetic event', game: 'VGC', format: 'M-C', date: '2026-10-01T10:00:00Z', players: 10, ...overrides })
@@ -78,16 +78,41 @@ test('Limitless uses catalogue names and verified provider aliases only when a s
   assert.equal(resolve('charizard', 'Alternate spelling absent from the catalogue').showdownId, 'charizard')
   assert.equal(resolve(null, 'Eternal Flower Floet').showdownId, null)
 })
-test('Limitless never upgrades ordinary Floette, an unknown form or a Mega stone to a different species', () => {
-  const member = normalizeTournamentStandings([standing({ decklist: [{ id: 'floette', name: 'Floette', item: 'Floettite' }] })], 'event-1')[0].team[0]
-  assert.equal(member.showdownId, null)
-  assert.equal(member.identity, 'unknown-id')
+test('Limitless maps the approved M-C Floette exception without changing the published set or inferring a Mega', () => {
+  const member = normalizeTournamentStandings([standing({ decklist: [{ id: 'floette', name: 'Floette', item: 'Floettite', ability: 'Fairy Aura', nature: 'Modest', attacks: ['Moonblast', 'Protect'] }] })], 'event-1')[0].team[0]
+  assert.equal(member.showdownId, 'floetteeternal')
+  assert.equal(member.identity, 'regulation-alias')
+  assert.equal(member.sourceId, 'floette')
   assert.equal(member.sourceName, 'Floette')
+  assert.equal(member.item, 'Floettite')
+  assert.equal(member.ability, 'Fairy Aura')
+  assert.equal(member.nature, 'Modest')
+  assert.deepEqual(member.moves, ['Moonblast', 'Protect'])
   const resolve = createLimitlessPokemonResolver(REGULATION_ROSTER)
   assert.equal(resolve(null, 'Floette').showdownId, null)
   assert.equal(resolve('charizard', 'Alolan Ninetales').identity, 'conflict')
   assert.equal(resolve('indeedee', 'Indeedee ♀').identity, 'conflict')
   assert.equal(resolve('rotom-heat', 'Wash Rotom').identity, 'conflict')
+})
+test('Limitless Floette exception requires the explicit M-C context, exact source pair and a unique roster target', () => {
+  const resolve = createLimitlessPokemonResolver(REGULATION_ROSTER, REGULATION)
+  assert.equal(resolve('floette', 'Floette').showdownId, 'floetteeternal')
+  assert.equal(resolve('floette', 'Floette').identity, 'regulation-alias')
+  assert.equal(resolve('floette', 'Floette Eternal').showdownId, null)
+  assert.equal(resolve('floette', 'Flabébé').showdownId, null)
+  assert.equal(resolve('floette', null).showdownId, null)
+  assert.equal(resolve(null, 'Floette').showdownId, null)
+  assert.equal(resolve('floette-blue', 'Floette').showdownId, null)
+  // No held item, move or ability is required for this explicit species mapping.
+  const member = normalizeTournamentStandings([standing({ decklist: [{ id: 'floette', name: 'Floette' }] })], 'event-1')[0].team[0]
+  assert.equal(member.showdownId, 'floetteeternal')
+  assert.equal(member.ability, null)
+  for (const context of [undefined, { ...REGULATION, label: 'M-B' }, { ...REGULATION, mechanics: 'sv' }, { ...REGULATION, format: 'gen9vgc2026regmc' }]) {
+    assert.equal(createLimitlessPokemonResolver(REGULATION_ROSTER, context)('floette', 'Floette').showdownId, null)
+  }
+  assert.equal(createLimitlessPokemonResolver([], REGULATION)('floette', 'Floette').showdownId, null)
+  const expanded = createLimitlessPokemonResolver([...REGULATION_ROSTER, { showdownId: 'floette', displayName: 'Floette' }], REGULATION)
+  assert.deepEqual(expanded('floette', 'Floette'), { showdownId: 'floette', identity: 'id' })
 })
 test('Limitless resolver follows the supplied regulation roster and refuses ambiguous name collisions', () => {
   const smallRoster = [{ showdownId: 'floetteeternal', displayName: 'Floette Eternal' }]

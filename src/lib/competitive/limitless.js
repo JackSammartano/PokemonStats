@@ -1,5 +1,5 @@
 import { showdownId } from './normalize.js'
-import { REGULATION_ROSTER } from '../regulation.js'
+import { REGULATION, REGULATION_ROSTER } from '../regulation.js'
 
 export const LIMITLESS_ORIGIN = 'https://play.limitlesstcg.com'
 export const TOURNAMENT_PAGE_SIZE = 20
@@ -27,7 +27,7 @@ const speciesAliases = {
 }
 const speciesNameId = (name) => showdownId(String(name ?? '').replaceAll('♀', 'f').replaceAll('♂', 'm'))
 
-export function createLimitlessPokemonResolver(roster) {
+export function createLimitlessPokemonResolver(roster, regulation) {
   const ids = new Set(roster.map((pokemon) => pokemon.showdownId)), names = new Map()
   function addName(name, id) {
     const key = speciesNameId(name)
@@ -42,6 +42,12 @@ export function createLimitlessPokemonResolver(roster) {
   return (sourceId, sourceName) => {
     const candidates = names.get(speciesNameId(sourceName)) ?? new Set()
     const id = sourceId ? showdownId(sourceId) : null
+    // Explicit product mapping approved for Limitless Champions M-C. This is
+    // not an identity claim by the provider, nor a deduction from the set.
+    if (id === 'floette' && speciesNameId(sourceName) === 'floette' && !ids.has(id) && ids.has('floetteeternal')
+      && regulation?.mechanics === 'champions' && regulation.label === 'M-C' && regulation.format === 'gen9championsvgc2026regmc') {
+      return { showdownId: 'floetteeternal', identity: 'regulation-alias' }
+    }
     // An explicit unknown ID is not overridden by a more convenient name.
     if (sourceId && !ids.has(id)) return { showdownId: null, identity: 'unknown-id' }
     if (candidates.size > 1 || (id && candidates.size === 1 && !candidates.has(id))) return { showdownId: null, identity: 'conflict' }
@@ -50,7 +56,7 @@ export function createLimitlessPokemonResolver(roster) {
     return { showdownId: null, identity: 'unknown-name' }
   }
 }
-const resolvePokemon = createLimitlessPokemonResolver(REGULATION_ROSTER)
+const resolvePokemon = createLimitlessPokemonResolver(REGULATION_ROSTER, REGULATION)
 
 export function normalizeLimitlessGames(payload) {
   if (!Array.isArray(payload)) fail('elenco giochi non valido')

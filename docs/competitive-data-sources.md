@@ -130,8 +130,16 @@ Basculegion ♀, Meowstic ♀, Alolan Ninetales, Hisuian Arcanine/Decidueye/Samu
 Zoroark/Typhlosion, Paldean Tauros Aqua Breed, Wash Rotom e Heat Rotom.
 L’integrazione usa questi ID e conserva i nomi originali; senza ID usa solo nomi
 del catalogo o alias verificati e univoci. Un conflitto tra forme resta segnalato.
-Il caso `floette` / Floette non ha destinazione nel roster attivo: non viene
-sostituito con Floette Eternal, neppure quando porta una megapietra.
+Il caso `floette` / Floette non ha una corrispondenza esatta nel roster attivo.
+Successivamente è stata approvata un’eccezione esplicita dell’applicazione,
+circoscritta a Limitless Champions M-C: questa coppia viene collegata a
+Floette Eternal, conservando e mostrando il nome originale. L’eccezione non
+certifica l’identità della fonte e non si basa sulla megapietra o sulle mosse.
+Nel [Pomelo Late Night Tour](https://play.limitlesstcg.com/tournament/6ae1134f22fd412b92a4e42d)
+la voce Floette pubblica Floettite e Fairy Aura; questi campi restano invariati,
+senza conversione in Mega Floette o correzione dell’abilità. La regola non viene
+riutilizzata automaticamente in altre regulation; vedere i vincoli e le verifiche
+in [competitive-stats.md](competitive-stats.md).
 
 [Battle Cruise VGC](https://play.limitlesstcg.com/tournament/6ad8ee598a8383117e3f0bb4)
 restituisce `platform: null`, `isOnline: false`, fasi valide e 59 giocatori con team.
